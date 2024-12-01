@@ -40,12 +40,6 @@ class ArticleCourse(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=False)
     
-class Tag(models.Model):
-    tag = models.CharField(max_length=100, default="unknown", null=False)
-
-class ArticleTag(models.Model):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
-    tag = models.ForeignKey(Course, on_delete=models.CASCADE, null=False)
     
 class Comment(models.Model): 
     body = models.TextField(default="unknown", null=False)
