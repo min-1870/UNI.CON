@@ -1,0 +1,38 @@
+[
+    {
+      "model": "account.school",
+      "pk": 0,
+      "fields": {
+        "name": "University of New South Wales",
+        "color": "#FFA500",
+        "initial": "unsw"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 1,
+      "fields": {
+        "name": "University of Technology Sydney",
+        "color": "#0000FF",
+        "initial": "uts"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 2,
+      "fields": {
+        "name": "The University of Sydney",
+        "color": "#0000FF",
+        "initial": "usyd"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 3,
+      "fields": {
+        "name": "Macquarie University",
+        "color": "#0000FF",
+        "initial": "mu"
+      }
+    }
+]
