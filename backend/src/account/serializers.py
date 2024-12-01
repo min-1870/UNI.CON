@@ -5,7 +5,7 @@ from randomname import get_name
 import random
 import re
 from django.utils import timezone
-from .methods import get_school_from_email
+from .helps import get_school_from_email
 
 class UserSerializer(serializers.ModelSerializer):    
     class Meta:
