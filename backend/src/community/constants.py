@@ -1,28 +1,22 @@
-# from django.core.cache import cache
 from .models import Article, Comment
-# from django.db.models import OuterRef, Case, When, BooleanField, Subquery
-# from .serializer import ArticleSerializer
-# from rest_framework.pagination import PageNumberPagination
-# from django.utils import timezone
-# from datetime import timedelta
-
 from django.db.models import Sum, F, Count, Q
+from django.db.models import F, Q
+from decouple import config
 import numpy as np
 from openai import OpenAI
-from django.db.models import OuterRef, Subquery, Exists
-from django.db.models import F, Q, FloatField
-from django.db.models.functions import Log
+
 
 client = OpenAI(
-    api_key="AN API KEY",
+    api_key=config("OPENAI_API_KEY")
 )
 
 def update_article_engagement_score(article_instance):
     article_instance.engagement_score = (
-        Log(F('views_count') + 1).output_field(FloatField()) * 0.1 +
-        Log(F('views_count') + 1).output_field(FloatField()) * 0.2 +
-        Log(F('views_count') + 1).output_field(FloatField()) * 0.3 
+        (F('views_count') * 1) +
+        (F('likes_count') * 2) +
+        (F('comments_count') * 3)
     )
+    
     article_instance.save(update_fields=['engagement_score'])
 
 def get_embedding(text, model="text-embedding-3-small"):
