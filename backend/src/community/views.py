@@ -28,13 +28,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        user_instance = request.user
-
-        # beginning_datetime = request.session.get('beginning_datetime', False)
-        # articles_number = request.session.get('articles_number', False)
-        # Fetch most recent articles
-        # recent_articles_queryset = self.queryset.filter(created_at__lte=beginning_datetime)[:articles_number]
-
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
@@ -43,11 +36,29 @@ class ArticleViewSet(viewsets.ModelViewSet):
         paginated_articles = paginator.paginate_queryset(self.get_queryset(), request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
         
-        
+        return paginator.get_paginated_response({
+            'articles': article_serializer.data
+        })
+    
+    @action(detail=False, methods=['get']) #TODO CREATE Test Case
+    def hot(self, request):
+        # Set up pagination for articles
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+
+        # Apply pagination to the comments queryset
+        sorted_articles = self.get_queryset().order_by('-engagement_score')
+        paginated_articles = paginator.paginate_queryset(sorted_articles, request)
+        article_serializer = ArticleSerializer(paginated_articles, many=True)
         
         return paginator.get_paginated_response({
             'articles': article_serializer.data
         })
+    
+    @action(detail=False, methods=['get']) #TODO Apply FAISS and embedding
+    def preference(self, request):
+        user_instance = request.user
+        return None
 
     def update(self, request, *args, **kwargs):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
