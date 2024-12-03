@@ -2,6 +2,11 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+import numpy as np
+
+
+def default_embedding_vectors():
+    return np.zeros(1536).tolist()
 
 class School(models.Model):
     name = models.CharField(max_length=200, default="unknown", null=False)
@@ -18,6 +23,7 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False, null=False)
     date_joined = models.DateTimeField(default=timezone.now, null=False)
     school = models.ForeignKey(School, on_delete=models.CASCADE, null=True)
+    embedding_vector = models.JSONField(null=False, default=default_embedding_vectors)
     
 class TimeTable(models.Model):
     user_id = models.ForeignKey(User, to_field='id', db_column='user_id', on_delete=models.CASCADE)
