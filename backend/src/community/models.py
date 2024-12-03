@@ -45,6 +45,8 @@ class ArticleCourse(models.Model):
 class Comment(models.Model): 
     body = models.TextField(default="unknown", null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+
+    deleted = models.BooleanField(default=False, null=False)
     
     parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)

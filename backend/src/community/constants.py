@@ -4,11 +4,21 @@ from django.db.models import F, Q
 from decouple import config
 import numpy as np
 from openai import OpenAI
+import faiss
 
+DELETED_TITLE = '[DELETED ARTICLE]'
+DELETED_BODY = '[DELETED CONTENT]'
 
 client = OpenAI(
     api_key=config("OPENAI_API_KEY")
 )
+
+try:
+    index = faiss.read_index("index_file.idx")
+except Exception:
+    index = faiss.IndexFlatL2(1536)
+    index = faiss.IndexIDMap(index)
+
 
 def update_article_engagement_score(article_instance):
     article_instance.engagement_score = (
@@ -25,6 +35,22 @@ def get_embedding(text, model="text-embedding-3-small"):
 
 def calculate_similarity(vector_1, vector_2):
     return np.dot(vector_1, vector_2) / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2))
+
+def update_preference_vector(user_embeddings, article_embedding, alpha=0.1):
+    user_embeddings = np.array(user_embeddings)  
+    article_embedding = np.array(article_embedding)    
+    return ((1 - alpha) * user_embeddings + alpha * article_embedding).tolist()
+
+def add_embedding_to_faiss(article_embedding, article_id):
+    article_embedding = np.array([article_embedding])
+    article_id = np.array([article_id])
+    
+    index.add_with_ids(article_embedding, article_id)
+    
+
+def search_similar_embeddings(embedding, number=100):
+    _, ids = index.search(np.array([embedding]), k=number)
+    return ids[ids > 0]
 
 def get_current_user_points(user_id):
 

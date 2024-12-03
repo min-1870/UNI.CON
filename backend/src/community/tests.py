@@ -5,8 +5,11 @@ from .models import User
 from copy import deepcopy
 from .models import Article, Course, ArticleCourse, School, ArticleLike, Comment, CommentLike
 #, Forum, Course, ArticleCourse, ArticleLike, UserCourse, Comment, CommentLike
-from .constants import get_current_user_points
+from .constants import update_preference_vector
 import json
+from datetime import datetime
+
+import numpy as np
 
 
 
@@ -21,6 +24,8 @@ class ArticleCreateTest(APITestCase):
 
         self.ArticlePatchDetailDelete_name = 'article-detail'
         self.ArticleListCreate_name = 'article-list'
+        self.ArticleScore_name = 'article-hot'
+        self.ArticlePreference_name = 'article-preference'
         self.ArticleLike_name = 'article-like'
         self.ArticleUnlike_name = 'article-unlike'
 
@@ -74,7 +79,7 @@ class ArticleCreateTest(APITestCase):
             return User.objects.get(email=user_data['email'])
         else:        
             return response
-    
+     
     def test_post_article(self):
 
         user_instance = self.register_account(self.mock_user1)
@@ -168,9 +173,9 @@ class ArticleCreateTest(APITestCase):
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         
         # Validate the article has been deleted
-        exist = Article.objects.filter(id=post_response.data['id']).exists()
-        self.assertFalse(exist)
-    
+        article_instance = Article.objects.get(pk=post_response.data['id'])
+        self.assertTrue(article_instance.deleted)
+     
     def article(self, restful, data, instance=True, kwargs=0):
 
         if restful == 'post':
@@ -189,7 +194,7 @@ class ArticleCreateTest(APITestCase):
             return Article.objects.get(pk=response.data['id'])
         else:
             return response
-    
+     
     def test_like_article(self):
 
         user_instance = self.register_account(self.mock_user1)
@@ -314,10 +319,8 @@ class ArticleCreateTest(APITestCase):
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         
         # Validate the comment has been deleted
-        exist = Comment.objects.filter(id=post_comment_response.data['id']).exists()
-        self.assertFalse(exist)
-        article_instance = Article.objects.get(pk=article_instance.id)
-        self.assertEqual(article_instance.comments_count, 0)
+        comment_instance = Comment.objects.get(pk = post_comment_response.data['id'])
+        self.assertTrue(comment_instance.deleted)
  
     def test_like_comment(self):
 
@@ -366,7 +369,7 @@ class ArticleCreateTest(APITestCase):
         self.assertFalse(comment_like_exist)
         comment_instance = Comment.objects.get(pk=post_comment_response.data['id'])
         self.assertEqual(comment_instance.likes_count, 0)
-         
+      
     def post_comment(self, article_id, comment_id=False, instance=True):
         comment_data = deepcopy(self.mock_comment)
         comment_data['article'] = article_id
@@ -382,16 +385,29 @@ class ArticleCreateTest(APITestCase):
             return Comment.objects.get(pk=response.data['id'])
         
         return response
-
-    def test_retrieve_article(self):
+     
+    def test_retrieve_an_article(self):
 
         user_instance = self.register_account(self.mock_user1)
         article_instance = self.article('post', self.mock_article)
         comment_instance = self.post_comment(article_instance.id)
+        initial_user_preference = np.array(user_instance.embedding_vector)
 
-        retrieve_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
-        retrieve_article_response = self.client.get(retrieve_article_url)
-        self.assertEqual(retrieve_article_response.status_code, status.HTTP_200_OK)
+        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
+        retrieve_an_article_response = self.client.get(retrieve_an_article_url)
+        self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
+
+        # Validate the article
+        self.assertEqual(retrieve_an_article_response.data['results']['article']['id'], article_instance.id)
+
+        # Validate the comment
+        self.assertEqual(retrieve_an_article_response.data['results']['comments'][0]['id'], comment_instance.id)
+
+        # Validate the preference embedding update
+        user_instance = User.objects.get(pk=user_instance.id)
+        updated_embedding = np.array(user_instance.embedding_vector)        
+        self.assertFalse(np.allclose(initial_user_preference, updated_embedding))
+
 
     def test_retrieve_article_with_course_code(self):
 
@@ -402,41 +418,92 @@ class ArticleCreateTest(APITestCase):
         mock_article['unicon'] = False
 
         article_instance = self.article('post', mock_article)
-        comment_instance = self.post_comment(article_instance.id)
 
-        retrieve_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
-        retrieve_article_response = self.client.get(retrieve_article_url)
-        self.assertEqual(retrieve_article_response.status_code, status.HTTP_200_OK)
+        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
+        retrieve_an_article_response = self.client.get(retrieve_an_article_url)
+        self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
 
-    def test_retrieve_article_with_nested_comments(self):
+    def test_retrieve_nested_comments(self):
 
         user_instance = self.register_account(self.mock_user1)
         article_instance = self.article('post', self.mock_article)
         comment_instance = self.post_comment(article_instance.id)
-        nested_comment_instance = self.post_comment(article_instance.id, comment_instance.id)
-
-        retrieve_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
-        retrieve_article_response = self.client.get(retrieve_article_url)
-        self.assertEqual(retrieve_article_response.status_code, status.HTTP_200_OK)        
+        nested_comment_instance = self.post_comment(article_instance.id, comment_instance.id)   
 
         retrieve_comment_url = reverse(self.CommentPatchDetailDelete_name, kwargs={'pk':comment_instance.id})
         retrieve_comment_response = self.client.get(retrieve_comment_url)
         self.assertEqual(retrieve_comment_response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(nested_comment_instance.id, retrieve_comment_response.data['results']['nested_comments'][0]['id'])
         
 
-    def test_retrieve_article_with_nested_comments(self):
+    def test_retrieve_articles_sorted_by_time(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        article_instance = self.article('post', self.mock_article)
-        article_instance = self.article('post', self.mock_article)
-        article_instance = self.article('post', self.mock_article)
-        article_instance = self.article('post', self.mock_article)
-        comment_instance = self.post_comment(article_instance.id)
-        nested_comment_instance = self.post_comment(article_instance.id, comment_instance.id)
+        self.register_account(self.mock_user1)
+        for _ in range(10):
+            self.article('post', self.mock_article)
+        retrieve_articles_url = reverse(self.ArticleListCreate_name)
+        retrieve_articles_response = self.client.get(retrieve_articles_url)
+        self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
 
-        retrieve_article_url = reverse(self.ArticleListCreate_name)
-        retrieve_article_response = self.client.get(retrieve_article_url)
-        self.assertEqual(retrieve_article_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Article.objects.count(), len(retrieve_article_response.data['results']['articles']))
+        # Validate Number of Articles
+        self.assertEqual(Article.objects.count(), len(retrieve_articles_response.data['results']['articles']))
+
+        # Validate the order of Articles
+        articles = retrieve_articles_response.data['results']['articles']
+        previous_article_time = datetime.strptime(articles[0]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        for i in range(1, len(articles)):
+            current_article_time = datetime.strptime(articles[i]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+            self.assertTrue(previous_article_time > current_article_time)
+
+    
+
+    def test_retrieve_articles_sorted_by_score(self):
+
+        self.register_account(self.mock_user1)
+
+        for i in range(10, 0, -1):
+            article_instance = self.article('post', self.mock_article)
+            for _ in range(i):
+                self.post_comment(article_instance.id)
+
+        retrieve_articles_url = reverse(self.ArticleScore_name)
+        retrieve_articles_response = self.client.get(retrieve_articles_url)
+        self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
+
+        # Validate Number of Articles
+        self.assertEqual(Article.objects.count(), len(retrieve_articles_response.data['results']['articles']))
+
+        # Validate the order of Articles
+        articles = retrieve_articles_response.data['results']['articles']
+        previous_article_comment_count = articles[0]['comments_count']
+        for i in range(1, len(articles)):
+            current_article_comment_count = articles[i]['comments_count']
+            self.assertTrue(previous_article_comment_count > current_article_comment_count)
+     
+    def test_retrieve_articles_sorted_by_preference(self):
+
+        self.register_account(self.mock_user1)
+
+        food_article = deepcopy(self.mock_article)
+        food_article['body'] = "Food is a universal language that connects people across cultures and traditions. It’s not just about nourishment; it’s an expression of history, creativity, and community. From street food in bustling markets to gourmet meals in fine dining, every dish tells a story of flavors, techniques, and memories shared."
+        food_article_instance = self.article('post', food_article)
+
+        exam_article = deepcopy(self.mock_article)
+        exam_article['body'] = "Exams are often used in educational settings, professional certifications, and recruitment processes to measure competence and understanding. Preparation, focus, and time management are key to success in exams."
+        exam_article_instance = self.article('post', exam_article)
+        
+        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':food_article_instance.id})
+        retrieve_an_article_response = self.client.get(retrieve_an_article_url)
+        self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
+        
+        retrieve_articles_url = reverse(self.ArticlePreference_name)
+        retrieve_articles_response = self.client.get(retrieve_articles_url)
+        self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
+
+        # Validate the order of Articles
+        articles = retrieve_articles_response.data['results']['articles']
+        self.assertEqual(articles[0]['id'], food_article_instance.id)
+        self.assertEqual(articles[1]['id'], exam_article_instance.id)
+
         # print(json.dumps(retrieve_comment_response.data, indent=4))

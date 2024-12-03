@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
 from randomname import get_name
-from .constants import get_current_user_points, get_embedding
+from .constants import get_current_user_points, get_embedding, add_embedding_to_faiss
 from django.db.models import F
 
 
@@ -96,6 +96,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         )
 
         article_instance = Article.objects.create(**validated_data)
+
+        add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
 
         # Create the temporary username for the author
         ArticleUser.objects.create(

@@ -11,6 +11,8 @@ from django.db.models import F, Q
 from django.db.models.functions import Log
 from .constants import update_article_engagement_score
 from rest_framework.pagination import PageNumberPagination
+from .constants import search_similar_embeddings, update_preference_vector, DELETED_BODY, DELETED_TITLE
+from django.db.models import Case, When
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -32,7 +34,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
-        # Apply pagination to the comments queryset
+        # Apply pagination to the articles queryset
         paginated_articles = paginator.paginate_queryset(self.get_queryset(), request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
         
@@ -40,13 +42,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'articles': article_serializer.data
         })
     
-    @action(detail=False, methods=['get']) #TODO CREATE Test Case
+    @action(detail=False, methods=['get'])
     def hot(self, request):
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
-        # Apply pagination to the comments queryset
+        # Apply pagination to the articles queryset
         sorted_articles = self.get_queryset().order_by('-engagement_score')
         paginated_articles = paginator.paginate_queryset(sorted_articles, request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
@@ -55,10 +57,28 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'articles': article_serializer.data
         })
     
-    @action(detail=False, methods=['get']) #TODO Apply FAISS and embedding
+    @action(detail=False, methods=['get'])
     def preference(self, request):
         user_instance = request.user
-        return None
+        
+        # Set up pagination for articles
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+
+        # Fetch Ids of the article based on the similarity
+        ids = search_similar_embeddings(user_instance.embedding_vector)
+
+        # Fetch the article based on the fetched id while maintaining the order
+        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+        articles = self.get_queryset().filter(pk__in=ids).order_by(order)
+
+        # Apply pagination to the articles queryset
+        paginated_articles = paginator.paginate_queryset(articles, request)
+        article_serializer = ArticleSerializer(paginated_articles, many=True)
+        
+        return paginator.get_paginated_response({
+            'articles': article_serializer.data
+        })
 
     def update(self, request, *args, **kwargs):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
@@ -95,6 +115,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         exist = ArticleLike.objects.filter(article=article_instance, user=user_instance).exists()
         article_instance.like_status = exist
+
+        # Update user preference based on the embedding of article
+        updated_preference_vector = update_preference_vector(user_instance.embedding_vector, article_instance.embedding_vector)
+        user_instance.embedding_vector = updated_preference_vector
+        user_instance.save(update_fields=['embedding_vector'])
 
         # Fetch the comments related to the article and parent_comment is null
         comment_queryset = Comment.objects.filter(
@@ -148,6 +173,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'article': article_data,
             'comments': comment_serializer.data
         })
+    
+    def destroy(self, request, *args, **kwargs):
+        article_instance = self.get_object()
+
+        # Remove and save original content
+        article_instance.title = DELETED_TITLE
+        article_instance.body = DELETED_BODY
+        article_instance.deleted = True
+        article_instance.save(update_fields=['title', 'body', 'deleted'])
+
+        return Response({'detail':'The article is deleted.'},status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], permission_classes=[Custom_IsAuthenticated])
     def like(self, request, pk=None):
@@ -217,25 +253,13 @@ class CommentViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         comment_instance = self.get_object()        
-        article_instance = Article.objects.get(pk=comment_instance.article.id)
-        
-        # Update the comments_count of the parent_comment
-        parent_comment = comment_instance.parent_comment
-        if parent_comment is not None:
-            parent_comment.comments_count = F('comments_count') - 1  
-            parent_comment.save(update_fields=['comments_count'])
 
-        # Update the comments_count of article
-        article_instance.comments_count = F('comments_count') - 1  
-        article_instance.save(update_fields=['comments_count'])
-        
-        # Update engagement score
-        update_article_engagement_score(article_instance)
+        # Remove and save original content
+        comment_instance.body = DELETED_BODY
+        comment_instance.deleted = True
+        comment_instance.save(update_fields=['body', 'deleted'])
 
-        # Delete the comment
-        comment_instance.delete()
-
-        return Response({'detail':'The comment is deleted.'},status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail':'The article is deleted.'},status=status.HTTP_204_NO_CONTENT)
 
     def retrieve(self, request, *args, **kwargs):
         user_instance = request.user
