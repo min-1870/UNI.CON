@@ -1,10 +1,8 @@
-from rest_framework import serializers
+from .helpers import get_current_user_points, get_embedding, add_embedding_to_faiss
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
+from rest_framework import serializers
 from randomname import get_name
-from .constants import get_current_user_points, get_embedding, add_embedding_to_faiss
 from django.db.models import F
-
-
 
 
 class ArticleSerializer(serializers.ModelSerializer):

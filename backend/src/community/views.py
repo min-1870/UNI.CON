@@ -1,22 +1,18 @@
 
+from .helpers import update_article_engagement_score, search_similar_embeddings, update_preference_vector
 from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
-from rest_framework import viewsets
+from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
+from django.db.models import OuterRef, Subquery, Exists, Case, When, F, Q
 from .serializer import ArticleSerializer, CommentSerializer
-from .permissions import Custom_IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.decorators import action
-from django.db.models import OuterRef, Subquery, Exists
-from django.db.models import F, Q
-from django.db.models.functions import Log
-from .constants import update_article_engagement_score
 from rest_framework.pagination import PageNumberPagination
-from .constants import search_similar_embeddings, update_preference_vector, DELETED_BODY, DELETED_TITLE
-from django.db.models import Case, When
+from .constants import DELETED_BODY, DELETED_TITLE
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework import viewsets, status
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
-    permission_classes = [Custom_IsAuthenticated]
+    permission_classes = [Article_IsAuthenticated]
     serializer_class = ArticleSerializer
 
     def get_queryset(self):
@@ -108,8 +104,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         article_instance.user_school = user_instance.school.id
         articleUser_instance = ArticleUser.objects.get(
-            article=article_instance,
-            user=user_instance
+            article=article_instance
         )
 
         article_instance.user_temp_name = articleUser_instance.user_temp_name
@@ -194,7 +189,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({'detail':'The article is deleted.'},status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=[Custom_IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[Article_IsAuthenticated])
     def like(self, request, pk=None):
 
         article_instance = self.get_object()
@@ -219,7 +214,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({'detail':'The article liked by the user.'}, status=status.HTTP_200_OK)  
     
-    @action(detail=True, methods=['post'], permission_classes=[Custom_IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[Article_IsAuthenticated])
     def unlike(self, request, pk=None):
 
         article_instance = self.get_object()
@@ -245,7 +240,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
 
-    permission_classes = [Custom_IsAuthenticated]
+    permission_classes = [Comment_IsAuthenticated]
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
     
@@ -345,14 +340,14 @@ class CommentViewSet(viewsets.ModelViewSet):
             'nested_comments': comment_serializer.data
         })
 
-    @action(detail=True, methods=['post'], permission_classes=[Custom_IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[Comment_IsAuthenticated])
     def like(self, request, pk=None):
 
         comment_instance = self.get_object()
 
         # Block the modification for the deleted object
         if comment_instance.deleted:
-            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail':'The comment is deleted.'},status=status.HTTP_400_BAD_REQUEST)
         
         user_instance = request.user
 
@@ -367,14 +362,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         return Response({'detail':'The comment liked by the user.'}, status=status.HTTP_201_CREATED)  
     
-    @action(detail=True, methods=['post'], permission_classes=[Custom_IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[Comment_IsAuthenticated])
     def unlike(self, request, pk=None):
 
         comment_instance = self.get_object()
 
         # Block the modification for the deleted object
         if comment_instance.deleted:
-            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail':'The comment is deleted.'},status=status.HTTP_400_BAD_REQUEST)
         
         user_instance = request.user
 

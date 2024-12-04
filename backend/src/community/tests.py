@@ -1,4 +1,4 @@
-from .models import Article, Course, ArticleCourse, School, ArticleLike, Comment, CommentLike, User  
+from .models import Article, Course, ArticleCourse, ArticleLike, Comment, CommentLike, User  
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
@@ -28,6 +28,11 @@ MOCK_ARTICLE ={
     "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "unicon":True,
 }
+MOCK_ARTICLE_2 ={
+    "title":"Nice title",
+    "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "unicon":False,
+}
 
 MOCK_COMMENT ={
     "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -42,9 +47,15 @@ MOCK_USER_2 = {
     "password": "securepassword123",
     "email": "z6666666@student.unsw.edu.au"
 } 
+        
+MOCK_USER_3 = {
+    "password": "securepassword123",
+    "email": "z6666666@student.uts.edu.au"
+} 
 
 
 class AllowActionsTest(APITestCase):
+# class AllowActionsTest():
     fixtures = ['fixtures.json']
 
     def setUp(self):
@@ -492,4 +503,161 @@ class AllowActionsTest(APITestCase):
         self.assertEqual(articles[0]['id'], food_article_instance.id)
         self.assertEqual(articles[1]['id'], exam_article_instance.id)
 
-        # print(json.dumps(retrieve_comment_response.data, indent=4))
+        # print(json.dumps(retrieve_articles_response.data, indent=4))
+
+
+class NotAllowActionsTest(APITestCase):
+    fixtures = ['fixtures.json']
+
+    def setUp(self):
+        self.client = APIClient()
+    
+    def register_account(self, user_data, instance=True):
+        #Register a new account
+        response = self.client.post(REGISTER_SUBMIT_URL, user_data, format='json')
+        self.assertIs(response.status_code, status.HTTP_201_CREATED, f"Wrong response status: {response.data}")
+
+        #Apply token
+        access_token = response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+
+        #Fetch validation code
+        user_instance = User.objects.get(email=user_data['email'])
+        validation_data = {'validation_code': user_instance.validation_code}
+        response = self.client.post(REGISTER_CONFIRM_VIEW_URL, validation_data, format='json')
+
+        if instance:
+            return User.objects.get(email=user_data['email'])
+        else:        
+            return response
+
+    def article(self, restful, data, instance=True, kwargs=0):
+
+        if restful == 'post':
+            url = reverse(ARTICLE_LIST_CREATE_NAME)
+            response = self.client.post(url, data, format='json')
+
+        elif restful == 'patch':
+            url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs=kwargs)
+            response = self.client.patch(url, data, format='json')
+
+        elif restful == 'delete':
+            url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs=kwargs)
+            response = self.client.delete(url, data, format='json')
+        
+        if instance:
+            return Article.objects.get(pk=response.data['id'])
+        else:
+            return response
+      
+    def post_comment(self, article_id, comment_id=False, instance=True):
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_id
+        
+        if comment_id:
+            modified_mock_comment['parent_comment'] = comment_id
+
+        # Post a comment
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        response = self.client.post(post_comment_url, modified_mock_comment, format='json')
+
+        if instance:
+            return Comment.objects.get(pk=response.data['id'])
+        
+        return response
+    
+    def test_block_delete_article_by_other(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_2, False)
+
+        delete_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':article_instance.id})
+        delete_an_article_response = self.client.delete(delete_an_article_url)
+        self.assertEqual(delete_an_article_response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_block_delete_comment_by_other(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        comment_instance = self.post_comment(article_instance.id)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_2, False)
+
+        delete_an_comment_url = reverse(COMMENT_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':comment_instance.id})
+        delete_an_comment_response = self.client.delete(delete_an_comment_url)
+        self.assertEqual(delete_an_comment_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_patch_article_by_other(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_2, False)
+
+        patch_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':article_instance.id})
+        patch_an_article_response = self.client.patch(patch_an_article_url)
+        self.assertEqual(patch_an_article_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_patch_comment_by_other(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        comment_instance = self.post_comment(article_instance.id)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_2, False)
+
+        patch_an_comment_url = reverse(COMMENT_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':comment_instance.id})
+        patch_an_comment_response = self.client.patch(patch_an_comment_url)
+        self.assertEqual(patch_an_comment_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_retrieve_article_by_other_schools(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE_2)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_3, False)
+
+        retrieve_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':article_instance.id})
+        retrieve_an_article_response = self.client.get(retrieve_an_article_url)
+        self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_like_article_by_other_schools(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_3, False)
+
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={'pk': article_instance.id}) 
+        like_article_response = self.client.post(like_article_url)
+        self.assertEqual(like_article_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_leave_comment_by_other_schools(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE_2)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_3, False)
+
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
+        
+        # Post a comment
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
+        self.assertEqual(post_comment_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_block_like_comment_by_other_schools(self):
+        self.register_account(MOCK_USER_1, False)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        comment_instance = self.post_comment(article_instance.id)
+        
+        self.client.credentials()
+        self.register_account(MOCK_USER_3, False)
+        
+        # Like a comment
+        like_comment_url = reverse(COMMENT_LIKE_NAME, kwargs={'pk': comment_instance.id}) 
+        like_comment_response = self.client.post(like_comment_url)
+        self.assertEqual(like_comment_response.status_code, status.HTTP_403_FORBIDDEN)

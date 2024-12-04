@@ -1,5 +1,5 @@
-from django.db import models
 from account.models import User, School
+from django.db import models
 
 class Article(models.Model):
     title = models.CharField(max_length=100, default="unknown", null=False)
