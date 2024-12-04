@@ -85,6 +85,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         article_instance = self.get_object()
+
+        # Block the modification for the deleted object
+        if article_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+
         new_text = request.data.get('body', '').strip()
 
         if new_text:
@@ -176,6 +181,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         article_instance = self.get_object()
+        
+        # Block the modification for the deleted object
+        if article_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
         # Remove and save original content
         article_instance.title = DELETED_TITLE
@@ -189,6 +198,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def like(self, request, pk=None):
 
         article_instance = self.get_object()
+
+        # Block the modification for the deleted object
+        if article_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+        
         user_instance = request.user
 
         # Create relational data
@@ -210,6 +224,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         article_instance = self.get_object()
         user_instance = request.user
+
+        # Block the modification for the deleted object
+        if article_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
         # Create relational data
         _, deleted = ArticleLike.objects.filter(user=user_instance, article=article_instance).delete()
@@ -239,6 +257,11 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         comment_instance = self.get_object()
+
+        # Block the modification for the deleted object
+        if comment_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+        
         new_text = request.data.get('body', '').strip()
 
         if new_text:
@@ -252,7 +275,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
-        comment_instance = self.get_object()        
+        comment_instance = self.get_object()       
+
+        # Block the modification for the deleted object
+        if comment_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST) 
 
         # Remove and save original content
         comment_instance.body = DELETED_BODY
@@ -322,6 +349,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     def like(self, request, pk=None):
 
         comment_instance = self.get_object()
+
+        # Block the modification for the deleted object
+        if comment_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+        
         user_instance = request.user
 
         # Create relational data
@@ -339,6 +371,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     def unlike(self, request, pk=None):
 
         comment_instance = self.get_object()
+
+        # Block the modification for the deleted object
+        if comment_instance.deleted:
+            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
+        
         user_instance = request.user
 
         # Create relational data
