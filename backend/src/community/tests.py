@@ -1,69 +1,58 @@
-from django.urls import reverse
-from rest_framework import status
+from .models import Article, Course, ArticleCourse, School, ArticleLike, Comment, CommentLike, User  
 from rest_framework.test import APITestCase, APIClient
-from .models import User  
-from copy import deepcopy
-from .models import Article, Course, ArticleCourse, School, ArticleLike, Comment, CommentLike
-#, Forum, Course, ArticleCourse, ArticleLike, UserCourse, Comment, CommentLike
-from .constants import update_preference_vector
-import json
+from rest_framework import status
+from django.urls import reverse
 from datetime import datetime
-
+from copy import deepcopy
 import numpy as np
+import json
+
+        
+REGISTER_SUBMIT_URL = reverse('register/submit') 
+REGISTER_CONFIRM_VIEW_URL = reverse('register/confirm')
+
+ARTICLE_PATCH_DETAIL_DELETE_NAME = 'article-detail'
+ARTICLE_LIST_CREATE_NAME = 'article-list'
+ARTICLE_SCORE_NAME = 'article-hot'
+ARTICLE_PREFERENCE_NAME = 'article-preference'
+ARTICLE_LIKE_NAME = 'article-like'
+ARTICLE_UNLIKE_NAME = 'article-unlike'
+
+COMMENT_PATCH_DETAIL_DELETE_NAME = 'comment-detail'
+COMMENT_LIST_CREATE_NAME = 'comment-list'
+COMMENT_LIKE_NAME = 'comment-like'
+COMMENT_UNLIKE_NAME = 'comment-unlike'
+
+MOCK_ARTICLE ={
+    "title":"Nice title",
+    "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "unicon":True,
+}
+
+MOCK_COMMENT ={
+    "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+}
+        
+MOCK_USER_1 = {
+    "password": "securepassword123",
+    "email": "z5555555@student.unsw.edu.au"
+} 
+        
+MOCK_USER_2 = {
+    "password": "securepassword123",
+    "email": "z6666666@student.unsw.edu.au"
+} 
 
 
-
-class ArticleCreateTest(APITestCase):
+class AllowActionsTest(APITestCase):
     fixtures = ['fixtures.json']
 
     def setUp(self):
         self.client = APIClient()
-        
-        self.RegisterSubmitView_url = reverse('register/submit') 
-        self.RegisterConfirmView_url = reverse('register/confirm')
-
-        self.ArticlePatchDetailDelete_name = 'article-detail'
-        self.ArticleListCreate_name = 'article-list'
-        self.ArticleScore_name = 'article-hot'
-        self.ArticlePreference_name = 'article-preference'
-        self.ArticleLike_name = 'article-like'
-        self.ArticleUnlike_name = 'article-unlike'
-
-        self.CommentPatchDetailDelete_name = 'comment-detail'
-        self.CommentListCreate_name = 'comment-list'
-        self.CommentLike_name = 'comment-like'
-        self.CommentUnlike_name = 'comment-unlike'
-
-        self.mock_article ={
-            "title":"Nice title",
-            "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "unicon":True,
-        }
-
-        self.mock_comment ={
-            "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        }
-        
-        self.mock_user1 = {
-            "password": "securepassword123",
-            "email": "z5555555@student.unsw.edu.au"
-        } 
-        
-        self.mock_user2 = {
-            "password": "securepassword123",
-            "email": "z6666666@student.unsw.edu.au"
-        } 
-        
-        self.mock_user3 = {
-            "password": "securepassword123",
-            "email": "z7777777@student.unsw.edu.au"
-        } 
-
-        self.mock_comment = {"body":"Lorem ipsum dolor sit amet."}
     
     def register_account(self, user_data, instance=True):
         #Register a new account
-        response = self.client.post(self.RegisterSubmitView_url, user_data, format='json')
+        response = self.client.post(REGISTER_SUBMIT_URL, user_data, format='json')
         self.assertIs(response.status_code, status.HTTP_201_CREATED, f"Wrong response status: {response.data}")
 
         #Apply token
@@ -73,7 +62,7 @@ class ArticleCreateTest(APITestCase):
         #Fetch validation code
         user_instance = User.objects.get(email=user_data['email'])
         validation_data = {'validation_code': user_instance.validation_code}
-        response = self.client.post(self.RegisterConfirmView_url, validation_data, format='json')
+        response = self.client.post(REGISTER_CONFIRM_VIEW_URL, validation_data, format='json')
 
         if instance:
             return User.objects.get(email=user_data['email'])
@@ -82,11 +71,11 @@ class ArticleCreateTest(APITestCase):
      
     def test_post_article(self):
 
-        user_instance = self.register_account(self.mock_user1)
+        user_instance = self.register_account(MOCK_USER_1)
 
         # Post an article
-        url = reverse(self.ArticleListCreate_name)
-        response = self.client.post(url, self.mock_article, format='json')
+        url = reverse(ARTICLE_LIST_CREATE_NAME)
+        response = self.client.post(url, MOCK_ARTICLE, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
         # Validate existence of the article
@@ -96,21 +85,21 @@ class ArticleCreateTest(APITestCase):
 
         # Validate attributes
         self.assertEqual(user_instance, article_instance.user)
-        self.assertEqual(self.mock_article['title'], article_instance.title)
-        self.assertEqual(self.mock_article['body'], article_instance.body)
-        self.assertEqual(self.mock_article['unicon'], article_instance.unicon)
+        self.assertEqual(MOCK_ARTICLE['title'], article_instance.title)
+        self.assertEqual(MOCK_ARTICLE['body'], article_instance.body)
+        self.assertEqual(MOCK_ARTICLE['unicon'], article_instance.unicon)
 
     def test_post_article_with_course(self):
 
-        user_instance = self.register_account(self.mock_user1)
+        user_instance = self.register_account(MOCK_USER_1)
 
-        mock_article = deepcopy(self.mock_article)
-        mock_article['course_code'] = 'comp1231, Comp1320'        
-        mock_article['unicon'] = False
+        modified_mock_article = deepcopy(MOCK_ARTICLE)
+        modified_mock_article['course_code'] = 'comp1231, Comp1320'        
+        modified_mock_article['unicon'] = False
 
         # Post an article with courses
-        url = reverse(self.ArticleListCreate_name)
-        response = self.client.post(url, mock_article, format='json')
+        url = reverse(ARTICLE_LIST_CREATE_NAME)
+        response = self.client.post(url, modified_mock_article, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Validate Article
@@ -120,12 +109,12 @@ class ArticleCreateTest(APITestCase):
 
         # Validate attributes
         self.assertEqual(user_instance, article_instance.user)
-        self.assertEqual(mock_article['title'], article_instance.title)
-        self.assertEqual(mock_article['body'], article_instance.body)
-        self.assertEqual(mock_article['unicon'], article_instance.unicon)
+        self.assertEqual(modified_mock_article['title'], article_instance.title)
+        self.assertEqual(modified_mock_article['body'], article_instance.body)
+        self.assertEqual(modified_mock_article['unicon'], article_instance.unicon)
 
         #Validate Course
-        for code in mock_article['course_code'].split(','):
+        for code in modified_mock_article['course_code'].split(','):
 
             code = code.upper().strip()
 
@@ -143,15 +132,15 @@ class ArticleCreateTest(APITestCase):
 
     def test_patch_article(self):
 
-        _ = self.register_account(self.mock_user1)
+        _ = self.register_account(MOCK_USER_1)
 
         # Post an article
-        url = reverse(self.ArticleListCreate_name)
-        response = self.client.post(url, self.mock_article, format='json')
+        url = reverse(ARTICLE_LIST_CREATE_NAME)
+        response = self.client.post(url, MOCK_ARTICLE, format='json')
 
         # Patch the article
         appended_body = {'body':'12345'}
-        url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk': response.data['id']})
+        url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk': response.data['id']})
         response = self.client.patch(url, appended_body, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
@@ -161,14 +150,14 @@ class ArticleCreateTest(APITestCase):
 
     def test_delete_article(self):
 
-        _ = self.register_account(self.mock_user1)
+        _ = self.register_account(MOCK_USER_1)
 
         # Post a article
-        url = reverse(self.ArticleListCreate_name)
-        post_response = self.client.post(url, self.mock_article, format='json')
+        url = reverse(ARTICLE_LIST_CREATE_NAME)
+        post_response = self.client.post(url, MOCK_ARTICLE, format='json')
 
         # Delete the article
-        url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':post_response.data['id']})
+        url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':post_response.data['id']})
         delete_response = self.client.delete(url, format='json')
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         
@@ -179,15 +168,15 @@ class ArticleCreateTest(APITestCase):
     def article(self, restful, data, instance=True, kwargs=0):
 
         if restful == 'post':
-            url = reverse(self.ArticleListCreate_name)
+            url = reverse(ARTICLE_LIST_CREATE_NAME)
             response = self.client.post(url, data, format='json')
 
         elif restful == 'patch':
-            url = reverse(self.ArticlePatchDetailDelete_name, kwargs=kwargs)
+            url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs=kwargs)
             response = self.client.patch(url, data, format='json')
 
         elif restful == 'delete':
-            url = reverse(self.ArticlePatchDetailDelete_name, kwargs=kwargs)
+            url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs=kwargs)
             response = self.client.delete(url, data, format='json')
 
         if instance:
@@ -197,11 +186,11 @@ class ArticleCreateTest(APITestCase):
      
     def test_like_article(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
 
         # Like an article
-        like_article_url = reverse(self.ArticleLike_name, kwargs={'pk': article_instance.id}) 
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={'pk': article_instance.id}) 
         like_article_response = self.client.post(like_article_url)
         self.assertEqual(like_article_response.status_code, status.HTTP_200_OK)
         
@@ -214,15 +203,15 @@ class ArticleCreateTest(APITestCase):
 
     def test_unlike_article(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
 
         # Like an article
-        like_article_url = reverse(self.ArticleLike_name, kwargs={'pk': article_instance.id}) 
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={'pk': article_instance.id}) 
         self.client.post(like_article_url)
 
         # Unlike an article
-        unlike_article_url = reverse(self.ArticleUnlike_name, kwargs={'pk': article_instance.id}) 
+        unlike_article_url = reverse(ARTICLE_UNLIKE_NAME, kwargs={'pk': article_instance.id}) 
         unlike_article_response = self.client.post(unlike_article_url)
         self.assertEqual(unlike_article_response.status_code, status.HTTP_200_OK)
 
@@ -233,14 +222,14 @@ class ArticleCreateTest(APITestCase):
 
     def test_post_comment(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
         self.assertEqual(post_comment_response.status_code, status.HTTP_201_CREATED)
         
         # Validate the database
@@ -248,25 +237,25 @@ class ArticleCreateTest(APITestCase):
         self.assertTrue(exist)
         comment_instance = Comment.objects.get(pk=post_comment_response.data['id'])
         self.assertEqual(comment_instance.user, user_instance)
-        self.assertEqual(comment_instance.body, comment_data['body'])
+        self.assertEqual(comment_instance.body, modified_mock_comment['body'])
         article_instance = Article.objects.get(pk=article_instance.id)
         self.assertEqual(article_instance.comments_count, 1)
 
     def test_post_nested_comment(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
         
         # Post a nested comment
-        comment_data['parent_comment'] = post_comment_response.data['id']
-        post_nested_comment_url = reverse(self.CommentListCreate_name)
-        post_nested_comment_response = self.client.post(post_nested_comment_url, comment_data, format='json')
+        modified_mock_comment['parent_comment'] = post_comment_response.data['id']
+        post_nested_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_nested_comment_response = self.client.post(post_nested_comment_url, modified_mock_comment, format='json')
         self.assertEqual(post_nested_comment_response.status_code, status.HTTP_201_CREATED)
         
         # Validate the database
@@ -274,7 +263,7 @@ class ArticleCreateTest(APITestCase):
         self.assertTrue(exist)
         comment_instance = Comment.objects.get(pk=post_nested_comment_response.data['id'])
         self.assertEqual(comment_instance.user, user_instance)
-        self.assertEqual(comment_instance.body, comment_data['body'])
+        self.assertEqual(comment_instance.body, modified_mock_comment['body'])
         parent_comment_instance = Comment.objects.get(pk=post_comment_response.data['id'])
         self.assertEqual(parent_comment_instance.comments_count, 1)
         article_instance = Article.objects.get(pk=article_instance.id)
@@ -282,39 +271,39 @@ class ArticleCreateTest(APITestCase):
 
     def test_patch_comment(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
         
         # Patch the comment
-        comment_data = {'body':'12345'}
-        patch_comment_url = reverse(self.CommentPatchDetailDelete_name, kwargs={'pk':post_comment_response.data['id']})
-        patch_comment_response = self.client.patch(patch_comment_url, comment_data, format='json')
+        modified_mock_comment = {'body':'12345'}
+        patch_comment_url = reverse(COMMENT_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':post_comment_response.data['id']})
+        patch_comment_response = self.client.patch(patch_comment_url, modified_mock_comment, format='json')
         self.assertEqual(patch_comment_response.status_code, status.HTTP_200_OK)
         
         # Validate the database
         comment_instance = Comment.objects.get(pk=patch_comment_response.data['id'])
         self.assertEqual(comment_instance.user, user_instance)
-        self.assertEqual(comment_instance.body, comment_data['body'])
+        self.assertEqual(comment_instance.body, modified_mock_comment['body'])
 
     def test_delete_comment(self):
 
-        _ = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        _ = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
 
         # Delete the comment
-        url = reverse(self.CommentPatchDetailDelete_name, kwargs={'pk':post_comment_response.data['id']})
+        url = reverse(COMMENT_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':post_comment_response.data['id']})
         delete_response = self.client.delete(url, format='json')
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         
@@ -324,17 +313,17 @@ class ArticleCreateTest(APITestCase):
  
     def test_like_comment(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
 
         # Like a comment
-        like_comment_url = reverse(self.CommentLike_name, kwargs={'pk': post_comment_response.data['id']}) 
+        like_comment_url = reverse(COMMENT_LIKE_NAME, kwargs={'pk': post_comment_response.data['id']}) 
         like_comment_response = self.client.post(like_comment_url)
         self.assertEqual(like_comment_response.status_code, status.HTTP_201_CREATED)
 
@@ -346,21 +335,21 @@ class ArticleCreateTest(APITestCase):
 
     def test_unlike_comment(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_instance.id
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_instance.id
         
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        post_comment_response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        post_comment_response = self.client.post(post_comment_url, modified_mock_comment, format='json')
 
         # Like a comment
-        like_comment_url = reverse(self.CommentLike_name, kwargs={'pk': post_comment_response.data['id']}) 
+        like_comment_url = reverse(COMMENT_LIKE_NAME, kwargs={'pk': post_comment_response.data['id']}) 
         like_comment_response = self.client.post(like_comment_url)
         
         # Unlike a comment
-        unlike_comment_url = reverse(self.CommentUnlike_name, kwargs={'pk': post_comment_response.data['id']}) 
+        unlike_comment_url = reverse(COMMENT_UNLIKE_NAME, kwargs={'pk': post_comment_response.data['id']}) 
         unlike_comment_response = self.client.post(unlike_comment_url)
         self.assertEqual(unlike_comment_response.status_code, status.HTTP_201_CREATED)
 
@@ -371,15 +360,15 @@ class ArticleCreateTest(APITestCase):
         self.assertEqual(comment_instance.likes_count, 0)
       
     def post_comment(self, article_id, comment_id=False, instance=True):
-        comment_data = deepcopy(self.mock_comment)
-        comment_data['article'] = article_id
+        modified_mock_comment = deepcopy(MOCK_COMMENT)
+        modified_mock_comment['article'] = article_id
         
         if comment_id:
-            comment_data['parent_comment'] = comment_id
+            modified_mock_comment['parent_comment'] = comment_id
 
         # Post a comment
-        post_comment_url = reverse(self.CommentListCreate_name)
-        response = self.client.post(post_comment_url, comment_data, format='json')
+        post_comment_url = reverse(COMMENT_LIST_CREATE_NAME)
+        response = self.client.post(post_comment_url, modified_mock_comment, format='json')
 
         if instance:
             return Comment.objects.get(pk=response.data['id'])
@@ -388,12 +377,12 @@ class ArticleCreateTest(APITestCase):
      
     def test_retrieve_an_article(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
+        user_instance = self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
         comment_instance = self.post_comment(article_instance.id)
         initial_user_preference = np.array(user_instance.embedding_vector)
 
-        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
+        retrieve_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':article_instance.id})
         retrieve_an_article_response = self.client.get(retrieve_an_article_url)
         self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
 
@@ -411,38 +400,37 @@ class ArticleCreateTest(APITestCase):
 
     def test_retrieve_article_with_course_code(self):
 
-        user_instance = self.register_account(self.mock_user1)
+        self.register_account(MOCK_USER_1)
         
-        mock_article = deepcopy(self.mock_article)
-        mock_article['course_code'] = 'comp1231, Comp1320'        
-        mock_article['unicon'] = False
+        modified_mock_article = deepcopy(MOCK_ARTICLE)
+        modified_mock_article['course_code'] = 'comp1231, Comp1320'        
+        modified_mock_article['unicon'] = False
 
-        article_instance = self.article('post', mock_article)
+        article_instance = self.article('post', modified_mock_article)
 
-        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':article_instance.id})
+        retrieve_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':article_instance.id})
         retrieve_an_article_response = self.client.get(retrieve_an_article_url)
         self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_nested_comments(self):
 
-        user_instance = self.register_account(self.mock_user1)
-        article_instance = self.article('post', self.mock_article)
+        self.register_account(MOCK_USER_1)
+        article_instance = self.article('post', MOCK_ARTICLE)
         comment_instance = self.post_comment(article_instance.id)
         nested_comment_instance = self.post_comment(article_instance.id, comment_instance.id)   
 
-        retrieve_comment_url = reverse(self.CommentPatchDetailDelete_name, kwargs={'pk':comment_instance.id})
+        retrieve_comment_url = reverse(COMMENT_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':comment_instance.id})
         retrieve_comment_response = self.client.get(retrieve_comment_url)
         self.assertEqual(retrieve_comment_response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(nested_comment_instance.id, retrieve_comment_response.data['results']['nested_comments'][0]['id'])
-        
-
+    
     def test_retrieve_articles_sorted_by_time(self):
 
-        self.register_account(self.mock_user1)
+        self.register_account(MOCK_USER_1)
         for _ in range(10):
-            self.article('post', self.mock_article)
-        retrieve_articles_url = reverse(self.ArticleListCreate_name)
+            self.article('post', MOCK_ARTICLE)
+        retrieve_articles_url = reverse(ARTICLE_LIST_CREATE_NAME)
         retrieve_articles_response = self.client.get(retrieve_articles_url)
         self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
 
@@ -456,18 +444,16 @@ class ArticleCreateTest(APITestCase):
             current_article_time = datetime.strptime(articles[i]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
             self.assertTrue(previous_article_time > current_article_time)
 
-    
-
     def test_retrieve_articles_sorted_by_score(self):
 
-        self.register_account(self.mock_user1)
+        self.register_account(MOCK_USER_1)
 
         for i in range(10, 0, -1):
-            article_instance = self.article('post', self.mock_article)
+            article_instance = self.article('post', MOCK_ARTICLE)
             for _ in range(i):
                 self.post_comment(article_instance.id)
 
-        retrieve_articles_url = reverse(self.ArticleScore_name)
+        retrieve_articles_url = reverse(ARTICLE_SCORE_NAME)
         retrieve_articles_response = self.client.get(retrieve_articles_url)
         self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
 
@@ -483,21 +469,21 @@ class ArticleCreateTest(APITestCase):
      
     def test_retrieve_articles_sorted_by_preference(self):
 
-        self.register_account(self.mock_user1)
+        self.register_account(MOCK_USER_1)
 
-        food_article = deepcopy(self.mock_article)
+        food_article = deepcopy(MOCK_ARTICLE)
         food_article['body'] = "Food is a universal language that connects people across cultures and traditions. It’s not just about nourishment; it’s an expression of history, creativity, and community. From street food in bustling markets to gourmet meals in fine dining, every dish tells a story of flavors, techniques, and memories shared."
         food_article_instance = self.article('post', food_article)
 
-        exam_article = deepcopy(self.mock_article)
+        exam_article = deepcopy(MOCK_ARTICLE)
         exam_article['body'] = "Exams are often used in educational settings, professional certifications, and recruitment processes to measure competence and understanding. Preparation, focus, and time management are key to success in exams."
         exam_article_instance = self.article('post', exam_article)
         
-        retrieve_an_article_url = reverse(self.ArticlePatchDetailDelete_name, kwargs={'pk':food_article_instance.id})
+        retrieve_an_article_url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk':food_article_instance.id})
         retrieve_an_article_response = self.client.get(retrieve_an_article_url)
         self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
         
-        retrieve_articles_url = reverse(self.ArticlePreference_name)
+        retrieve_articles_url = reverse(ARTICLE_PREFERENCE_NAME)
         retrieve_articles_response = self.client.get(retrieve_articles_url)
         self.assertEqual(retrieve_articles_response.status_code, status.HTTP_200_OK)
 
