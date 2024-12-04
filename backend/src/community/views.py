@@ -30,8 +30,24 @@ class ArticleViewSet(viewsets.ModelViewSet):
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
+        # Add user_temp_name & user_static_score to queryset
+        queryset = self.get_queryset().annotate(
+            user_temp_name=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_temp_name')[:1]
+            ),
+            user_static_points=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_static_points')[:1]
+            )
+        )
+
         # Apply pagination to the articles queryset
-        paginated_articles = paginator.paginate_queryset(self.get_queryset(), request)
+        paginated_articles = paginator.paginate_queryset(queryset, request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
         
         return paginator.get_paginated_response({
@@ -44,8 +60,24 @@ class ArticleViewSet(viewsets.ModelViewSet):
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
+        # Add user_temp_name & user_static_score to queryset
+        queryset = self.get_queryset().annotate(
+            user_temp_name=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_temp_name')[:1]
+            ),
+            user_static_points=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_static_points')[:1]
+            )
+        )
+
         # Apply pagination to the articles queryset
-        sorted_articles = self.get_queryset().order_by('-engagement_score')
+        sorted_articles = queryset.order_by('-engagement_score')
         paginated_articles = paginator.paginate_queryset(sorted_articles, request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
         
@@ -61,12 +93,28 @@ class ArticleViewSet(viewsets.ModelViewSet):
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
+        # Add user_temp_name & user_static_score to queryset
+        queryset = self.get_queryset().annotate(
+            user_temp_name=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_temp_name')[:1]
+            ),
+            user_static_points=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef('pk'),
+                    user=request.user
+                ).values('user_static_points')[:1]
+            )
+        )
+
         # Fetch Ids of the article based on the similarity
         ids = search_similar_embeddings(user_instance.embedding_vector)
 
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        articles = self.get_queryset().filter(pk__in=ids).order_by(order)
+        articles = queryset.filter(pk__in=ids).order_by(order)
 
         # Apply pagination to the articles queryset
         paginated_articles = paginator.paginate_queryset(articles, request)

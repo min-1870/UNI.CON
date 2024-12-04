@@ -454,7 +454,7 @@ class AllowActionsTest(APITestCase):
         for i in range(1, len(articles)):
             current_article_time = datetime.strptime(articles[i]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
             self.assertTrue(previous_article_time > current_article_time)
-
+        
     def test_retrieve_articles_sorted_by_score(self):
 
         self.register_account(MOCK_USER_1)
