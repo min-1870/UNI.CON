@@ -63,7 +63,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Apply pagination to the articles queryset
         paginated_articles = paginator.paginate_queryset(queryset, request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
-        print(article_serializer.data)
+        
         return paginator.get_paginated_response({
             'articles': article_serializer.data
         })

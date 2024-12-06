@@ -50,6 +50,10 @@ class Article_IsAuthenticated(permissions.BasePermission):
         
         # Not for the Safe Methods
         else:
+            view_name = getattr(view, 'action')
+            if view_name in ['like', 'unlike']:
+                return True
+            
             if obj.user == request.user:
                 return True
             else:
