@@ -1,0 +1,88 @@
+#container {
+    height: 100%;
+    display: flex;   
+    justify-content: center;
+}
+#community {
+    max-width: 600px;
+    font-family: Arial, sans-serif;
+}
+  
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  #sort-options {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  #sort-options button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+  }
+  
+  #sort-options button#active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+  
+  #article-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  #article {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
+  #article h2 {
+    margin: 0 0 10px;
+  }
+  
+  #article-meta,
+  #article-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  #pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  #pagination button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+  }
+  
+  #pagination button:disabled {
+    cursor: not-allowed;
+  }
+
+  #like-button button.unliked {
+    background-color: #00aaff;
+    color: white;
+  }
+  
+  
+  #like-button button.liked {
+    background-color: #ff5555;
+    color: white;
+  }

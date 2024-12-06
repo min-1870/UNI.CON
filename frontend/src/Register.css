@@ -1,0 +1,45 @@
+
+#register-container {
+    height: 100%;
+    display: flex;
+    margin-top: 20%;
+    justify-content: center;
+}
+#register {
+    max-width: 400px;
+    padding: 40px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+#register-title {
+    text-align: center;
+    margin-bottom: 20px;
+}
+#register-form {
+    display: flex;
+    flex-direction: column;
+}
+#register-inputGroup {
+    margin-bottom: 15px; 
+}
+.register-input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+#register-error {
+    color: red;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+#register-button {
+    padding: 10px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: #fff;
+    cursor: pointer;
+}

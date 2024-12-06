@@ -1,0 +1,43 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+#navbar-container {
+    width: 100vw;
+    border: 1px solid #ccc;
+}
+
+#navbar {
+    padding: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#nav-links {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+}
+
+#nav-links li {
+    display: inline-block;
+}
+
+#nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+#nav-links a:hover {
+    text-decoration: underline;
+}
+
+#profile a {
+    color: white;
+    text-decoration: none;
+}
+
+#profile a:hover {
+    text-decoration: underline;
+}
