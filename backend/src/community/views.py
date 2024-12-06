@@ -35,13 +35,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
             user_temp_name=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_temp_name')[:1]
             ),
             user_static_points=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_static_points')[:1]
             )
         )
@@ -49,7 +49,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Apply pagination to the articles queryset
         paginated_articles = paginator.paginate_queryset(queryset, request)
         article_serializer = ArticleSerializer(paginated_articles, many=True)
-        
+        print(article_serializer.data)
         return paginator.get_paginated_response({
             'articles': article_serializer.data
         })
@@ -65,13 +65,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
             user_temp_name=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_temp_name')[:1]
             ),
             user_static_points=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_static_points')[:1]
             )
         )
@@ -98,13 +98,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
             user_temp_name=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_temp_name')[:1]
             ),
             user_static_points=Subquery(
                 ArticleUser.objects.filter(
                     article=OuterRef('pk'),
-                    user=request.user
+                    user=OuterRef('user')
                 ).values('user_static_points')[:1]
             )
         )
