@@ -9,6 +9,8 @@ from .constants import DELETED_BODY, DELETED_TITLE
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
+from account.models import User
+from django.db.models import Subquery, OuterRef, Case, When, BooleanField
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -29,6 +31,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
+        liked_article_ids = list(ArticleLike.objects.filter(user=request.user).values_list('id', flat=True))
 
         # Add user_temp_name & user_static_score to queryset
         queryset = self.get_queryset().annotate(
@@ -43,6 +46,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     article=OuterRef('pk'),
                     user=OuterRef('user')
                 ).values('user_static_points')[:1]
+            ),user_school=Subquery(
+                User.objects.filter(
+                    id=OuterRef('user')
+                ).values('school__initial')[:1]
+            ),like_status=Case(
+                When(
+                        id__in=liked_article_ids, 
+                        then=True
+                    ), 
+                default=False, 
+                output_field=BooleanField()
             )
         )
 
