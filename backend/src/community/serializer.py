@@ -5,6 +5,10 @@ from randomname import get_name
 from django.db.models import F
 
 
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework import viewsets, status
+
 class ArticleSerializer(serializers.ModelSerializer):
     
     like_status = serializers.BooleanField(read_only=True)
@@ -140,6 +144,7 @@ class CommentSerializer(serializers.ModelSerializer):
             'created_at',
             'comments_count',
             'likes_count',
+            'deleted',
 
             # Read & Write
             'body',
@@ -227,5 +232,13 @@ class CommentSerializer(serializers.ModelSerializer):
         
         # Update the comments_count of the article
         comment_instance = Comment.objects.create(**validated_data)
+
+        # Add the extra properties
+        article_user_instance = ArticleUser.objects.get(user=user_instance, article=article_instance)
+        comment_instance.user_temp_name = article_user_instance.user_temp_name
+        comment_instance.user_static_points = article_user_instance.user_static_points
+        comment_instance.user_school = user_instance.school.initial
+        comment_instance.likes_count = 0
+        comment_instance.like_status = False
 
         return comment_instance
