@@ -36,6 +36,8 @@ const Login = () => {
         const data = await response.json();
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
+        localStorage.setItem('user', data.user);
+        navigate("/community")
       } else if (response.status === 401) {
         setError('Incorrect email or password.');
       } else {

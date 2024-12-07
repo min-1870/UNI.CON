@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import './Community.css';
 
@@ -9,6 +10,7 @@ const Community = () => {
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
   const accessToken = localStorage.getItem('access');
+  const navigate = useNavigate();
 
   const apiEndpoints = {
     recent: "http://127.0.0.1:8000/community/article",
@@ -111,7 +113,7 @@ const Community = () => {
         ) : (
           <div id="article-list">
             {articles.map((article) => (
-              <div id="article" key={article.id}>
+              <div id="article" key={article.id} onClick={() => navigate(`/article/${article.id}`)}>
                 <h2>{article.title}</h2>
                 <p>{article.body}</p>
                 <div id="article-meta">
@@ -119,7 +121,7 @@ const Community = () => {
                     <strong>By:</strong> {article.user_temp_name}
                   </span>
                   <span>
-                    <strong>School:</strong> {article.user_static_points}
+                    <strong>Points:</strong> {article.user_static_points}
                   </span>
                   <span>
                     <strong>From:</strong> {article.user_school}

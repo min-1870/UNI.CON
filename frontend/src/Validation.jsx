@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Validation.css';
 
 const Validation = () => {
   const [validationCode, setValidationCode] = useState('');
@@ -34,8 +35,8 @@ const Validation = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.validation}>
+    <div id="validation-container">
+      <div id="validation">
       <h2>Enter Validation Code</h2>
       <form onSubmit={handleSubmit}>
         <input
@@ -43,10 +44,10 @@ const Validation = () => {
           placeholder="6-digit code"
           value={validationCode}
           onChange={(e) => setValidationCode(e.target.value)}
-          style={styles.input}
+          id="validation-input"
         />
           {error && <p id="login-error">{error}</p>}
-        <button style={styles.container} type="submit" disabled={loading}>
+        <button id="validation-container" type="submit" disabled={loading}>
           {loading ? 'Submitting...' : 'Submit'}
         </button>
       </form>

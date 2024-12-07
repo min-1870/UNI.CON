@@ -33,6 +33,7 @@ const Register = () => {
         response.json().then((data) => {
           localStorage.setItem('access', data.access);
           localStorage.setItem('refresh', data.refresh);
+          localStorage.setItem('user', data.user);
           navigate("/validation");
         }).catch((error) => {
           console.error('Error parsing JSON:', error);
