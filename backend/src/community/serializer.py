@@ -4,11 +4,6 @@ from rest_framework import serializers
 from randomname import get_name
 from django.db.models import F
 
-
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework import viewsets, status
-
 class ArticleSerializer(serializers.ModelSerializer):
     
     like_status = serializers.BooleanField(read_only=True)
@@ -29,6 +24,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'views_count',
             'comments_count',
             'likes_count',
+            'deleted',
 
             # Read & Write
             'title',
@@ -97,32 +93,43 @@ class ArticleSerializer(serializers.ModelSerializer):
             validated_data['body']
         )
 
+        # Save the new article
         article_instance = Article.objects.create(**validated_data)
 
+        # Add the embedding to faiss
         add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
 
         # Create the temporary username for the author
+        user_temp_name = get_name()
+        user_static_points = get_current_user_points(user_instance.id)
         ArticleUser.objects.create(
-            user_temp_name = get_name(),
-            user_static_points = get_current_user_points(user_instance.id),
+            user_temp_name = user_temp_name,
+            user_static_points = user_static_points,
             user = user_instance,
             article = article_instance
         )
         
-        # Link the foreign key for each course code
+        # Link the foreign key for each course code if necessary
         if course_code:
-            
             for code in course_code.split(','):
-
                 course_instance, _ = Course.objects.get_or_create(
                     code=code.upper().strip(), 
                     school=user_instance.school
                 )
-            
                 ArticleCourse.objects.create(
                     article=article_instance, 
                     course=course_instance
                 )
+            
+            article_instance.course_code = [code.upper().strip() for code in course_code.split(',')]
+        else:
+            article_instance.course_code = None
+
+        # Add extra properties for the response
+        article_instance.user_temp_name = user_temp_name
+        article_instance.user_static_points = user_static_points
+        article_instance.user_school = user_instance.school
+        article_instance.like_status = False
 
         return article_instance
 
@@ -210,16 +217,7 @@ class CommentSerializer(serializers.ModelSerializer):
         validated_data['user'] = user_instance
         validated_data['article'] = article_instance
 
-        # Create the temporary username of the author if necessary
-        if not ArticleUser.objects.filter(user=user_instance, article=article_instance).exists():
-            ArticleUser.objects.create(
-                user=user_instance,
-                article=article_instance,
-                user_temp_name=get_name(),
-                user_static_points=get_current_user_points(user_instance.id)
-            )
-        
-        # Add comment instance to the ForeignKey
+        # Add parent comment instance to the ForeignKey if necessary
         if validated_data.get('parent_comment', False):
 
             # Save the parent_comment's id
@@ -230,15 +228,28 @@ class CommentSerializer(serializers.ModelSerializer):
             parent_comment_instance.comments_count = F('comments_count') + 1
             parent_comment_instance.save(update_fields=['comments_count'])
         
-        # Update the comments_count of the article
+        # Save the new comment
         comment_instance = Comment.objects.create(**validated_data)
 
+        # Create the temporary username of the author if necessary
+        if not ArticleUser.objects.filter(user=user_instance, article=article_instance).exists():
+            user_temp_name = get_name()
+            user_static_points = get_current_user_points(user_instance.id)
+            ArticleUser.objects.create(
+                user=user_instance,
+                article=article_instance,
+                user_temp_name=user_temp_name,
+                user_static_points=user_static_points
+            )
+        else:
+            article_user_instance = ArticleUser.objects.get(user=user_instance, article=article_instance)
+            user_temp_name = article_user_instance.user_temp_name
+            user_static_points = article_user_instance.user_static_points
+
         # Add the extra properties
-        article_user_instance = ArticleUser.objects.get(user=user_instance, article=article_instance)
-        comment_instance.user_temp_name = article_user_instance.user_temp_name
-        comment_instance.user_static_points = article_user_instance.user_static_points
+        comment_instance.user_temp_name = user_temp_name
+        comment_instance.user_static_points = user_static_points
         comment_instance.user_school = user_instance.school.initial
-        comment_instance.likes_count = 0
         comment_instance.like_status = False
 
         return comment_instance
