@@ -278,7 +278,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Annotate the queryset with the like_status using Exists
         comment_queryset = comment_queryset.annotate(
             like_status=Exists(liked_comments),
-            user_school=F('user__school__id'),
+            user_school=F('user__school__initial'),
             user_temp_name=Subquery(user_info_subquery.values('user_temp_name')[:1]),
             user_static_points=Subquery(user_info_subquery.values('user_static_points')[:1]),
         )       

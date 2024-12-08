@@ -55,7 +55,7 @@ class Comment_IsAuthenticated(permissions.BasePermission):
             return False
 
         view_name = getattr(view, 'action')
-        if view_name is "create":
+        if view_name == "create":
             # Allow if the article is UNI.CON
             article_instance = Article.objects.get(pk=request.data['article'])
             if article_instance.unicon:
