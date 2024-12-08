@@ -3,14 +3,13 @@ from .helpers import update_article_engagement_score, search_similar_embeddings,
 from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
 from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
 from django.db.models import OuterRef, Subquery, Exists, Case, When, F, Q
+from .constants import DELETED_BODY, DELETED_TITLE, SEPARATION_LINE
 from .serializer import ArticleSerializer, CommentSerializer
 from rest_framework.pagination import PageNumberPagination
-from .constants import DELETED_BODY, DELETED_TITLE
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from account.models import User
-from django.db.models import Subquery, OuterRef, Case, When, BooleanField
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -28,10 +27,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
+        user_instance = request.user
+
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
-        liked_article_ids = list(ArticleLike.objects.filter(user=request.user).values_list('id', flat=True))
+        
+        liked_articles = ArticleLike.objects.filter(
+            user=user_instance,
+            article=OuterRef('pk')
+        )
 
         # Add user_temp_name & user_static_score to queryset
         queryset = self.get_queryset().annotate(
@@ -46,17 +51,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     article=OuterRef('pk'),
                     user=OuterRef('user')
                 ).values('user_static_points')[:1]
-            ),user_school=Subquery(
+            ),
+            user_school=Subquery(
                 User.objects.filter(
                     id=OuterRef('user')
                 ).values('school__initial')[:1]
-            ),like_status=Case(
-                When(
-                        id__in=liked_article_ids, 
-                        then=True
-                    ), 
-                default=False, 
-                output_field=BooleanField()
+            ),
+            like_status=Exists(
+                liked_articles
+            ),
+            course_code=Subquery(
+                ArticleCourse.objects.filter(
+                    article=OuterRef('pk')
+                ).values('course__code')[:1]
             )
         )
 
@@ -70,9 +77,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def hot(self, request):
+        user_instance = request.user
+
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
+        
+        liked_articles = ArticleLike.objects.filter(
+            user=user_instance,
+            article=OuterRef('pk')
+        )
 
         # Add user_temp_name & user_static_score to queryset
         queryset = self.get_queryset().annotate(
@@ -87,6 +101,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     article=OuterRef('pk'),
                     user=OuterRef('user')
                 ).values('user_static_points')[:1]
+            ),
+            user_school=Subquery(
+                User.objects.filter(
+                    id=OuterRef('user')
+                ).values('school__initial')[:1]
+            ),
+            like_status=Exists(
+                liked_articles
+            ),
+            course_code=Subquery(
+                ArticleCourse.objects.filter(
+                    article=OuterRef('pk')
+                ).values('course__code')[:1]
             )
         )
 
@@ -106,6 +133,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
+        
+        liked_articles = ArticleLike.objects.filter(
+            user=user_instance,
+            article=OuterRef('pk')
+        )
 
         # Add user_temp_name & user_static_score to queryset
         queryset = self.get_queryset().annotate(
@@ -120,6 +152,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     article=OuterRef('pk'),
                     user=OuterRef('user')
                 ).values('user_static_points')[:1]
+            ),
+            user_school=Subquery(
+                User.objects.filter(
+                    id=OuterRef('user')
+                ).values('school__initial')[:1]
+            ),
+            like_status=Exists(
+                liked_articles
+            ),
+            course_code=Subquery(
+                ArticleCourse.objects.filter(
+                    article=OuterRef('pk')
+                ).values('course__code')[:1]
             )
         )
 
@@ -142,21 +187,37 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
 
     def partial_update(self, request, *args, **kwargs):
+        user_instance = request.user
         article_instance = self.get_object()
 
         # Block the modification for the deleted object
         if article_instance.deleted:
             return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
-        new_text = request.data.get('body', '').strip()
+        append_body = request.data.get('body', '').strip()
 
-        if new_text:
+        if append_body:
 
             # Append new text to the existing body
-            article_instance.body = new_text
+            article_instance.body = article_instance.body + SEPARATION_LINE + append_body
             article_instance.save(update_fields=['body'])
 
         # Serialize the article and return the response
+        article_instance.user_school = article_instance.user.school.initial
+        articleUser_instance = ArticleUser.objects.get(
+            article=article_instance,
+            user=article_instance.user
+        )
+
+        article_instance.user_temp_name = articleUser_instance.user_temp_name
+        article_instance.user_static_points = articleUser_instance.user_static_points
+
+        course_codes = ArticleCourse.objects.filter(article=article_instance).values_list('course__code', flat=True)
+        article_instance.course_code = list(course_codes)
+
+        exist = ArticleLike.objects.filter(article=article_instance, user=user_instance).exists()
+        article_instance.like_status = exist
+
         serializer = self.get_serializer(article_instance)
         return Response(serializer.data)
 
@@ -164,9 +225,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
         article_instance = self.get_object()
 
-        article_instance.user_school = user_instance.school.id
+        # Update views_count of the article
+        article_instance.views_count = F('views_count') + 1
+        article_instance.save(update_fields=['views_count'])
+
+        # Update engagement score
+        update_article_engagement_score(article_instance)
+
+        # Fetch the updated instance
+        article_instance = Article.objects.get(id=article_instance.id)
+
+        article_instance.user_school = article_instance.user.school.initial
         articleUser_instance = ArticleUser.objects.get(
-            article=article_instance
+            article=article_instance,
+            user=article_instance.user
         )
 
         article_instance.user_temp_name = articleUser_instance.user_temp_name
@@ -187,7 +259,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         comment_queryset = Comment.objects.filter(
             article=article_instance, 
             parent_comment__isnull=True
-        ).order_by('created_at')
+        ).order_by('-created_at')
 
         # Subquery to check if the user has liked the comment
         liked_comments = CommentLike.objects.filter(
@@ -211,16 +283,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             user_static_points=Subquery(user_info_subquery.values('user_static_points')[:1]),
         )       
 
-        # Update views_count of the article
-        article_instance.views_count = F('views_count') + 1
-        article_instance.save(update_fields=['views_count'])
-
-        # Update engagement score
-        update_article_engagement_score(article_instance)
-
-        # Fetch the updated instance
-        article_instance = Article.objects.get(id=article_instance.id)
-
         # Set up pagination for comments
         paginator = PageNumberPagination()
         paginator.page_size = 10
@@ -228,9 +290,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Apply pagination to the comments queryset
         paginated_comments = paginator.paginate_queryset(comment_queryset, request)
         comment_serializer = CommentSerializer(paginated_comments, many=True)
-
+        
         # Construct response using paginated response
         article_data = ArticleSerializer(article_instance).data
+        
         return paginator.get_paginated_response({
             'article': article_data,
             'comments': comment_serializer.data
@@ -304,7 +367,16 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     permission_classes = [Comment_IsAuthenticated]
     serializer_class = CommentSerializer
-    queryset = Comment.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user 
+        
+        # Filter articles based on user's school or if the article is unicon
+        queryset = Comment.objects.filter(
+            Q(user__school=user.school) | Q(article__unicon=True)
+        )
+        
+        return queryset
     
     def list(self, request, *args, **kwargs):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
@@ -349,10 +421,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         user_instance = request.user
         comment_instance = self.get_object()
 
-        comment_instance.user_school = user_instance.school.id
+        comment_instance.user_school = comment_instance.user.school.initial
         articleUser_instance = ArticleUser.objects.get(
             article=comment_instance.article,
-            user=user_instance
+            user=comment_instance.user
         )
 
         comment_instance.user_temp_name = articleUser_instance.user_temp_name
@@ -362,7 +434,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment_instance.like_status = exist
 
         # Fetch the nested comments related to the parent comment
-        nested_comment_queryset = Comment.objects.filter(
+        nested_comment_queryset = self.get_queryset().filter(
             parent_comment=comment_instance,
         ).order_by('created_at')
 
