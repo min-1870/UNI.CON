@@ -117,33 +117,16 @@ const Community = () => {
                 <h2>{article.title}</h2>
                 <p>{article.body}</p>
                 <div id="article-meta">
-                  <span>
-                    <strong>By:</strong> {article.user_temp_name}
-                  </span>
-                  <span>
-                    <strong>Points:</strong> {article.user_static_points}
-                  </span>
-                  <span>
-                    <strong>From:</strong> {article.user_school}
-                  </span>
-                  <span>
-                    <strong>Date:</strong>{" "}
-                    {new Date(article.created_at).toLocaleDateString()}
-                  </span>
-                  <span>
-                    <strong>Unicon:</strong> {article.unicon ? "Yes" : "No"}
-                  </span>
+                  <span><strong>By: </strong> {article.user_temp_name}</span>
+                  <span><strong>Points: </strong> {article.user_static_points}</span>
+                  <span><strong>From: </strong> {article.user_school}</span>
+                  <span><strong>Date: </strong> {new Date(article.created_at).toLocaleString()}</span>
+                  <span><strong>Unicon: </strong> {article.unicon ? "Yes" : "No"}</span>
                 </div>
                 <div id="article-stats">
-                  <span>
-                    <strong>Views:</strong> {article.views_count}
-                  </span>
-                  <span>
-                    <strong>Comments:</strong> {article.comments_count}
-                  </span>
-                  <span>
-                    <strong>Likes:</strong> {article.likes_count}
-                  </span>
+                  <span><strong>Views: </strong> {article.views_count}</span>
+                  <span><strong>Comments: </strong> {article.comments_count}</span>
+                  <span><strong>Likes: </strong> {article.likes_count}</span>
                 </div>
                 <div id="like-button">
                   <button onClick={() => 

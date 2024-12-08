@@ -2,7 +2,7 @@
     box-sizing: border-box;
 }
 #navbar-container {
-    width: 100vw;
+    width: 100%;
     border: 1px solid #ccc;
 }
 

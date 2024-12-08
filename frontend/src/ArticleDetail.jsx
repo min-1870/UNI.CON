@@ -18,6 +18,10 @@ const ArticleDetail = () => {
     fetchArticleDetails();
   }, [articleId]);
 
+  useEffect(() => {
+    console.log("Updated comments:", comments);
+  }, [comments]);
+
   const fetchArticleDetails = async () => {
     setLoading(true);
     try {
@@ -66,8 +70,6 @@ const ArticleDetail = () => {
 
     setSubmittingComment(true);
     try {
-        console.log(newComment)
-        console.log(articleId)
         const response = await axios.post(
             `http://127.0.0.1:8000/community/comment/`,
             {
@@ -103,12 +105,11 @@ const ArticleDetail = () => {
     }
   };
 
-  const handleCommentDelete = async (commentId, currentLikeStatus, index) => {
-    const url = `http://127.0.0.1:8000/community/comment/${commentId}/`
+  const handleCommentDelete = async (comment_id) => {
+    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
     try {
         const response = await axios.delete(
             url,
-            {},
             {
             headers: {
                 "Content-Type": "application/json",
@@ -116,10 +117,11 @@ const ArticleDetail = () => {
             },
             }
         );
+        
         if (response.status == 204){
             setComments((prevComments) =>
               prevComments.map(comment =>
-                comment.id === commentId ? { ...comment,
+                comment.id === comment_id ? { ...comment,
                     deleted: true,
                     body: "[DELETED CONTENT]"
                 } : comment
@@ -127,7 +129,151 @@ const ArticleDetail = () => {
             );
         }
     } catch (error) {
-      console.error("Error toggling comment like:", error);
+      console.error("Error delete comment:", error);
+    }
+  };
+
+  const handleCommentEdit = async (comment_id) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+            ? {
+                ...comment,
+                editing: true,
+                text_area: comment.body
+            }
+            : comment
+    ));
+  };
+
+  const handleCommentCancel = async (comment_id) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              editing: false,
+              text_area: ''
+          }
+          : comment
+    ));
+  };
+  
+
+  const handleCommentReplyCancel = async (comment_id) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              replying: false,
+              reply_text_area: ''
+          }
+          : comment
+    ));
+  };
+  
+  const handleCommentReply = async (comment_id) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              replying: true,
+              child_text_area: ''
+          }
+          : comment
+    ));
+  };
+
+  const handleCommentReplyTextArea = async (comment_id, value) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              reply_text_area: value
+          }
+          : comment
+    ));
+  };
+  
+  const handleCommentReplySave = async (comment_id, value) => {
+    const url = `http://127.0.0.1:8000/community/comment/`
+    console.log(comment_id, value)
+    try {
+        const response = await axios.post(
+            url,
+            {
+              "body": value,
+              "article": articleId,
+              "parent_comment": comment_id
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        // if (response.status == 200){
+        //     setComments((prevComments) =>
+        //       prevComments.map(comment =>
+        //         comment.id === comment_id ? { ...comment,
+        //             editing: false,
+        //             text_area: '',
+        //             body: text_area
+        //         } : comment
+        //       )
+        //     );
+        // }
+    } catch (error) {
+      console.error("Error edit comment:", error);
+    }
+  };
+
+  const handleCommentTextArea = async (comment_id, value) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              text_area: value
+          }
+          : comment
+    ));
+  };
+  
+  const handleCommentSave = async (comment_id, text_area) => {
+    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
+    try {
+        const response = await axios.patch(
+            url,
+            {
+              "body": text_area
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    editing: false,
+                    text_area: '',
+                    body: text_area
+                } : comment
+              )
+            );
+        }
+    } catch (error) {
+      console.error("Error edit comment:", error);
     }
   };
   
@@ -199,30 +345,41 @@ const ArticleDetail = () => {
 
   return (
     <div id="article-detail-container">
-      {article && (
-        <>
-          <h1>{article.title}</h1>
-          <p>{article.body}</p>
-          <div id="article-stats">
-            <span><strong>Views:</strong> {article.views_count}</span>
-            <span><strong>Comments:</strong> {article.comments_count}</span>
-            <span><strong>Likes:</strong> {article.likes_count}</span>
-            <button
-              onClick={toggleArticleLike}
-              className={article.like_status ? "liked" : "unliked"}
-            >
-              {article.like_status ? "Unlike" : "Like"}
-            </button>
-          </div>
-        </>
-      )}
+      <div id="article-detail">
 
-      <div id="comments-section">
-        <h2>Comments</h2>
 
-        <div id="new-comment">
+        <div id="article-detail-article">
+          {article && (
+            <>
+              <h1>{article.title}</h1>
+              <p>{article.body}</p>
+              <div id="article-meta">
+                  <span><strong>By: </strong> {article.user_temp_name}</span>
+                  <span><strong>Points: </strong> {article.user_static_points}</span>
+                  <span><strong>From: </strong> {article.user_school}</span>
+                  <span><strong>Date: </strong> {new Date(article.created_at).toLocaleString()}</span>
+                  <span><strong>Unicon: </strong> {article.unicon ? "Yes" : "No"}</span>
+              </div>
+              <div id="article-stats">
+                <span><strong>Views: </strong> {article.views_count}</span>
+                <span><strong>Comments: </strong> {article.comments_count}</span>
+                <span><strong>Likes: </strong> {article.likes_count}</span>
+                <button
+                  onClick={toggleArticleLike}
+                  className={article.like_status ? "liked" : "unliked"}
+                >
+                  {article.like_status ? "Unlike" : "Like"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+
+        <div id="article-detail-new-comments">
           <textarea
             value={newComment}
+            id="article-detail-comment-textarea"
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Write your comment here..."
             disabled={submittingComment}
@@ -232,47 +389,120 @@ const ArticleDetail = () => {
           </button>
         </div>
 
-        {comments.map((comment, index) => (
-          <div key={comment.id} className="comment">
-            <p>{comment.body}</p>
-            <div className="comment-meta">
-              <span><strong>By:</strong> {comment.user_temp_name}</span>
-              <span><strong>Points:</strong> {comment.user_static_points}</span>
-              <span><strong>From:</strong> {comment.user_school}</span>
-              <span><strong>Date & Time:</strong> {new Date(comment.created_at).toLocaleString()}</span>
+
+        <div id="article-detail-comments">
+          {comments.map((comment, index) => (
+            <div key={comment.id} id="article-detail-comment">
+              {comment.editing ? (
+                  <textarea
+                    value={comment.text_area}
+                    id="article-detail-comment-textarea"
+                    onChange={(e) => handleCommentTextArea(comment.id, e.target.value)}
+                    placeholder="Write your comment here..."
+                    disabled={submittingComment}
+                  />
+                ) : (
+                  <p>{comment.body}</p>
+                )
+              }
+              <div id="article-detail-comment-meta">
+                <span><strong>By: </strong> {comment.user_temp_name}</span>
+                <span><strong>Points: </strong> {comment.user_static_points}</span>
+                <span><strong>From: </strong> {comment.user_school}</span>
+                <span><strong>Date: </strong> {new Date(comment.created_at).toLocaleString()}</span>
+              </div>
+              <div id="article-detail-comment-actions">
+                  {!comment.deleted && (
+                    <>
+                      <button
+                            onClick={() => toggleCommentLike(comment.id, comment.like_status, index)}
+                            className={comment.like_status ? "liked" : "unliked"}
+                        >
+                            {comment.like_status ? "Unlike" : "Like"} ({comment.likes_count})
+                        </button>
+                        <button
+                            onClick={() => handleCommentReply(comment.id)}
+                        >
+                        Reply
+                        </button>
+                      </>
+                  )}
+                  {(comment.user == user && !comment.deleted) && (
+                    <>
+                      { comment.editing ? (
+                        <>
+                          <button
+                          onClick={() => handleCommentCancel(comment.id)}
+                          disabled={loadingMore}
+                          >
+                          Cancel
+                          </button>
+                          <button
+                          onClick={() => handleCommentSave(comment.id, comment.text_area)}
+                          disabled={loadingMore}
+                          >
+                          Save
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                          onClick={() => handleCommentEdit(comment.id)}
+                          disabled={loadingMore}
+                          >
+                          Edit
+                          </button>
+                          <button
+                          onClick={() => handleCommentDelete(comment.id)}
+                          disabled={loadingMore}
+                          >
+                          Delete
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+              </div>
+              {comment.replying && (
+                  <>
+                    <textarea
+                      value={comment.reply_text_area}
+                      id="article-detail-comment-textarea"
+                      onChange={(e) => handleCommentReplyTextArea(comment.id, e.target.value)}
+                      placeholder="Write your comment here..."
+                      disabled={submittingComment}
+                    />
+                    <div id="article-detail-comment-actions">
+                      <button
+                        onClick={() => handleCommentReplyCancel(comment.id)}
+                        disabled={loadingMore}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleCommentReplySave(comment.id, comment.reply_text_area)}
+                        disabled={loadingMore}
+                      >
+                        Post
+                      </button>
+                    </div>
+                  </>
+                )
+              }
             </div>
-            <div className="comment-actions">
-                {!comment.deleted && (
-                    <button
-                        onClick={() => toggleCommentLike(comment.id, comment.like_status, index)}
-                        className={comment.like_status ? "liked" : "unliked"}
-                    >
-                        {comment.like_status ? "Unlike" : "Like"} ({comment.likes_count})
-                    </button>
-                )}
-              {(comment.user == user && !comment.deleted) && (
-                <button
-                onClick={() => handleCommentDelete(comment.id, comment.like_status, index)}
+          ))}
+
+          <div id="pagination-controls">
+            {nextCommentPage && (
+              <button
+                onClick={() => fetchNextCommentPage(nextCommentPage)}
                 disabled={loadingMore}
                 className="pagination-button"
-                >
-                Delete
-                </button>
-              )}
-            </div>
+              >
+                Load More Comments
+              </button>
+            )}
           </div>
-        ))}
-
-        <div id="pagination-controls">
-          {nextCommentPage && (
-            <button
-              onClick={() => fetchNextCommentPage(nextCommentPage)}
-              disabled={loadingMore}
-              className="pagination-button"
-            >
-              Load More Comments
-            </button>
-          )}
         </div>
       </div>
     </div>
