@@ -8,8 +8,8 @@ import numpy as np
 import json
 from .constants import (
     SEPARATION_LINE,
-    REGISTER_SUBMIT_URL,
-    REGISTER_CONFIRM_VIEW_URL,
+    REGISTER_SUBMIT_NAME,
+    REGISTER_CONFIRM_VIEW_NAME,
 
     ARTICLE_PATCH_DETAIL_DELETE_NAME,
     ARTICLE_LIST_CREATE_NAME,
@@ -39,14 +39,17 @@ from .constants import (
     
 def register_account(client, user_data, instance=True):
     #Register a new account
-    response = client.post(REGISTER_SUBMIT_URL, user_data, format='json')
+    url = reverse(REGISTER_SUBMIT_NAME)
+    response = client.post(url, user_data, format='json')
     #Apply token
     access_token = response.data['access']
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
     #Fetch validation code
     user_instance = User.objects.get(email=user_data['email'])
     validation_data = {'validation_code': user_instance.validation_code}
-    response = client.post(REGISTER_CONFIRM_VIEW_URL, validation_data, format='json')
+    
+    url = reverse(REGISTER_CONFIRM_VIEW_NAME)
+    response = client.post(url, validation_data, format='json')
     if instance:
         return User.objects.get(email=user_data['email'])
     else:        

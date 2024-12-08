@@ -1,11 +1,9 @@
-from django.urls import reverse
-
 DELETED_TITLE = '[DELETED ARTICLE]'
 DELETED_BODY = '[DELETED CONTENT]'
 SEPARATION_LINE = '\n\n<=============== New Content ===============>\n\n'
 
-REGISTER_SUBMIT_URL = reverse('register/submit') 
-REGISTER_CONFIRM_VIEW_URL = reverse('register/confirm')
+REGISTER_SUBMIT_NAME = 'register/submit'
+REGISTER_CONFIRM_VIEW_NAME = 'register/confirm'
 
 ARTICLE_PATCH_DETAIL_DELETE_NAME = 'article-detail'
 ARTICLE_LIST_CREATE_NAME = 'article-list'
