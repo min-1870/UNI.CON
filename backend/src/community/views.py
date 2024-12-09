@@ -170,7 +170,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Fetch Ids of the article based on the similarity
         ids = search_similar_embeddings(user_instance.embedding_vector)
-
+        print(ids)
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         articles = queryset.filter(pk__in=ids).order_by(order)

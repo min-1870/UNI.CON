@@ -24,6 +24,7 @@ const Community = () => {
 
   const fetchArticles = async () => {
     setLoading(true);
+    
     try {
       const response = await axios.get(apiEndpoints[sortOption], {
         headers: {

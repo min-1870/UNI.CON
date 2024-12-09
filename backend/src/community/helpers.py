@@ -6,16 +6,6 @@ import numpy as np
 from openai import OpenAI
 import faiss
 
-client = OpenAI(
-    api_key=config("OPENAI_API_KEY")
-)
-
-try:
-    index = faiss.read_index("index_file.idx")
-except Exception:
-    index = faiss.IndexFlatL2(1536)
-    index = faiss.IndexIDMap(index)
-
 
 def update_article_engagement_score(article_instance):
     article_instance.engagement_score = (
@@ -98,6 +88,18 @@ def get_current_user_points(user_id):
     return total_points
 
 
+client = OpenAI(
+    api_key=config("OPENAI_API_KEY")
+)
+
+try:
+    index = faiss.read_index("index_file.idx")
+except Exception:
+    index = faiss.IndexFlatL2(1536)
+    index = faiss.IndexIDMap(index)
+    for article_instance in Article.objects.all():
+        add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
+        
 # INITIAL_ARTICLE_SCORE_GRAVITY = 1.8
 # ARTICLE_SCORE_GRAVITY_RESET_MINUTES = 5
 # VIEWED_FORUM_GRAVITY_INC_RATE = 1.1
