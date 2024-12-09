@@ -11,6 +11,7 @@
 }
 #article-detail {
   max-width: 600px;
+  border: 1px solid #ccc;
 }
 #article-detail-article {
   margin-bottom: 5%;
@@ -27,6 +28,7 @@
 
 #article-detail-new-comments {
   margin-bottom: 5%;
+  border: 1px solid #ccc;
 }
 
 
@@ -35,6 +37,7 @@
 }
 #article-detail-comment {
   margin-bottom: 5%;
+  border: 1px solid #ccc;
 }
 #article-detail-comment-meta {
   display: flex;
@@ -58,9 +61,11 @@
   max-width: 500px;
   margin-top: 5%;
   align-self: center;
+  border: 1px solid #ccc;
 }
 #article-detail-comment-reply-nested-comment{
   margin-bottom: 5%;
+  border: 1px solid #ccc;
 }
 #article-detail-comment-reply-nested-comment-body{
   margin-bottom: 5%;

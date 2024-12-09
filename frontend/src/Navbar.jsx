@@ -11,21 +11,23 @@ const Navbar = () => {
   return (
     <nav id="navbar-container">
       <div id="navbar">
-        {/* Logo */}
+        
         <div id="logo">
-          <Link to="/">UNI.CON</Link>
+          <h3 to="/">UNI.CON</h3>
         </div>
 
-        {/* Navigation Links */}
+        
         <ul id="nav-links">
           <li><Link to="/">Login</Link></li>
           <li><Link to="/register">Register</Link></li>
+          <li><Link to="/community">Community</Link></li>
         </ul>
 
-        {/* Profile/Account Section */}
-        <div id="profile">
-          <Link to="/" onClick={handleLogout}>Logout</Link>
-        </div>
+        
+        <ul id="profile">
+          <li><Link to="/" onClick={handleLogout}>Logout</Link></li>
+          <li><Link to="/mypage">My Page</Link></li>
+        </ul>
       </div>
     </nav>
   );
