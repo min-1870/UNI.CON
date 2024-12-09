@@ -436,7 +436,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Fetch the nested comments related to the parent comment
         nested_comment_queryset = self.get_queryset().filter(
             parent_comment=comment_instance,
-        ).order_by('created_at')
+        ).order_by('-created_at')
 
         # Subquery to check if the user has liked the nested comment(s)
         liked_comments = CommentLike.objects.filter(
