@@ -18,10 +18,6 @@ const ArticleDetail = () => {
     fetchArticleDetails();
   }, [articleId]);
 
-  useEffect(() => {
-    console.log("Updated comments:", comments);
-  }, [comments]);
-
   const fetchArticleDetails = async () => {
     setLoading(true);
     try {
@@ -58,6 +54,41 @@ const ArticleDetail = () => {
       );
       setComments((prev) => [...prev, ...filteredComments]);
       setNextCommentPage(response.data.next);
+    } catch (error) {
+      console.error("Error loading more comments:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+
+  };  
+  
+  const fetchNextNestedCommentPage = async (comment_id) => {
+    setLoadingMore(true);
+    const comment = comments.find((comment) => comment.id === comment_id)
+    try {
+      const response = await axios.get(
+        comment.next_comment_page, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+      });
+
+      if (response.status == 200) {
+        const filteredComments = response.data.results.nested_comments.filter(
+          (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
+        );      
+        setComments((prevComments) =>
+          prevComments.map(comment =>
+            comment.id === comment_id ? { ...comment,
+                nested_comments: [...comment.nested_comments, ...filteredComments],
+                show_nested_comments: true,
+                next_comment_page: response.data.next
+            } : comment 
+          )
+        );
+      }
+
     } catch (error) {
       console.error("Error loading more comments:", error);
     } finally {
@@ -105,8 +136,10 @@ const ArticleDetail = () => {
     }
   };
 
-  const handleCommentDelete = async (comment_id) => {
-    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
+  const handleCommentDelete = async (comment_id, nested_comment_id=false) => {
+    const url = nested_comment_id
+    ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/`
+    : `http://127.0.0.1:8000/community/comment/${comment_id}/`;
     try {
         const response = await axios.delete(
             url,
@@ -119,6 +152,27 @@ const ArticleDetail = () => {
         );
         
         if (response.status == 204){
+
+
+          if (nested_comment_id)  {
+            setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === comment_id
+                ? {
+                    ...comment,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            deleted: true,
+                            body: "[DELETED CONTENT]"
+                          }
+                        : nested_comment
+                    ),
+                }
+                : comment
+            )); 
+          }else{
             setComments((prevComments) =>
               prevComments.map(comment =>
                 comment.id === comment_id ? { ...comment,
@@ -127,40 +181,225 @@ const ArticleDetail = () => {
                 } : comment
               )
             );
+          }
+
         }
     } catch (error) {
       console.error("Error delete comment:", error);
     }
   };
 
-  const handleCommentEdit = async (comment_id) => {
-    setComments((prevComments) =>
-      prevComments.map(comment =>
+  const handleEditComment = async (comment_id, nested_comment_id=false) => {
+    
+    if (nested_comment_id)  {
+      console.log('this is nested comment')
+      setComments((prevComments) =>
+      prevComments.map((comment) =>
         comment.id === comment_id
-            ? {
-                ...comment,
-                editing: true,
-                text_area: comment.body
-            }
-            : comment
-    ));
+          ? {
+              ...comment,
+              nested_comments: comment.nested_comments.map((nested_comment) =>
+                nested_comment.id === nested_comment_id
+                  ? {
+                      ...nested_comment,
+                      editing: true,
+                      edit_text_area: nested_comment.body
+                    }
+                  : nested_comment
+              ),
+          }
+          : comment
+      )); 
+    }else{
+      setComments((prevComments) =>
+        prevComments.map(comment =>
+          comment.id === comment_id
+              ? {
+                  ...comment,
+                  editing: true,
+                  edit_text_area: comment.body
+              }
+              : comment
+      ));
+    }
   };
 
-  const handleCommentCancel = async (comment_id) => {
+  const handleEditCommentTextArea = async (comment_id, value, nested_comment_id=false) => {
+    if (nested_comment_id) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: comment.nested_comments.map((nested_comment) =>
+                  nested_comment.id === nested_comment_id
+                    ? {
+                        ...nested_comment,
+                        edit_text_area: value,
+                      }
+                    : nested_comment
+                ),
+              }
+            : comment
+        )
+      );
+    }else{
+      setComments((prevComments) =>
+        prevComments.map(comment =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                edit_text_area: value
+            }
+            : comment
+      ));
+
+    }
+  };
+
+  const handleEditCommentCancel = async (comment_id, nested_comment_id=false) => {
+    if (nested_comment_id) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: comment.nested_comments.map((nested_comment) =>
+                  nested_comment.id === nested_comment_id
+                    ? {
+                        ...nested_comment,
+                        editing: false,
+                        edit_text_area: ''
+                      }
+                    : nested_comment
+                ),
+              }
+            : comment
+        )
+      );
+    }else{
+      setComments((prevComments) =>
+        prevComments.map(comment =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                editing: false,
+                edit_text_area: ''
+            }
+            : comment
+      ));
+    }
+  };
+  
+  const handleEditCommentSave = async (comment_id, value, nested_comment_id=false) => {
+    const url = nested_comment_id 
+    ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/`
+    : `http://127.0.0.1:8000/community/comment/${comment_id}/`;
+    
+    try {
+        const response = await axios.patch(
+            url,
+            {
+              "body": value
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+
+          
+          if (nested_comment_id)  {
+            setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === comment_id
+                ? {
+                    ...comment,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            editing: false,
+                            body: value
+                          }
+                        : nested_comment
+                    ),
+                }
+                : comment
+            )); 
+          }else{          
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    editing: false,
+                    body: value
+                } : comment
+              )
+            );
+          }
+        }
+    } catch (error) {
+      console.error("Error edit comment:", error);
+    }
+  };
+  
+  const handleReplyComment = async (comment_id) => {
     setComments((prevComments) =>
       prevComments.map(comment =>
         comment.id === comment_id
           ? {
               ...comment,
-              editing: false,
-              text_area: ''
+              replying: true,
+              reply_text_area: ''
+          }
+          : comment
+    ));
+    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
+    try {
+        const response = await axios.get(
+            url,
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+          
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    nested_comments: response.data.results.nested_comments,
+                    show_nested_comments: true,
+                    next_comment_page: response.data.next
+                } : comment 
+              )
+            );
+        }
+    } catch (error) {
+      console.error("Error edit comment:", error);
+    }
+  };
+
+  const handleReplyCommentTextArea = async (comment_id, value) => {
+    setComments((prevComments) =>
+      prevComments.map(comment =>
+        comment.id === comment_id
+          ? {
+              ...comment,
+              reply_text_area: value
           }
           : comment
     ));
   };
-  
 
-  const handleCommentReplyCancel = async (comment_id) => {
+  const handleReplyCommentCancel = async (comment_id) => {
     setComments((prevComments) =>
       prevComments.map(comment =>
         comment.id === comment_id
@@ -173,32 +412,7 @@ const ArticleDetail = () => {
     ));
   };
   
-  const handleCommentReply = async (comment_id) => {
-    setComments((prevComments) =>
-      prevComments.map(comment =>
-        comment.id === comment_id
-          ? {
-              ...comment,
-              replying: true,
-              child_text_area: ''
-          }
-          : comment
-    ));
-  };
-
-  const handleCommentReplyTextArea = async (comment_id, value) => {
-    setComments((prevComments) =>
-      prevComments.map(comment =>
-        comment.id === comment_id
-          ? {
-              ...comment,
-              reply_text_area: value
-          }
-          : comment
-    ));
-  };
-  
-  const handleCommentReplySave = async (comment_id, value) => {
+  const handleReplyCommentSave = async (comment_id, value) => {
     const url = `http://127.0.0.1:8000/community/comment/`
     console.log(comment_id, value)
     try {
@@ -217,60 +431,28 @@ const ArticleDetail = () => {
             }
         );
         
-        // if (response.status == 200){
-        //     setComments((prevComments) =>
-        //       prevComments.map(comment =>
-        //         comment.id === comment_id ? { ...comment,
-        //             editing: false,
-        //             text_area: '',
-        //             body: text_area
-        //         } : comment
-        //       )
-        //     );
-        // }
-    } catch (error) {
-      console.error("Error edit comment:", error);
-    }
-  };
-
-  const handleCommentTextArea = async (comment_id, value) => {
-    setComments((prevComments) =>
-      prevComments.map(comment =>
-        comment.id === comment_id
-          ? {
-              ...comment,
-              text_area: value
-          }
-          : comment
-    ));
-  };
-  
-  const handleCommentSave = async (comment_id, text_area) => {
-    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
-    try {
-        const response = await axios.patch(
-            url,
-            {
-              "body": text_area
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    editing: false,
-                    text_area: '',
-                    body: text_area
-                } : comment
-              )
-            );
+        if (response.status == 201){
+          console.log(response.data)
+          setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === comment_id
+              ? {
+                  ...comment,
+                  nested_comments: [
+                    {
+                      ...response.data, 
+                      body: response.data.body,
+                      user_temp_name: response.data.user_temp_name,
+                      user_static_points: response.data.user_static_points,
+                      user_school: response.data.user_school,
+                      like_status: response.data.like_status,
+                    },
+                    ...comment.nested_comments, 
+                  ],
+                  reply_text_area: ''
+              }
+              : comment
+          )); 
         }
     } catch (error) {
       console.error("Error edit comment:", error);
@@ -308,13 +490,17 @@ const ArticleDetail = () => {
     }
   };
 
-  const toggleCommentLike = async (commentId, currentLikeStatus, index) => {
-    const endpoint = currentLikeStatus
-      ? `http://127.0.0.1:8000/community/comment/${commentId}/unlike/`
-      : `http://127.0.0.1:8000/community/comment/${commentId}/like/`;
+  const toggleCommentLike = async (comment_id, currentLikeStatus, nested_comment_id=false) => {
+    const url = nested_comment_id
+    ?  currentLikeStatus 
+      ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/unlike/`
+      : `http://127.0.0.1:8000/community/comment/${nested_comment_id}/like/`
+    : currentLikeStatus
+      ? `http://127.0.0.1:8000/community/comment/${comment_id}/unlike/`
+      : `http://127.0.0.1:8000/community/comment/${comment_id}/like/`;
     try {
         const response = await axios.post(
-            endpoint,
+            url,
             {},
             {
             headers: {
@@ -324,18 +510,41 @@ const ArticleDetail = () => {
             }
         );
         if (response.status == 201){
+          if (nested_comment_id)  {
             setComments((prevComments) =>
-            prevComments.map((comment, i) =>
-            i === index
+            prevComments.map((comment) =>
+              comment.id === comment_id
                 ? {
                     ...comment,
-                    like_status: !currentLikeStatus,
-                    likes_count: currentLikeStatus
-                    ? comment.likes_count - 1
-                    : comment.likes_count + 1,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            like_status: !currentLikeStatus,
+                            likes_count: currentLikeStatus
+                            ? nested_comment.likes_count - 1
+                            : nested_comment.likes_count + 1,
+                          }
+                        : nested_comment
+                    ),
                 }
                 : comment
-        ));}
+            )); 
+          }else{
+            setComments((prevComments) =>
+              prevComments.map((comment) =>
+                comment.id === comment_id
+                  ? {
+                      ...comment,
+                      like_status: !currentLikeStatus,
+                      likes_count: currentLikeStatus
+                      ? comment.likes_count - 1
+                      : comment.likes_count + 1,
+                  }
+                  : comment
+            ));
+          }
+        }
     } catch (error) {
       console.error("Error toggling comment like:", error);
     }
@@ -353,24 +562,24 @@ const ArticleDetail = () => {
             <>
               <h1>{article.title}</h1>
               <p>{article.body}</p>
-              <div id="article-meta">
+              <div id="article-detail-meta">
                   <span><strong>By: </strong> {article.user_temp_name}</span>
                   <span><strong>Points: </strong> {article.user_static_points}</span>
                   <span><strong>From: </strong> {article.user_school}</span>
                   <span><strong>Date: </strong> {new Date(article.created_at).toLocaleString()}</span>
                   <span><strong>Unicon: </strong> {article.unicon ? "Yes" : "No"}</span>
               </div>
-              <div id="article-stats">
+              <div id="article-detail-stats">
                 <span><strong>Views: </strong> {article.views_count}</span>
                 <span><strong>Comments: </strong> {article.comments_count}</span>
                 <span><strong>Likes: </strong> {article.likes_count}</span>
-                <button
+              </div>
+              <button
                   onClick={toggleArticleLike}
                   className={article.like_status ? "liked" : "unliked"}
                 >
                   {article.like_status ? "Unlike" : "Like"}
-                </button>
-              </div>
+              </button>
             </>
           )}
         </div>
@@ -379,7 +588,7 @@ const ArticleDetail = () => {
         <div id="article-detail-new-comments">
           <textarea
             value={newComment}
-            id="article-detail-comment-textarea"
+            id="article-detail-textarea"
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Write your comment here..."
             disabled={submittingComment}
@@ -391,54 +600,60 @@ const ArticleDetail = () => {
 
 
         <div id="article-detail-comments">
-          {comments.map((comment, index) => (
+          
+          {comments.map((comment) => (
             <div key={comment.id} id="article-detail-comment">
-              {comment.editing ? (
-                  <textarea
-                    value={comment.text_area}
-                    id="article-detail-comment-textarea"
-                    onChange={(e) => handleCommentTextArea(comment.id, e.target.value)}
-                    placeholder="Write your comment here..."
-                    disabled={submittingComment}
-                  />
-                ) : (
-                  <p>{comment.body}</p>
-                )
-              }
+
+              <div id="article-detail-comment-body">
+                {comment.editing ? (
+                    <textarea
+                      value={comment.edit_text_area}
+                      id="article-detail-textarea"
+                      onChange={(e) => handleEditCommentTextArea(comment.id, e.target.value)}
+                      placeholder="Write your comment here..."
+                      disabled={submittingComment}
+                    />
+                  ) : (
+                    <p>{comment.body}</p>
+                  )
+                }
+              </div>
+
               <div id="article-detail-comment-meta">
                 <span><strong>By: </strong> {comment.user_temp_name}</span>
                 <span><strong>Points: </strong> {comment.user_static_points}</span>
                 <span><strong>From: </strong> {comment.user_school}</span>
                 <span><strong>Date: </strong> {new Date(comment.created_at).toLocaleString()}</span>
               </div>
-              <div id="article-detail-comment-actions">
+
+              <div id="article-detail-comment-buttons">
                   {!comment.deleted && (
                     <>
                       <button
-                            onClick={() => toggleCommentLike(comment.id, comment.like_status, index)}
+                            onClick={() => toggleCommentLike(comment.id, comment.like_status)}
                             className={comment.like_status ? "liked" : "unliked"}
                         >
                             {comment.like_status ? "Unlike" : "Like"} ({comment.likes_count})
                         </button>
                         <button
-                            onClick={() => handleCommentReply(comment.id)}
+                            onClick={() => handleReplyComment(comment.id)}
                         >
                         Reply
                         </button>
-                      </>
+                    </>
                   )}
                   {(comment.user == user && !comment.deleted) && (
                     <>
                       { comment.editing ? (
                         <>
                           <button
-                          onClick={() => handleCommentCancel(comment.id)}
+                          onClick={() => handleEditCommentCancel(comment.id)}
                           disabled={loadingMore}
                           >
                           Cancel
                           </button>
                           <button
-                          onClick={() => handleCommentSave(comment.id, comment.text_area)}
+                          onClick={() => handleEditCommentSave(comment.id, comment.edit_text_area)}
                           disabled={loadingMore}
                           >
                           Save
@@ -447,7 +662,7 @@ const ArticleDetail = () => {
                       ) : (
                         <>
                           <button
-                          onClick={() => handleCommentEdit(comment.id)}
+                          onClick={() => handleEditComment(comment.id)}
                           disabled={loadingMore}
                           >
                           Edit
@@ -463,46 +678,155 @@ const ArticleDetail = () => {
                     </>
                   )}
               </div>
-              {comment.replying && (
+
+              <div id = "article-detail-comment-reply">
+                {comment.replying && (
                   <>
+
+                    
                     <textarea
                       value={comment.reply_text_area}
-                      id="article-detail-comment-textarea"
-                      onChange={(e) => handleCommentReplyTextArea(comment.id, e.target.value)}
+                      id="article-detail-textarea"
+                      onChange={(e) => handleReplyCommentTextArea(comment.id, e.target.value)}
                       placeholder="Write your comment here..."
                       disabled={submittingComment}
                     />
-                    <div id="article-detail-comment-actions">
+                    <div id="article-detail-comment-reply-buttons">
                       <button
-                        onClick={() => handleCommentReplyCancel(comment.id)}
+                        onClick={() => handleReplyCommentCancel(comment.id)}
                         disabled={loadingMore}
                       >
                         Cancel
                       </button>
                       <button
-                        onClick={() => handleCommentReplySave(comment.id, comment.reply_text_area)}
+                        onClick={() => handleReplyCommentSave(comment.id, comment.reply_text_area)}
                         disabled={loadingMore}
                       >
                         Post
                       </button>
                     </div>
+                    
+
+                    <div id="article-detail-comment-reply-nested-comments"> 
+                      
+                      {comment.show_nested_comments && (
+
+                        <div>
+                          {comment.nested_comments.map((nested_comment) => (
+
+                            <div key={nested_comment.id} id="article-detail-comment-reply-nested-comment">
+
+
+
+                              <div id="article-detail-comment-reply-nested-comment-body">
+                                {nested_comment.editing ? (
+                                    <textarea
+                                      value={nested_comment.edit_text_area}
+                                      id="article-detail-comment-textarea"
+                                      onChange={(e) => handleEditCommentTextArea(comment.id, e.target.value, nested_comment.id)}
+                                      placeholder="Write your comment here..."
+                                      disabled={submittingComment}
+                                    />
+                                  ) : (
+                                    <p>{nested_comment.body}</p>
+                                  )
+                                }
+                              </div>
+
+                              <div id="article-detail-comment-reply-nested-comment-meta">
+                                <span><strong>By: </strong> {nested_comment.user_temp_name}</span>
+                                <span><strong>Points: </strong> {nested_comment.user_static_points}</span>
+                                <span><strong>From: </strong> {nested_comment.user_school}</span>
+                                <span><strong>Date: </strong> {new Date(nested_comment.created_at).toLocaleString()}</span>
+                              </div>
+
+                              <div id="article-detail-comment-reply-nested-comment-buttons">
+                                  {!nested_comment.deleted && (
+                                    <>
+                                      <button
+                                            onClick={() => toggleCommentLike(comment.id, nested_comment.like_status, nested_comment.id)}
+                                            className={nested_comment.like_status ? "liked" : "unliked"}
+                                        >
+                                            {nested_comment.like_status ? "Unlike" : "Like"} ({nested_comment.likes_count})
+                                        </button>
+                                    </>
+                                  )}
+                                  {(nested_comment.user == user && !nested_comment.deleted) && (
+                                    <>
+                                      { nested_comment.editing ? (
+                                        <>
+                                          <button
+                                          onClick={() => handleEditCommentCancel(comment.id, nested_comment.id)}
+                                          disabled={loadingMore}
+                                          >
+                                          Cancel
+                                          </button>
+                                          <button
+                                          onClick={() => handleEditCommentSave(comment.id, nested_comment.edit_text_area, nested_comment.id)}
+                                          disabled={loadingMore}
+                                          >
+                                          Save
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <button
+                                          onClick={() => handleEditComment(comment.id, nested_comment.id)}
+                                          disabled={loadingMore}
+                                          >
+                                          Edit
+                                          </button>
+                                          <button
+                                          onClick={() => handleCommentDelete(comment.id, nested_comment.id)}
+                                          disabled={loadingMore}
+                                          >
+                                          Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </>
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+
+                        </div>
+
+                      )}
+
+                    </div>
+
+
+                    <div id="article-detail-comment-reply-nested-comments-pagination-controls">
+                      {comment.next_comment_page && (
+                        <button
+                          onClick={() => fetchNextNestedCommentPage(comment.id)}
+                          disabled={loadingMore}
+                          className="pagination-button"
+                        >
+                          Load More Nested Comments
+                        </button>
+                      )}
+                    </div>
                   </>
-                )
-              }
+                )}
+              </div>
+
             </div>
           ))}
 
-          <div id="pagination-controls">
-            {nextCommentPage && (
-              <button
-                onClick={() => fetchNextCommentPage(nextCommentPage)}
-                disabled={loadingMore}
-                className="pagination-button"
-              >
-                Load More Comments
-              </button>
-            )}
-          </div>
+        </div>
+
+        <div id="article-detail-comments-pagination-controls">
+          {nextCommentPage && (
+            <button
+              onClick={() => fetchNextCommentPage()}
+              disabled={loadingMore}
+              className="pagination-button"
+            >
+              Load More Comments
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -510,3 +834,6 @@ const ArticleDetail = () => {
 };
 
 export default ArticleDetail;
+
+
+

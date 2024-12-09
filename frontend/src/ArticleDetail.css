@@ -1,3 +1,9 @@
+
+#article-detail-textarea {
+  width: 100%;
+}
+
+
 #article-detail-container {
   display: flex;
   height: 100%;
@@ -5,17 +11,27 @@
 }
 #article-detail {
   max-width: 600px;
-    
 }
 #article-detail-article {
   margin-bottom: 5%;
-    
 }
+#article-detail-meta {
+  display: flex;
+  justify-content: space-between;
+}
+#article-detail-stats {
+  display: flex;
+  justify-content: space-between;
+}
+
+
 #article-detail-new-comments {
   margin-bottom: 5%;
 }
-#article-detail-comment-textarea {
-  width: 100%;
+
+
+#article-detail-comments {
+  margin-top: 5%;
 }
 #article-detail-comment {
   margin-bottom: 5%;
@@ -24,28 +40,55 @@
   display: flex;
   justify-content: space-between;
 }
-#article-detail-comment-actions {
+#article-detail-comment-buttons {
   display: flex;
   justify-content: space-between;
 }
-#pagination-controls {
+
+
+#article-detail-comment-reply {
+  display: flex;
+  flex-direction: column;
+}
+#article-detail-comment-reply-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+#article-detail-comment-reply-nested-comments{
+  max-width: 500px;
+  margin-top: 5%;
+  align-self: center;
+}
+#article-detail-comment-reply-nested-comment{
+  margin-bottom: 5%;
+}
+#article-detail-comment-reply-nested-comment-body{
+  margin-bottom: 5%;
+}
+#article-detail-comment-reply-nested-comment-meta{
+  margin-bottom: 5%;
+  display: flex;
+  justify-content: space-between;
+}
+#article-detail-comment-reply-nested-comment-buttons{
+  margin-bottom: 5%;
+  display: flex;
+  justify-content: space-between;
+}
+#article-detail-comment-reply-nested-comments-pagination-controls{
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 100px;
+
+}
+
+
+#article-detail-comments-pagination-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     margin-top: 20px;
+    margin-bottom: 100px;
   }
   
-  .pagination-button {
-    padding: 10px 20px;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-  }
-  
-  .pagination-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
   
