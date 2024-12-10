@@ -31,13 +31,13 @@ def update_preference_vector(user_embeddings, article_embedding, alpha=0.1):
 def add_embedding_to_faiss(article_embedding, article_id):
     article_embedding = np.array([article_embedding])
     article_id = np.array([article_id])
-    
     index.add_with_ids(article_embedding, article_id)
+    faiss.write_index(index, "index.idx")
     
 
-def search_similar_embeddings(embedding, number=100):
-    _, ids = index.search(np.array([embedding]), k=number)
-    return ids[ids > 0]
+def search_similar_embeddings(embedding, k=100):
+    _, ids = index.search(np.array([embedding]), k=k)
+    return ids[0]
 
 def get_current_user_points(user_id):
 
@@ -91,6 +91,10 @@ def get_current_user_points(user_id):
 client = OpenAI(
     api_key=config("OPENAI_API_KEY")
 )
+
+def retrain_all_articles_to_faiss(index):
+
+    return index
 
 try:
     index = faiss.read_index("index_file.idx")

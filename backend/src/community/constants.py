@@ -1,6 +1,5 @@
 DELETED_TITLE = '[DELETED ARTICLE]'
 DELETED_BODY = '[DELETED CONTENT]'
-SEPARATION_LINE = '\n\n<=============== New Content ===============>\n\n'
 
 REGISTER_SUBMIT_NAME = 'register/submit'
 REGISTER_CONFIRM_VIEW_NAME = 'register/confirm'
@@ -35,6 +34,7 @@ MOCK_ARTICLE_RESPONSE_KEYS = {
     "user",
     "unicon",
     "deleted",
+    "edited",
     "created_at",
     "views_count",
     "comments_count",

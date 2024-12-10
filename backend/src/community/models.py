@@ -8,6 +8,7 @@ class Article(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     unicon = models.BooleanField(default=True, null=False)
     deleted = models.BooleanField(default=False, null=False)
+    edited = models.BooleanField(default=False, null=False)
 
     created_at = models.DateTimeField(null=False, auto_now_add=True)
     views_count = models.IntegerField(default=0, null=False)

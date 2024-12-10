@@ -3,9 +3,9 @@ from .helpers import update_article_engagement_score, search_similar_embeddings,
 from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
 from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
 from django.db.models import OuterRef, Subquery, Exists, Case, When, F, Q
-from .constants import DELETED_BODY, DELETED_TITLE, SEPARATION_LINE
 from .serializer import ArticleSerializer, CommentSerializer
 from rest_framework.pagination import PageNumberPagination
+from .constants import DELETED_BODY, DELETED_TITLE
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
@@ -169,8 +169,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
 
         # Fetch Ids of the article based on the similarity
-        ids = search_similar_embeddings(user_instance.embedding_vector)
-        print(ids)
+        ids = search_similar_embeddings(user_instance.embedding_vector, len(self.get_queryset()))
+        
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         articles = queryset.filter(pk__in=ids).order_by(order)
@@ -194,13 +194,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if article_instance.deleted:
             return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
-        append_body = request.data.get('body', '').strip()
+        new_body = request.data.get('body', '').strip()
 
-        if append_body:
-
+        if new_body:
             # Append new text to the existing body
-            article_instance.body = article_instance.body + SEPARATION_LINE + append_body
-            article_instance.save(update_fields=['body'])
+            article_instance.body = new_body
+            article_instance.edited = True
+            article_instance.save(update_fields=['body', 'edited'])
 
         # Serialize the article and return the response
         article_instance.user_school = article_instance.user.school.initial

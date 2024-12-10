@@ -7,7 +7,6 @@ from copy import deepcopy
 import numpy as np
 import json
 from .constants import (
-    SEPARATION_LINE,
     REGISTER_SUBMIT_NAME,
     REGISTER_CONFIRM_VIEW_NAME,
 
@@ -162,9 +161,9 @@ class articleModificationTests(APITestCase):
         response = self.client.post(url, MOCK_ARTICLE, format='json')
 
         # Patch the article
-        appended_body = {'body':'12345'}
+        new_body = {'body':'12345'}
         url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk': response.data['id']})
-        response = self.client.patch(url, appended_body, format='json')
+        response = self.client.patch(url, new_body, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Validate response structure
@@ -173,7 +172,8 @@ class articleModificationTests(APITestCase):
         
         # Validate the appended content
         article_instance = Article.objects.get(pk=response.data['id'])
-        self.assertEqual(article_instance.body, MOCK_ARTICLE['body'] + SEPARATION_LINE + appended_body['body'])
+        self.assertEqual(article_instance.body, new_body['body'])
+        self.assertTrue(article_instance.edited)
 
     def test_patch_article_by_other(self):
         # Post an article
@@ -186,9 +186,9 @@ class articleModificationTests(APITestCase):
         register_account(self.client, MOCK_USER_2, False)
 
         # Patch the article
-        appended_body = {'body':'12345'}
+        new_body = {'body':'12345'}
         url = reverse(ARTICLE_PATCH_DETAIL_DELETE_NAME, kwargs={'pk': response.data['id']})
-        response = self.client.patch(url, appended_body, format='json')
+        response = self.client.patch(url, new_body, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_article(self):
@@ -345,7 +345,7 @@ class articleRetrieveTests(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
-     
+    
     def test_retrieve_an_article(self):
         # Post an article and comment
         user_instance = register_account(self.client, MOCK_USER_1)
@@ -468,7 +468,7 @@ class articleRetrieveTests(APITestCase):
             # Validate the order
             current_article_comment_count = articles[i]['comments_count']
             self.assertTrue(previous_article_comment_count > current_article_comment_count)
-     
+    
     def test_retrieve_articles_sorted_by_preference(self):
 
         register_account(self.client, MOCK_USER_1)
