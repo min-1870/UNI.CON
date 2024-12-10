@@ -391,13 +391,14 @@ class CommentViewSet(viewsets.ModelViewSet):
         if comment_instance.deleted:
             return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
         
-        new_text = request.data.get('body', '').strip()
+        new_body = request.data.get('body', '').strip()
 
-        if new_text:
+        if new_body:
 
             # Append new text to the existing body
-            comment_instance.body = new_text
-            comment_instance.save(update_fields=['body'])
+            comment_instance.body = new_body
+            comment_instance.edited = True
+            comment_instance.save(update_fields=['body', 'edited'])
 
         # Serialize the comment and return the response
         serializer = self.get_serializer(comment_instance)

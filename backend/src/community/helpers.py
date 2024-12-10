@@ -32,8 +32,7 @@ def add_embedding_to_faiss(article_embedding, article_id):
     article_embedding = np.array([article_embedding])
     article_id = np.array([article_id])
     index.add_with_ids(article_embedding, article_id)
-    faiss.write_index(index, "index.idx")
-    
+    faiss.write_index(index, "index.idx")    
 
 def search_similar_embeddings(embedding, k=100):
     _, ids = index.search(np.array([embedding]), k=k)
@@ -92,9 +91,8 @@ client = OpenAI(
     api_key=config("OPENAI_API_KEY")
 )
 
-def retrain_all_articles_to_faiss(index):
-
-    return index
+def reset_faiss():
+    index.reset()
 
 try:
     index = faiss.read_index("index_file.idx")

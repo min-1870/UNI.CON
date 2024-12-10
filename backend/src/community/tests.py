@@ -6,6 +6,7 @@ from datetime import datetime
 from copy import deepcopy
 import numpy as np
 import json
+from .helpers import reset_faiss
 from .constants import (
     REGISTER_SUBMIT_NAME,
     REGISTER_CONFIRM_VIEW_NAME,
@@ -472,7 +473,7 @@ class articleRetrieveTests(APITestCase):
     def test_retrieve_articles_sorted_by_preference(self):
 
         register_account(self.client, MOCK_USER_1)
-
+        reset_faiss()
         food_article = deepcopy(MOCK_ARTICLE)
         food_article['body'] = "Food is a universal language that connects people across cultures and traditions. It’s not just about nourishment; it’s an expression of history, creativity, and community. From street food in bustling markets to gourmet meals in fine dining, every dish tells a story of flavors, techniques, and memories shared."
         food_article_instance = article(self.client, 'post', food_article)

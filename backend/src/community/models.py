@@ -51,6 +51,7 @@ class Comment(models.Model):
     
     parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
+    edited = models.BooleanField(default=False, null=False)
 
     created_at = models.DateTimeField(null=False, auto_now_add=True)
     comments_count = models.IntegerField(default=0, null=False)

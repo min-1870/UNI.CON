@@ -61,6 +61,7 @@ MOCK_COMMENT_RESPONSE_KEYS = {
     "body",
     "user",
     "deleted",
+    "edited",
     "parent_comment",
     "article",
     "created_at",

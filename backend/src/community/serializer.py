@@ -153,6 +153,7 @@ class CommentSerializer(serializers.ModelSerializer):
             'comments_count',
             'likes_count',
             'deleted',
+            "edited",
 
             # Read & Write
             'body',
