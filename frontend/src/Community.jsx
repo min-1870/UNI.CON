@@ -5,8 +5,9 @@ import './Community.css';
 
 const Community = () => {
   const [articles, setArticles] = useState([]);
+  const [nextArticlePage, setNextArticlePage] = useState(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  // const [totalPages, setTotalPages] = useState(1);
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
   const accessToken = localStorage.getItem('access');
@@ -34,9 +35,10 @@ const Community = () => {
         params: { page },
       });
       console.log(response);
-      const { results, count } = response.data;
-      setArticles(results.articles);
-      setTotalPages(Math.ceil(count / 10));
+      // const { results, count } = response.data;
+      setArticles(response.data.results.articles);
+      // setTotalPages(Math.ceil(count / 10));
+      setNextArticlePage(response.data.next)
     } catch (error) {
       console.error("Error fetching articles:", error);
     } finally {
@@ -48,14 +50,27 @@ const Community = () => {
     setSortOption(option);
     setPage(1); 
   };
+  
+  const fetchNextArticlePage = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        nextArticlePage, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+      });
 
-  const handlePageChange = (direction) => {
-    if (direction === "next" && page < totalPages) {
-      setPage(page + 1);
-    } else if (direction === "prev" && page > 1) {
-      setPage(page - 1);
+      setArticles((prev) => [...prev, ...response.data.results.articles]);
+      setNextArticlePage(response.data.next);
+    } catch (error) {
+      console.error("Error loading more articles:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+
+  };  
 
   const handleLike = async (articleId) => {
     const article = articles.find((a) => a.id === articleId);
@@ -143,7 +158,7 @@ const Community = () => {
         )}
 
         <div id="pagination">
-          <button onClick={() => handlePageChange("prev")} disabled={page === 1}>
+          {/* <button onClick={() => handlePageChange("prev")} disabled={page === 1}>
             Previous
           </button>
           <span>
@@ -154,7 +169,17 @@ const Community = () => {
             disabled={page === totalPages}
           >
             Next
-          </button>
+          </button> */}
+          
+          {nextArticlePage && (
+            <button
+              onClick={() => fetchNextArticlePage()}
+              // disabled={loadingMore}
+              className="pagination-button"
+            >
+              Load More Articles
+            </button>
+          )}
         </div>
       </div>
     </div>
