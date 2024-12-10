@@ -26,7 +26,6 @@ from .constants import (
     MOCK_ARTICLE,
     MOCK_ARTICLE_WITH_COURSES,
     MOCK_ARTICLE_RESPONSE_KEYS,
-    MOCK_ARTICLE_2,
 
     MOCK_COMMENT,
     MOCK_COMMENT_RESPONSE_KEYS,
@@ -139,7 +138,7 @@ class articleModificationTests(APITestCase):
         self.assertEqual(MOCK_ARTICLE_WITH_COURSES['unicon'], article_instance.unicon)
 
         #Validate Course
-        for code in MOCK_ARTICLE_WITH_COURSES['course_code'].split(','):
+        for code in MOCK_ARTICLE_WITH_COURSES['course_code']:
 
             code = code.upper().strip()
 
@@ -276,7 +275,7 @@ class articleModificationTests(APITestCase):
     
     def test_block_like_article_by_other_schools(self):
         register_account(self.client, MOCK_USER_1, False)
-        article_instance = article(self.client, 'post', MOCK_ARTICLE_2)
+        article_instance = article(self.client, 'post', MOCK_ARTICLE_WITH_COURSES)
         
         self.client.credentials()
         register_account(self.client, MOCK_USER_3, False)
@@ -379,7 +378,7 @@ class articleRetrieveTests(APITestCase):
 
     def test_block_retrieve_article_by_other_schools(self):
         register_account(self.client, MOCK_USER_1, False)
-        article_instance = article(self.client, 'post', MOCK_ARTICLE_2)
+        article_instance = article(self.client, 'post', MOCK_ARTICLE_WITH_COURSES)
         
         self.client.credentials()
         register_account(self.client, MOCK_USER_3, False)

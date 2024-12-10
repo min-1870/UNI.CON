@@ -41,39 +41,20 @@ def search_similar_embeddings(embedding, k=100):
 def get_current_user_points(user_id):
 
     # Filter articles by the user and sum the counts
-    article_points = Article.objects.filter(user=user_id).annotate(
-        # Count the comments and the likes by the author
-        author_comments=Count(
-            'comment',
-            filter=Q(comment__user=F('user'))
-        ),
-        author_likes=Count(
-            'articlelike',
-            filter=Q(articlelike__user=F('user'))
-        )
-    ).aggregate(
+    article_points = Article.objects.filter(user=user_id).aggregate(
         # Sum the total comments and the likes while ignore number by the author
         total_views=Sum('views_count'),
-        total_comments=Sum(F('comments_count') * 3) - Sum('author_comments') * 3,
-        total_likes=Sum(F('likes_count') * 2) - Sum('author_likes') * 2
+        total_comments=Sum(F('comments_count') * 3),
+        total_likes=Sum(F('likes_count') * 2)
     )    
     
     # Filter comment by the user and sum the counts
-    comment_points = Comment.objects.filter(user=user_id).annotate(
-        # Count the comments and the likes by the author
-        author_comments=Count(
-            'comment',
-            filter=Q(comment__user=F('user'))
-        ),
-        author_likes=Count(
-            'commentlike',
-            filter=Q(commentlike__user=F('user'))
-        )
-    ).aggregate(
-        # Sum the total comments and the likes while ignore number by the author
-        total_comments=Sum(F('comments_count') * 3) - Sum('author_comments') * 3,
-        total_likes=Sum(F('likes_count') * 2) - Sum('author_likes') * 2
+    comment_points = Comment.objects.filter(user=user_id).exclude(article__user=user_id).aggregate(
+        # Sum the total comments and the likes while ignore comment under the author's article
+        total_comments=Sum(F('comments_count') * 3),
+        total_likes=Sum(F('likes_count') * 2)
     )
+    
 
     # Calculate the sum of all counts
     total_points = (

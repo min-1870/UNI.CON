@@ -10,7 +10,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     user_school = serializers.CharField(read_only=True)
     user_temp_name = serializers.CharField(read_only=True)
     user_static_points = serializers.IntegerField(read_only=True)
-    course_code = serializers.CharField(required=False)
+    course_code = serializers.JSONField(required=True)
 
     class Meta:
         model = Article
@@ -58,6 +58,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'title': {'required': True},
             'body': {'required': True},
             'unicon': {'required': True},
+            'course_code': {'required': True},
             }
         
 
@@ -74,7 +75,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("The body cannot be empty.")
 
         # Validate the course code is not included for the unicon article
-        if data['unicon'] and 'course_code' in data.keys():
+        if data['unicon'] and len(data['course_code']) != 0:
             raise serializers.ValidationError("The article with the course code does not support unicon option.")
         
         return data
@@ -85,8 +86,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         # Link the foreign key
         user_instance = self.context['request'].user
         validated_data['user'] = user_instance
-        course_code = validated_data.get('course_code', False)
-        if course_code: del validated_data['course_code']
+        course_code = validated_data.get('course_code')
+        del validated_data['course_code']
 
         # Calculate and save the embedding vector
         validated_data['embedding_vector'] = get_embedding(
@@ -111,8 +112,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         )
         
         # Link the foreign key for each course code if necessary
-        if course_code:
-            for code in course_code.split(','):
+        if len(course_code) != 0:
+            for code in course_code:
                 course_instance, _ = Course.objects.get_or_create(
                     code=code.upper().strip(), 
                     school=user_instance.school
@@ -122,9 +123,9 @@ class ArticleSerializer(serializers.ModelSerializer):
                     course=course_instance
                 )
             
-            article_instance.course_code = [code.upper().strip() for code in course_code.split(',')]
+            article_instance.course_code = [code.upper().strip() for code in course_code]
         else:
-            article_instance.course_code = None
+            article_instance.course_code = []
 
         # Add extra properties for the response
         article_instance.user_temp_name = user_temp_name

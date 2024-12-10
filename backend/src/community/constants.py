@@ -20,12 +20,13 @@ MOCK_ARTICLE ={
     "title":"Nice title",
     "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "unicon":True,
+    "course_code":[]
 }
 MOCK_ARTICLE_WITH_COURSES ={
     "title":"Nice title",
     "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "unicon":False,
-    "course_code":'comp1231, Comp1320'
+    "course_code":['comp1231', 'Comp1320']
 }
 MOCK_ARTICLE_RESPONSE_KEYS = {
     "id",
@@ -45,12 +46,6 @@ MOCK_ARTICLE_RESPONSE_KEYS = {
     "user_school",
     "like_status",
     "course_code",
-}
-
-MOCK_ARTICLE_2 ={
-    "title":"Nice title",
-    "body":"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "unicon":False,
 }
 
 MOCK_COMMENT ={
