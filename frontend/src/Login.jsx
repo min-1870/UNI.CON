@@ -53,25 +53,24 @@ const Login = () => {
   return (
     <div id="login-container">
       <div id="login">
-        <h2 id="login-title">Login</h2>
+        <div id="login-title">Welcome Back</div>
+        <div id="login-description">Enter your email and password to sign in</div>
         <form onSubmit={handleLogin} id="login-form">
-          <div id="login-inputGroup">
-            <label htmlFor="email">Email:</label>
+          <div id="login-from-input-group">
+            <label htmlFor="email" id='email-label'>School Email</label>
             <input
               id="email"
-              className="login-input"
               type="email"
               value={email}
+              placeholder='Your School Email (@XX.edu)'
               onChange={(e) => setEmail(e.target.value)}
             />
-          </div>
-          <div id="login-inputGroup">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password</label>
             <input
               id="password"
-              className="login-input"
               type="password"
               value={password}
+              placeholder='Your Password'
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
@@ -81,17 +80,16 @@ const Login = () => {
             id="login-button"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-          <button
-              type="Register"
-              id="login-button"
-              disabled={loading}
-              onClick={handleNavigateToRegister}
-            >
-              Register
+            {loading ? 'SIGNING IN...' : 'SIGN IN'}
           </button>
         </form>
+        <div id="login-sign-up-container">
+          <div id="login-sign-up-description">Don't have an account?</div>
+          <span id="login-sign-up-link" onClick={handleNavigateToRegister}>Sign Up</span>
+        </div>
+      </div>
+      <div id="login-logo">
+        <p>UNI.CON</p>
       </div>
     </div>
   );

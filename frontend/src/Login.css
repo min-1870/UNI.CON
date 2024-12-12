@@ -1,47 +1,103 @@
-
-
-    #login-container {
-      height: 100%;
-      display: flex;    
-      margin-top: 20%;
-      justify-content: center;
-    }
-    #login {
-      max-width: 400px;
-      padding: 40px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-    }
-    #login-title {
-      text-align: center;
-      margin-top: 20px;
-    }
-    #login-form {
-      display: flex;
-      flex-direction: column;
-    }
-    #login-inputGroup {
-      margin-bottom: 15px;
-    }
-    .login-input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 10px;
-      border-radius: 4px;
-      border: 1px solid #ddd;
-    }
-    #login-error {
-      color: red;
-      font-size: 0.9em;
-      margin-bottom: 15px;
-    }
-    #login-button {
-      padding: 10px;
-      margin-top: 20px;
-      border: none;
-      border-radius: 4px;
-      background: #007bff;
-      color: #fff;
-      cursor: pointer;
-    }
+#login-container {
+  display: flex;    
+  background-color: #ffffff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  align-items: center;
+}
+#login {
+  max-width: 500px;
+  min-width: 350px;
+  margin-right: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+#login-title{
+  color: #2684FF;
+  font-size: 2rem; 
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+#login-description{
+  color: #A0AEC0;
+  font-size: 1rem; 
+  font-weight: 400;
+  margin-bottom: 40px;
   
+}
+#login-logo {
+  color: #2684FF;
+  font-size: 3.5rem; 
+  font-weight: 700;
+}
+#login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+#login-from-input-group{
+  margin-bottom: 25px;
+}
+#email{
+  width: 100%;
+  min-height: 45px;
+  margin-bottom: 25px;
+  padding: 8px;
+  border: 1px solid #E2E8F0;
+  border-radius: 15px;
+  background-color: #ffffff;
+  color: #555e68;
+  font-size: 1rem; 
+}
+#email::placeholder{
+  color: #A0AEC0;
+  font-size: 1rem; 
+}
+#password{
+  width: 100%;
+  min-height: 45px;
+  margin-bottom: 25px;
+  padding: 8px;
+  border: 1px solid #E2E8F0;
+  background-color: #ffffff;
+  border-radius: 15px;
+  font-size: 1rem; 
+}
+#password::placeholder{
+  color: #A0AEC0;
+  font-size: 1rem; 
+}
+#login-error {
+  color: red;
+  font-size: 0.9em;
+  margin-bottom: 15px;
+}
+#login-button {
+  padding: 10px;
+  margin-bottom: 20px;
+  min-height: 45px;
+  border: None;
+  border-radius: 15px;
+  background: #007bff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.7rem; 
+  font-weight: bold;
+}
+#login-sign-up-container {
+  font-size: 1rem;
+  width: 100%;
+  display: flex;
+}
+#login-sign-up-description{
+  color: #A0AEC0;
+  font-size: 1rem; 
+  margin-right: 10px;
+}
+#login-sign-up-link{
+  color: #2684FF;
+  font-size: 1rem; 
+}

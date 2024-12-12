@@ -8,12 +8,13 @@ import Navbar from './Navbar';
 import Community from './Community';
 import ArticleDetail from './ArticleDetail';
 import PostArticle from './PostArticle';
+import './App.css';
 
 const App = () => {
   return (
     <Router>
       <Navbar />
-        <div>
+        <div id="app-div">
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
