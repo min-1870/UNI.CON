@@ -9,6 +9,9 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   
+  const handleNavigateToLogin = () => {
+    navigate("/");
+  };
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -54,34 +57,40 @@ const Register = () => {
   return (
     <div id="register-container">
       <div id="register">
-        <h2 id="register-title">Register</h2>
+        <div id="register-title-description">
+          <div id="register-title">Welcome</div>
+          <div id="register-description">Sign up quickly and easily to unlock all the features of UNI.CON.</div>
+        </div>
+        
         <form onSubmit={handleRegister} id="register-form">
-          <div id="register-inputGroup">
-            <label htmlFor="email">Email:</label>
+            <label htmlFor="email">School Email</label>
             <input
               
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              id="email"
-              className='register-input'
+              id="register-email"
+              placeholder='Your School Email (@XX.edu)'
             />
-          </div>
-          <div id="register-inputGroup">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password</label>
             <input
               
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              id="password"
-              className='register-input'
+              id="register-password"
+              
+              placeholder='Your Password'
+              
             />
-          </div>
           {error && <p id="register-error">{error}</p>}
           <button type="submit" id="register-button" disabled={loading}>
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'SIGNING UP...' : 'SIGN UP'}
           </button>
+          <div id="register-sign-in-container">
+            <div id="register-sign-in-description">Don't have an account?</div>
+            <span id="register-sign-in-link" onClick={handleNavigateToLogin}>Sign In</span>
+          </div>
         </form>
       </div>
     </div>

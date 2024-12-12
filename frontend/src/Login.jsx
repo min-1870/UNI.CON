@@ -57,21 +57,23 @@ const Login = () => {
         <div id="login-description">Enter your email and password to sign in</div>
         <form onSubmit={handleLogin} id="login-form">
           <div id="login-from-input-group">
-            <label htmlFor="email" id='email-label'>School Email</label>
+            <label htmlFor="email" id='login-email-label'>School Email</label>
             <input
               id="email"
               type="email"
               value={email}
               placeholder='Your School Email (@XX.edu)'
               onChange={(e) => setEmail(e.target.value)}
+              className='login-email'
             />
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" id='login-password-label'>Password</label>
             <input
               id="password"
               type="password"
               value={password}
               placeholder='Your Password'
               onChange={(e) => setPassword(e.target.value)}
+              className='login-password'
             />
           </div>
           {error && <p id="login-error">{error}</p>}

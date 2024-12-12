@@ -41,7 +41,10 @@
 #login-from-input-group{
   margin-bottom: 25px;
 }
-#email{
+#login-email-label{
+  color: black;
+}
+.login-email{
   width: 100%;
   min-height: 45px;
   margin-bottom: 25px;
@@ -52,21 +55,25 @@
   color: #555e68;
   font-size: 1rem; 
 }
-#email::placeholder{
+.login-email::placeholder{
   color: #A0AEC0;
   font-size: 1rem; 
 }
-#password{
+#login-password-label{
+  color: black;
+}
+.login-password{
   width: 100%;
   min-height: 45px;
   margin-bottom: 25px;
   padding: 8px;
   border: 1px solid #E2E8F0;
   background-color: #ffffff;
+  color: #555e68;
   border-radius: 15px;
   font-size: 1rem; 
 }
-#password::placeholder{
+.login-password::placeholder{
   color: #A0AEC0;
   font-size: 1rem; 
 }
@@ -100,4 +107,5 @@
 #login-sign-up-link{
   color: #2684FF;
   font-size: 1rem; 
+  font-weight: 700;
 }

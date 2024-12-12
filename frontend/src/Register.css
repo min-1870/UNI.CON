@@ -6,31 +6,74 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    color: black;
+    /* max-width: 500px; */
+    /* min-width: 350px; */
+    /* width: 400px; */
 }
 #register {
-    max-width: 400px;
-    padding: 40px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#register-title-description{
+    max-width: 300px;
+    min-width: 150px;
+    margin-bottom: 70px;
 }
 #register-title {
     text-align: center;
     margin-bottom: 20px;
+    color: #2684FF;
+    font-size: 2rem; 
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+#register-description {
+    text-align: center;
+    font-weight: 400;
+    color: #2D3748;
 }
 #register-form {
+    max-width: 500px;
+    min-width: 450px;
+    padding: 50px;
     display: flex;
     flex-direction: column;
+    box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    -webkit-box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    -moz-box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    border-radius: 15px;
 }
-#register-inputGroup {
-    margin-bottom: 15px; 
-}
-.register-input {
+#register-email{
     width: 100%;
+    min-height: 45px;
+    margin-bottom: 25px;
     padding: 8px;
-    margin-top: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
+    border: 1px solid #E2E8F0;
+    border-radius: 15px;
+    background-color: #ffffff;
+    color: #555e68;
+    font-size: 1rem; 
+  }
+  #register-email::placeholder{
+    color: #A0AEC0;
+    font-size: 1rem; 
+  }
+  #register-password{
+    width: 100%;
+    min-height: 45px;
+    margin-bottom: 50px;
+    padding: 8px;
+    border: 1px solid #E2E8F0;
+    background-color: #ffffff;
+    border-radius: 15px;
+    font-size: 1rem; 
+  }
+  #register-password::placeholder{
+    color: #A0AEC0;
+    font-size: 1rem; 
+  }
 #register-error {
     color: red;
     font-size: 0.9em;
@@ -38,10 +81,29 @@
 }
 #register-button {
     padding: 10px;
-    margin-top: 20px;
-    border: none;
-    border-radius: 4px;
+    min-height: 45px;
+    border: None;
+    border-radius: 15px;
     background: #007bff;
     color: #fff;
     cursor: pointer;
+    font-size: 0.7rem; 
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+#register-sign-in-container {
+  font-size: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+#register-sign-in-description{
+  color: #A0AEC0;
+  font-size: 1rem; 
+  margin-right: 10px;
+}
+#register-sign-in-link{
+  color: #2684FF;
+  font-size: 1rem; 
+  font-weight: 700;
 }
