@@ -1,11 +1,14 @@
-#container {
+#community-container {
     height: 100%;
     display: flex;   
     justify-content: center;
+    background-color: #f8f9fa;
+    width: 100%;
+    color: #2D3748;
 }
 #community {
-    max-width: 600px;
-    font-family: Arial, sans-serif;
+    max-width: 1000px;
+    margin-right: 200px;
 }
   
   h1 {
@@ -13,68 +16,131 @@
     margin-bottom: 20px;
   }
   
-  #sort-options {
+  #community-sort-options {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
+    justify-content: flex-start;
+    margin-bottom: 30px;
+    gap: 14px;
   }
   
-  #sort-options button {
+  #community-sort-options button {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    border: 1px solid #ccc;
+    background-color: #fff;
+    border-radius: 15px;
+    color: #2D3748;
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
   }
   
-  #sort-options button#active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
+  #community-sort-options button#active {
+    /* background-color: #a0aec0; */
+    color: #fff;
   }
   
-  #article-list {
+  #community-article-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
   }
   
-  #article {
-    border: 1px solid #ccc;
+  #community-article {
+    background-color: #fff;
     padding: 15px;
-    border-radius: 5px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  } 
+  #community-article-unicon {
+    background-color: #2684ff;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
   }
   
-  #article h2 {
-    margin: 0 0 10px;
+  #community-article-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 15px;
   }
-  
-  #article-meta,
-  #article-stats {
+  #community-article-unicon #community-article-title{
+    color: #fff;
+  }
+  #community-article-name{
+    color: #2D3748;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  #community-article-unicon #community-article-name{
+    color: #fff;
+  }
+  #community-article-point-time-school-views{
+    color: #A0AEC0;
+    font-size: 0.8rem;
+    font-weight: 500;
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 14px;
-  }
-  
-  #pagination {
-    display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 4px;
+    margin-bottom: 25px;
+  }
+  #community-article-unicon #community-article-point-time-school-views{
+    color: #fff;
+  }
+  #community-article-view-container{
+    display: flex;
+    align-items: center;
+  }
+  #community-article-hr{
+    border: 1px solid #E2E8F0;
+    margin-bottom: 25px;
+  }
+  #community-article-body {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #2D3748;
+    margin-bottom: 25px;
+  }
+  #community-article-unicon #community-article-body{
+    color: #fff;
+  }
+  #community-article-likes-comments{
+    display: flex;
+  }
+  #community-article-liked{
+    display: flex; 
+    background-color: #a0aec0;
+    color: #2D3748;
+    border-radius: 50px;
+    margin-right: 13px;
+  }
+
+  #community-article-unliked{
+    display: flex; 
+    background-color: #e2e8f0;
+    color: #2D3748;
+    border-radius: 50px;
+    margin-right: 13px;
+  }
+  #community-article-comments{
+    display: flex; 
+    color: #2D3748;
+    background-color: #e2e8f0;
+    border-radius: 50px;
+    margin-right: 13px;
+  }
+
+  #community-article-comments-icon,
+  #community-article-likes-icon{
+    margin-right: 9px;
   }
   
-  #pagination button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-  }
-  
-  #pagination button:disabled {
-    cursor: not-allowed;
-  }
 
   #like-button button.unliked {
     background-color: #00aaff;
@@ -85,4 +151,26 @@
   #like-button button.liked {
     background-color: #ff5555;
     color: white;
+  }
+
+  #pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 100px;
+    margin-bottom: 100px;
+  }
+  
+  
+  #community-pagination-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: #fff;
+    border-radius: 15px;
+    color: #2D3748;
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
   }

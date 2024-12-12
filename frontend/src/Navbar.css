@@ -1,9 +1,12 @@
 *, *::before, *::after {
     box-sizing: border-box;
 }
+
 #navbar-container {
     width: 100%;
-    border: 1px solid #ccc;    
+    background-color: #f8f9fa;
+    padding: 30px;
+    position: sticky
 }
 
 #navbar {
@@ -13,10 +16,49 @@
     align-items: center;
 }
 
-#nav-links {
-    list-style: none;
+#navbar-logo{
     display: flex;
-    gap: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    
+}
+
+#navbar-title{
+    
+    color: #A0AEC0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+#navbar-initial{
+    
+    font-size: 2.5rem;
+    font-weight: 900;
+}
+
+#navbar-search{
+    min-width: 1000px;
+    margin-right: 150px;
+    background-color: #e2e8f0;
+    font-size: 1rem; 
+    color: #a0aec0;
+    padding: 14px;
+    border-radius: 50px;
+    border: none;
+}
+#navbar-search::placeholder{
+    color: #A0AEC0;
+}
+
+#navbar-logout {
+    background-color: #e2e8f0;
+    font-size: 1rem; 
+    color: #2D3748;
+    border-radius: 50px;
+}
+#navbar-points{
+    color: #2684ff;
+    font-size: 1rem; 
 }
 
 

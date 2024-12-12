@@ -37,6 +37,9 @@ const Login = () => {
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
         localStorage.setItem('user', data.user);
+        localStorage.setItem('color', data.color);
+        localStorage.setItem('initial', data.initial);
+        localStorage.setItem('points', data.points);
         navigate("/community")
       } else if (response.status === 401) {
         setError('Incorrect email or password.');

@@ -1,38 +1,54 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import './Navbar.css';
 
 const Navbar = () => {
-  const accessToken = localStorage.getItem('access');
+  const [search, setSearch] = useState('');
+  const accessToken = localStorage.getItem('access') || null;
+  const initial = localStorage.getItem('initial') || '';
+  const color = localStorage.getItem('color') || '#000';
+  const points = localStorage.getItem('points');
+  const navigate = useNavigate();
+  
   const handleLogout = () => {
     localStorage.clear()
+    navigate("/")
+    window.location.reload();
   };
 
   return (
+    <>
+    {accessToken && (
     <nav id="navbar-container">
-      {accessToken && (
+      
         <div id="navbar">
                 
-        <div id="logo">
-          <h3 to="/">UNI.CON</h3>
+        <div id="navbar-logo">
+          <div id="navbar-title">UNI.CON</div>
+          <div id="navbar-initial" style={{color:color}}>{initial.toUpperCase()}</div>
         </div>
+        
+        <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              id="navbar-search"
+              placeholder='Search Keywords     - Sorry.. We are still working on this feature :/'
+        />
 
 
-        <ul id="nav-links">
-          <li><Link to="/">Login</Link></li>
-          <li><Link to="/register">Register</Link></li>
-          <li><Link to="/community">Community</Link></li>
-          <li><Link to="/postarticle">Post</Link></li>
-        </ul>
-
-
-        <ul id="profile">
-          <li><Link to="/" onClick={handleLogout}>Logout</Link></li>
-          <li><Link to="/mypage">My Page</Link></li>
-        </ul>
+          
+          <button 
+            onClick={handleLogout}
+            id="navbar-logout"
+            >
+            Logout
+          </button>
+          <div id="navbar-points">{points}p</div>
         </div>
-      )} 
+      
     </nav>
+    )} 
+    </>
   );
 }
 
