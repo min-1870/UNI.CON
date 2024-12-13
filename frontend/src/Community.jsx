@@ -107,6 +107,7 @@ const Community = () => {
 
   return (
     <div id="community-container">
+      <div id="community-left"></div>
       <div id="community">
         <div id="community-sort-options">
           <button
@@ -162,7 +163,8 @@ const Community = () => {
                 id={article.unicon ? "community-article-unicon":"community-article"}
                 key={article.id}
               >
-                <div id="community-article-title"onClick={() => navigate(`/article/${article.id}`)}>{article.title}</div>
+                <div id="community-article-content" onClick={() => navigate(`/article/${article.id}`)}>
+                <div id="community-article-title">{article.title}</div>
                 <div id="community-article-name"> {article.user_temp_name}</div>
                 <div id="community-article-point-time-school-views">
                   <div> {article.user_static_points}p</div>‧
@@ -179,7 +181,8 @@ const Community = () => {
                   </div>
                 </div>
                 <hr id="community-article-hr"></hr>
-                <div id="community-article-body" onClick={() => navigate(`/article/${article.id}`)}>{article.body}</div>
+                <div id="community-article-body" >{article.body}</div>
+                </div>
                 <div id="community-article-likes-comments">
                   <button onClick={() => 
                     handleLike(article.id)}

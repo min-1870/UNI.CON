@@ -1,14 +1,16 @@
 #community-container {
     height: 100%;
     display: flex;   
-    justify-content: center;
+    justify-content: flex-start;
     background-color: #f8f9fa;
     width: 100%;
     color: #2D3748;
 }
+#community-left{
+  width: 200px;
+}
 #community {
-    max-width: 1000px;
-    margin-right: 200px;
+    width: 1000px;
 }
   
   h1 {

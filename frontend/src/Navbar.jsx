@@ -14,6 +14,10 @@ const Navbar = () => {
     localStorage.clear()
     navigate("/")
     window.location.reload();
+  }; 
+
+  const handleWrite = () => {    
+    navigate("/postarticle")
   };
 
   return (
@@ -36,6 +40,12 @@ const Navbar = () => {
         />
 
 
+          <button 
+            onClick={handleWrite}
+            id="navbar-logout"
+            >
+            Write
+          </button>
           
           <button 
             onClick={handleLogout}

@@ -2,20 +2,38 @@
 #article-detail-textarea {
   width: 100%;
 }
-
+#article-detail-back{
+  background-color: #fff;
+  height: 40px;
+  width: 40px;
+  padding: 10px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 30px;
+  border-radius: 50px;
+  box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+}
 
 #article-detail-container {
   display: flex;
   height: 100%;
   width: 100%;
-  justify-content: center;
+  justify-content: flex-start;
   background-color: #f8f9fa;
   color: #2D3748;
   padding-bottom: 300px;
 }
+#article-detail-left{
+  width: 120px;
+}
 #article-detail {
   width: 1000px;
-  margin-right: 200px;
+  margin-right: 370px;
 }
 #article-detail-article {
   background-color: #fff;

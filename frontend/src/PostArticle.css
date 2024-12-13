@@ -5,25 +5,93 @@
   
   
   #post-article-container {
-    display: flex;
     height: 100%;
-    justify-content: center;
-    align-items: center;
-    
+    display: flex;   
+    justify-content: flex-start;
+    background-color: #f8f9fa;
+    width: 100%;
+    color: #2D3748; 
   }
+#post-article-left{
+  width: 200px;
+}
   #post-article {
-    border: 1px solid #ccc;
+    width: 1000px;
+    padding-bottom: 100px;
     display: flex;
     flex-direction: column;
-    width: 600px;
+    gap: 15px;
   }
-  #post-article-title {
+
+#post-article-description{
+  display: flex;
+  flex-direction: row;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+#post-article-school{
+  margin-left: 10px;
+}
+
+#post-article-textarea-title{
+  border-radius: 30px;
+  font-size: 1rem;
+  padding: 30px;
+  background-color: #fff;
+  width: 100%;
+  color: #2D3748;
+  font-family: "Poppins", sans-serif;
+  
+}
+#post-article-unicon{
+  margin: 10px;
+  display: flex;
+  gap: 10px;
+  font-size: 1rem;
+}
+#post-article-cb{
+  height: 15px;
+  width: 15px;
+}
+#post-article-label{
+  font-weight: 700;
+  margin-right: 50px;
+}
+#post-article-textarea-body{
+  border-radius: 30px;
+  font-size: 1rem;
+  padding: 30px;
+  background-color: #fff;
+  height: 500px;
+  width: 100%;
+  color: #2D3748;
+  font-family: "Poppins", sans-serif;
+}
+#post-article-buttons{
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+#post-article-submit{
+  display: flex; 
+  background-color: #e2e8f0;
+  color: #2D3748;
+  border-radius: 50px;
+}
+#post-article-cancel{
+  display: flex; 
+  background-color: #ffcfcf;
+  color: #ff0000;
+  border-radius: 50px;
+}
+
+  /* #post-article-title {
     margin-bottom: 5%;
   }
   #post-article-body {
     margin-bottom: 5%;
-  }
-  #post-article-buttons {
+  } */
+  /* #post-article-buttons {
     display: flex;
     justify-content: space-between;
-  }
+  } */

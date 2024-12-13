@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import './ArticleDetail.css';
 
@@ -15,6 +15,12 @@ const ArticleDetail = () => {
   const accessToken = localStorage.getItem("access");
   const color = localStorage.getItem("color");
   const user = localStorage.getItem('user');
+  const navigate = useNavigate();
+  
+  const handleBack = () => {
+    navigate("/community")    
+  };
+
   useEffect(() => {
     fetchArticleDetails();
   }, [articleId]);
@@ -555,6 +561,10 @@ const ArticleDetail = () => {
 
   return (
     <div id="article-detail-container">
+      <div id="article-detail-left"></div>
+      <button onClick={handleBack} id="article-detail-back" style={{color:color}}>
+        {'<'}
+      </button>
       <div id="article-detail">
 
 
