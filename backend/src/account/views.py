@@ -8,6 +8,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from .serializers import UserSerializer
 from .models import User
+from community.helpers import get_current_user_points
 # Create your views here.
 
 def get_tokens_from_request(request):
@@ -25,6 +26,9 @@ def get_tokens_from_request(request):
     refresh = RefreshToken.for_user(user)
     return {
         'user': user.id, #TODO fix the function & var name and update the API notes
+        'initial':user.school.initial,
+        'color':user.school.color,
+        'points':get_current_user_points(user.id),
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }

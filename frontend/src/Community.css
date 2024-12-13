@@ -44,12 +44,12 @@
   #community-article-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 30px;
   }
   
   #community-article {
     background-color: #fff;
-    padding: 15px;
+    padding: 25px 15px 25px 15px;
     border-radius: 15px;
     box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
     -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
@@ -57,7 +57,7 @@
   } 
   #community-article-unicon {
     background-color: #2684ff;
-    padding: 15px;
+    padding: 25px 15px 25px 15px;
     border-radius: 15px;
     box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
     -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
