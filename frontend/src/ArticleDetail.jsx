@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import './ArticleDetail.css';
+import './constants.css';
 
 const ArticleDetail = () => {
   const { articleId } = useParams();
@@ -651,76 +652,77 @@ const ArticleDetail = () => {
       <div id="article-detail">
 
 
-        <div id="article-detail-article">
-          {article && (
-            <>
+        
+      <div id="article-detail-article">
+            
               {article.editing ?(
                   <textarea
                     value={article.title_edit_text_area}
-                    id="article-detail-comment-edit-textarea"
+                    id="edit-textarea"
                     onChange={(e) => handleTitleTextarea(e.target.value)}
                     placeholder="Write your title here..."
                   />
               ):(
-                <div className="title">{article.title}</div>
+                <div id="title">{article.title}</div>
                 
               )}
               {user == article.user ? (
-                <div id="article-detail-article-name"> {article.user_temp_name} (You)</div>
+                <div id="name"> {article.user_temp_name} (You)</div>
               ):(
-                <div id="article-detail-article-name"> {article.user_temp_name}</div>
+                <div id="name"> {article.user_temp_name}</div>
               )}
-              <div id="article-detail-article-meta">
+              <div id="meta">
                 <div> {article.user_static_points}p</div>‧
                 <div> {article.user_school.toUpperCase()}</div>‧
                 <div> {new Date(article.created_at).toLocaleString()}</div>‧          
-                <div id="article-detail-article-meta-view-container"> 
+                <div className="view-container"> 
                   <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="20px" fill="#A0AEC0"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>  
                   {article.views_count}
                 </div>
               </div>
-              <hr id="article-detail-article-hr"></hr>
+              <hr id="line"></hr>
               {article.editing ?(
                   <textarea
                     value={article.body_edit_text_area}
-                    id="article-detail-comment-edit-textarea"
+                    id="edit-textarea"
                     onChange={(e) => handleBodyTextarea(e.target.value)}
                     placeholder="Write your body here..."
                   />
               ):(
-                <div className="body">{article.body}</div>
+                <div id="body">{article.body}</div>
                 
               )}
+              
               <div id="article-detail-article-actions">
-              <div id="article-detail-article-likes-comments">
+              <div className="like-comment">
                   <button
                   onClick={toggleArticleLike}
-                    id={article.like_status ? "article-detail-article-liked" : "article-detail-article-unliked"}
+                    id={article.like_status ? "like" : "unlike"}
                     >
-                    <svg  id="article-detail-article-likes-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
+                    <svg  className="like-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
                     {article.likes_count}
                   </button>
                   <button 
                   onClick={toggleArticleLike}
-                    id="article-detail-article-comments"
+                  id="comment"
                     >
-                    <svg   id="article-detail-article-comments-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
+                    <svg   className="comment-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
                     {article.comments_count}
                   </button>
               </div>
               {user==article.user &&(
-              <div id="article-detail-article-edit-delete">
+              <div class="edit-delete">
                 {article.editing ? (
                   <>
                   <button
                   onClick={handleArticleEditCancel}
-                    id="article-detail-article-edit-cancel"
+                    id="grayButton"
                     >
                     Cancel
                   </button>
                   <button
                   onClick={handleArticleEditSave}
-                    id="article-detail-article-edit-save"
+                    id="greenButton"
                     >
                     Save
                   </button>
@@ -729,14 +731,14 @@ const ArticleDetail = () => {
                   <>
                   <button
                   onClick={handleArticleEdit}
-                    id="article-detail-article-edit"
+                    id="grayButton"
                     >
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                     edit
                   </button>
                   <button 
                   onClick={handleArticleDelete}
-                    id="article-detail-article-delete"
+                    id="redButton"
                     >
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ff0000"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
                     delete
@@ -746,20 +748,20 @@ const ArticleDetail = () => {
               </div>
               )}
               </div>
-            </>
-          )}
         </div>
+          
+        
 
 
         <div id="article-detail-new-comments">
           <textarea
             value={newComment}
-            id="article-detail--new-comment-textarea"
+            id="article-detail-new-comment-textarea"
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="What do you think?"
             disabled={submittingComment}
           />
-          <button className="button"onClick={handleNewCommentSubmit} disabled={submittingComment}>
+          <button className="submit"onClick={handleNewCommentSubmit} disabled={submittingComment}>
             {submittingComment ? "Submitting..." : "Submit"}
           </button>
         </div>
@@ -771,43 +773,43 @@ const ArticleDetail = () => {
             <>
               <div key={comment.id} id="article-detail-comment">
                 {user == comment.user ? (
-                  <div id="article-detail-article-name"> {comment.user_temp_name} (You)</div>
+                  <div id="name"> {comment.user_temp_name} (You)</div>
                 ):(
-                  <div id="article-detail-article-name"> {comment.user_temp_name}</div>
+                  <div id="name"> {comment.user_temp_name}</div>
                 )}
-                <div id="article-detail-article-meta">
+                <div id="meta">
                   <div> {comment.user_static_points}p</div>‧
                   <div> {comment.user_school.toUpperCase()}</div>‧
                   <div> {new Date(comment.created_at).toLocaleString()}</div>
                 </div>
 
-                <div id="article-detail-comment-body">
+                
                   {comment.editing ? (
                       <textarea
                         value={comment.edit_text_area}
-                        id="article-detail-comment-edit-textarea"
+                        id="edit-textarea"
                         onChange={(e) => handleEditCommentTextArea(comment.id, e.target.value)}
                         placeholder="Write your comment here..."
                         disabled={submittingComment}
                       />
                     ) : (
-                      <div>{comment.body}</div>
+                      <div id='body'>{comment.body}</div>
                     )
                   }
-                </div>
+                
 
                 <div id="article-detail-comment-buttons">
                         
                         <button
                         onClick={() => toggleCommentLike(comment.id, comment.like_status)}
-                          id={comment.like_status ? "article-detail-article-liked" : "article-detail-article-unliked"}
+                          id={comment.like_status ? "like" : "unlike"}
                           >
-                          <svg  id="article-detail-article-likes-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
+                          <svg  className="like-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
                           {comment.likes_count}
                         </button>
                           <button
                               onClick={() => handleReplyComment(comment.id)}
-                              className="reply"
+                              id="grayButton"
                           >
                           Reply {comment.comments_count}
                           </button>
@@ -818,14 +820,14 @@ const ArticleDetail = () => {
                             <button
                             onClick={() => handleEditCommentCancel(comment.id)}
                             disabled={loadingMore}
-                            className="editCancel"
+                            id="grayButton"
                             >
                             Cancel
                             </button>
                             <button
                             onClick={() => handleEditCommentSave(comment.id, comment.edit_text_area)}
                             disabled={loadingMore}
-                            className="editSave"
+                            id="greenButton"
                             >
                             Save
                             </button>
@@ -835,14 +837,14 @@ const ArticleDetail = () => {
                             <button
                             onClick={() => handleEditComment(comment.id)}
                             disabled={loadingMore}
-                            className="edit"
+                            id="grayButton"
                             >
                             Edit
                             </button>
                             <button
                             onClick={() => handleCommentDelete(comment.id)}
                             disabled={loadingMore}
-                            className="delete"
+                            id="redButton"
                             >
                             Delete
                             </button>
@@ -857,7 +859,7 @@ const ArticleDetail = () => {
                 {comment.replying && (
                   <>
 
-                    <div id="article-detail-comment-reply-textarea-buttons">
+                    <div id="article-detail-comment-reply-container">
                     <textarea
                       value={comment.reply_text_area}
                       id="article-detail-comment-reply-textarea"
@@ -867,14 +869,14 @@ const ArticleDetail = () => {
                     />
                     
                       <button
-                        id="article-detail-comment-reply-text-area-button"
+                        id="grayButton"
                         onClick={() => handleReplyCommentCancel(comment.id)}
                         disabled={loadingMore}
                       >
                         Cancel
                       </button>
                       <button
-                        id="article-detail-comment-reply-text-area-button"
+                        id="grayButton"
                         onClick={() => handleReplyCommentSave(comment.id, comment.reply_text_area)}
                         disabled={loadingMore}
                       >
@@ -883,57 +885,53 @@ const ArticleDetail = () => {
                     
                     </div>
 
-                    <div id="article-detail-comment-reply-nested-comments"> 
+                    <div id="article-detail-comment-nested-comments"> 
                       
                       {comment.show_nested_comments && (
 
                         <>
                           {comment.nested_comments.map((nested_comment) => (
 
-                            <div key={nested_comment.id} id="article-detail-comment-reply-nested-comment">
+                            <div key={nested_comment.id} id="article-detail-comment-nested-comment">
                             {user == comment.user ? (
-                              <div id="article-detail-article-name"> {nested_comment.user_temp_name} (You)</div>
+                              <div id="name"> {nested_comment.user_temp_name} (You)</div>
                             ):(
-                              <div id="article-detail-article-name"> {nested_comment.user_temp_name}</div>
+                              <div id="name"> {nested_comment.user_temp_name}</div>
                             )}
                             
-                            <div id="article-detail-article-meta">
+                            <div id="meta">
                                 <div> {nested_comment.user_static_points}p</div>‧
                                 <div> {nested_comment.user_school.toUpperCase()}</div>‧
-                                <div> {new Date(nested_comment.created_at).toLocaleString()}</div>‧          
-                                <div id="article-detail-article-meta-view-container"> 
-                                  <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="20px" fill="#A0AEC0"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>  
-                                  {nested_comment.views_count}
-                                </div>
+                                <div> {new Date(nested_comment.created_at).toLocaleString()}</div>
                             </div>
 
-                            <div id="article-detail-comment-body">
+                            
                                 {nested_comment.editing ? (
                                     <textarea
                                       value={nested_comment.edit_text_area}
-                                      id="article-detail-comment-edit-textarea"
+                                      id="edit-textarea"
                                       onChange={(e) => handleEditCommentTextArea(comment.id, e.target.value, nested_comment.id)}
                                       placeholder="Write your comment here..."
                                       disabled={submittingComment}
                                     />
                                   ) : (
-                                    <p>{nested_comment.body}</p>
+                                    <p id="body">{nested_comment.body}</p>
                                   )
                                 }
-                            </div>
+                            
 
                                <div id="article-detail-comment-buttons">
-                                  {!nested_comment.deleted && (
-                                    <>
+                                  
+                                    
                                       <button
                                             onClick={() => toggleCommentLike(comment.id, nested_comment.like_status, nested_comment.id)}
-                                            id={nested_comment.like_status ? "article-detail-article-liked" : "article-detail-article-unliked"}
+                                            id={nested_comment.like_status ? "like" : "unlike"}
                                         >
-                                          <svg  id="article-detail-article-likes-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
+                                          <svg  className="like-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
                                             {nested_comment.likes_count}
                                         </button>
-                                    </>
-                                  )}
+                                    
+                                  
                                   {(nested_comment.user == user && !nested_comment.deleted) && (
                                     <>
                                       { nested_comment.editing ? (
@@ -941,14 +939,14 @@ const ArticleDetail = () => {
                                           <button
                                           onClick={() => handleEditCommentCancel(comment.id, nested_comment.id)}
                                           disabled={loadingMore}
-                                          className="editCancel"
+                                          id='grayButton'
                                           >
                                           Cancel
                                           </button>
                                           <button
                                           onClick={() => handleEditCommentSave(comment.id, nested_comment.edit_text_area, nested_comment.id)}
                                           disabled={loadingMore}
-                                          className="editSave"
+                                          id='greenButton'
                                           >
                                           Save
                                           </button>
@@ -958,14 +956,14 @@ const ArticleDetail = () => {
                                           <button
                                           onClick={() => handleEditComment(comment.id, nested_comment.id)}
                                           disabled={loadingMore}
-                                          className="edit"
+                                          id="grayButton"
                                           >
                                           Edit
                                           </button>
                                           <button
                                           onClick={() => handleCommentDelete(comment.id, nested_comment.id)}
                                           disabled={loadingMore}
-                                          className="delete"
+                                          id="redButton"
                                           >
                                           Delete
                                           </button>
@@ -984,13 +982,13 @@ const ArticleDetail = () => {
                     </div>
 
 
-                    <div id="article-detail-comment-reply-nested-comments-pagination-controls">
+                    <div>
                       {comment.next_comment_page && (
                         <button
                           onClick={() => fetchNextNestedCommentPage(comment.id)}
                           disabled={loadingMore}
                           style={{color:color}}
-                          id="article-detail-comment-reply-nested-comments-pagination-controls-button"
+                          id="article-detail-comment-nested-comments-pagination-controls-button"
                         >
                           + More Reply
                         </button>

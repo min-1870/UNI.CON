@@ -1,0 +1,111 @@
+#title{
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+#body{
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 25px;
+}
+#name{
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+#meta{
+    color: #a0aec0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 25px;
+}
+#meta .view-container{
+    display: flex;
+    align-items: center;
+}
+
+#line{
+    border: 1px solid #E2E8F0;
+    margin-bottom: 25px;
+}
+
+#like{
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    background-color: #a0aec0;
+    color: #2D3748;
+    border-radius: 50px;
+}
+#like .like-icon{
+    margin-right: 9px;
+}
+
+#unlike{
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    background-color: #e2e8f0;
+    color: #2D3748;
+    border-radius: 50px;
+    
+}
+#unlike .like-icon{
+    margin-right: 9px;
+}
+
+#comment{
+    background-color: #e2e8f0;
+    color: #2D3748;
+    border-radius: 50px;
+    margin-right: 13px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+#comment .comment-icon{
+    margin-right: 9px;
+}
+
+
+#grayButton{
+    display: flex; 
+    background-color: #e2e8f0;
+    color: #2D3748;
+    border-radius: 50px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+#grayButton svg{
+    margin-right: 9px;
+}
+
+#greenButton{
+    display: flex; 
+    background-color: #c2ffcb;
+    color: #04890b;
+    border-radius: 50px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+#greenButton svg{
+    margin-right: 9px;
+}
+
+#redButton{
+    background-color: #ffcfcf;
+    color: #ff0000;
+    border-radius: 50px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+#redButton svg{
+    margin-right: 9px;
+}
+

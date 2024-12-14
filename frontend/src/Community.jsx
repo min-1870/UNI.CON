@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import './Community.css';
+import './constants.css';
 
 const Community = () => {
   const [articles, setArticles] = useState([]);
@@ -164,20 +165,20 @@ const Community = () => {
                 id={article.unicon ? "community-article-unicon":"community-article"}
                 key={article.id}
               >
-                <div id="community-article-content" onClick={() => navigate(`/article/${article.id}`)}>
-                <div id="community-article-title">{article.title}</div>
+                <div  onClick={() => navigate(`/article/${article.id}`)}>
+                <div id="title">{article.title}</div>
                 {user == article.user ? (
-                  <div id="community-article-name"> {article.user_temp_name} (You)</div>
+                  <div id="name"> {article.user_temp_name} (You)</div>
                 ):(
-                  <div id="community-article-name"> {article.user_temp_name}</div>
+                  <div id="name"> {article.user_temp_name}</div>
                 )}
                 
-                <div id="community-article-point-time-school-views">
+                <div id={article.unicon ? "unicon-meta" : "meta"}>
                   <div> {article.user_static_points}p</div>‧
                   <div> {article.user_school.toUpperCase()}</div>‧
                   <div> {new Date(article.created_at).toLocaleString()}</div>‧
                   
-                  <div id="community-article-view-container"> 
+                  <div className="view-container"> 
                     {article.unicon?(
                       <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="20px" fill="#fff"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
                     ):(
@@ -186,26 +187,24 @@ const Community = () => {
                     {article.views_count}
                   </div>
                 </div>
-                <hr id="community-article-hr"></hr>
-                <div id="community-article-body" >{article.body}</div>
+                <hr id="line"></hr>
+                <div id="body" >{article.body}</div>
                 </div>
-                <div id="community-article-likes-comments">
+                <div id="community-article-buttons">
                   <button onClick={() => 
                     handleLike(article.id)}
-                    id={article.like_status ? "community-article-liked" : "community-article-unliked"}
+                    id={article.like_status ? "like" : "unlike"}
                     >
-                    <svg  id="community-article-likes-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
+                    <svg  className="like-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>
                     {article.likes_count}
                   </button>
                   <button 
                     onClick={() => navigate(`/article/${article.id}`)}
-                    id="community-article-comments"
+                    id="comment"
                     >
-                    <svg   id="community-article-comments-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
+                    <svg   className="comment-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
                     {article.comments_count}
                   </button>
-                </div>
-                <div id="like-button">
                 </div>
               </div>
             ))}
