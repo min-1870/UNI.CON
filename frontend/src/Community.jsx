@@ -12,6 +12,7 @@ const Community = () => {
   const [loading, setLoading] = useState(false);
   const accessToken = localStorage.getItem('access');
   const color = localStorage.getItem('color');
+  const user = localStorage.getItem('user');
   const navigate = useNavigate();
 
   const apiEndpoints = {
@@ -165,7 +166,12 @@ const Community = () => {
               >
                 <div id="community-article-content" onClick={() => navigate(`/article/${article.id}`)}>
                 <div id="community-article-title">{article.title}</div>
-                <div id="community-article-name"> {article.user_temp_name}</div>
+                {user == article.user ? (
+                  <div id="community-article-name"> {article.user_temp_name} (You)</div>
+                ):(
+                  <div id="community-article-name"> {article.user_temp_name}</div>
+                )}
+                
                 <div id="community-article-point-time-school-views">
                   <div> {article.user_static_points}p</div>‧
                   <div> {article.user_school.toUpperCase()}</div>‧

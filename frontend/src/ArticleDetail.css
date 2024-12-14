@@ -80,7 +80,46 @@
 }
 #article-detail-article-actions{
   display: flex;
+  justify-content: space-between;
   gap: 14px;
+}
+#article-detail-article-likes-comments{
+  display: flex;
+  gap: 14px;
+}
+#article-detail-article-edit-delete{
+  display: flex;
+  gap: 14px;
+}
+#article-detail-article-edit{
+  display: flex; 
+  background-color: #e2e8f0;
+  color: #2D3748;
+  border-radius: 50px;
+  justify-content: center;
+  align-items: center;
+}
+#article-detail-article-edit-cancel{
+  display: flex; 
+  background-color: #e2e8f0;
+  color: #2D3748;
+  border-radius: 50px;
+  justify-content: center;
+  align-items: center;
+}
+#article-detail-article-edit-save{
+  display: flex; 
+  background-color: #c2ffcb;
+  color: #04890b;
+  border-radius: 50px;
+}
+#article-detail-article-delete{
+  display: flex; 
+  background-color: #ffcfcf;
+  color: #ff0000;
+  border-radius: 50px;
+  justify-content: center;
+  align-items: center;
 }
 #article-detail-article-liked{
   display: flex; 

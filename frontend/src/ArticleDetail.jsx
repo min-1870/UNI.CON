@@ -557,6 +557,89 @@ const ArticleDetail = () => {
     }
   };
 
+
+  const handleArticleEdit = async () => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      editing: true,
+      title_edit_text_area: article.title,
+      body_edit_text_area: article.body,
+    }));
+  };
+  const handleArticleEditCancel = async () => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      editing: false,
+      
+    }));
+  };
+  const handleArticleEditSave = async () => {
+    try {
+        const response = await axios.patch(
+            `http://127.0.0.1:8000/community/article/${articleId}/`,
+            {
+              "body": article.body_edit_text_area
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+          setArticle((prevArticle)=> ({
+            ...prevArticle,
+            title_edit_text_area: '',
+            body_edit_text_area: '',
+            editing: false,
+            body: response.data.body
+          }));
+        }
+    } catch (error) {
+      console.error("Error edit comment:", error);
+    }
+  };
+
+  const handleTitleTextarea = async (title) => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      title_edit_text_area: title
+    }));
+  };
+
+  const handleBodyTextarea = async (body) => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      body_edit_text_area: body
+    }));
+  };
+
+  const handleArticleDelete = async () => {
+    try {
+        const response = await axios.delete(
+            `http://127.0.0.1:8000/community/article/${articleId}/`,
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+            }
+        );
+        
+        if (response.status == 204){
+          setArticle((prevArticle)=> ({
+            ...prevArticle,
+            title: '[DELETED ARTICLE]',
+            body: '[DELETED CONTENT]'
+          }));
+        }
+    } catch (error) {
+      console.error("Error delete comment:", error);
+    }
+  };
+
   if (loading) return <p>Loading article...</p>;
 
   return (
@@ -571,8 +654,22 @@ const ArticleDetail = () => {
         <div id="article-detail-article">
           {article && (
             <>
-              <div className="title">{article.title}</div>
-              <div id="article-detail-article-name"> {article.user_temp_name}</div>
+              {article.editing ?(
+                  <textarea
+                    value={article.title_edit_text_area}
+                    id="article-detail-comment-edit-textarea"
+                    onChange={(e) => handleTitleTextarea(e.target.value)}
+                    placeholder="Write your title here..."
+                  />
+              ):(
+                <div className="title">{article.title}</div>
+                
+              )}
+              {user == article.user ? (
+                <div id="article-detail-article-name"> {article.user_temp_name} (You)</div>
+              ):(
+                <div id="article-detail-article-name"> {article.user_temp_name}</div>
+              )}
               <div id="article-detail-article-meta">
                 <div> {article.user_static_points}p</div>‧
                 <div> {article.user_school.toUpperCase()}</div>‧
@@ -583,8 +680,19 @@ const ArticleDetail = () => {
                 </div>
               </div>
               <hr id="article-detail-article-hr"></hr>
-              <div className="body">{article.body}</div>
+              {article.editing ?(
+                  <textarea
+                    value={article.body_edit_text_area}
+                    id="article-detail-comment-edit-textarea"
+                    onChange={(e) => handleBodyTextarea(e.target.value)}
+                    placeholder="Write your body here..."
+                  />
+              ):(
+                <div className="body">{article.body}</div>
+                
+              )}
               <div id="article-detail-article-actions">
+              <div id="article-detail-article-likes-comments">
                   <button
                   onClick={toggleArticleLike}
                     id={article.like_status ? "article-detail-article-liked" : "article-detail-article-unliked"}
@@ -599,7 +707,45 @@ const ArticleDetail = () => {
                     <svg   id="article-detail-article-comments-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
                     {article.comments_count}
                   </button>
-                </div>
+              </div>
+              {user==article.user &&(
+              <div id="article-detail-article-edit-delete">
+                {article.editing ? (
+                  <>
+                  <button
+                  onClick={handleArticleEditCancel}
+                    id="article-detail-article-edit-cancel"
+                    >
+                    Cancel
+                  </button>
+                  <button
+                  onClick={handleArticleEditSave}
+                    id="article-detail-article-edit-save"
+                    >
+                    Save
+                  </button>
+                  </>
+                ):(
+                  <>
+                  <button
+                  onClick={handleArticleEdit}
+                    id="article-detail-article-edit"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                    edit
+                  </button>
+                  <button 
+                  onClick={handleArticleDelete}
+                    id="article-detail-article-delete"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ff0000"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                    delete
+                  </button>
+                  </>
+                )}
+              </div>
+              )}
+              </div>
             </>
           )}
         </div>
@@ -624,7 +770,11 @@ const ArticleDetail = () => {
           {comments.map((comment) => (
             <>
               <div key={comment.id} id="article-detail-comment">
-                <div id="article-detail-article-name"> {comment.user_temp_name}</div>
+                {user == comment.user ? (
+                  <div id="article-detail-article-name"> {comment.user_temp_name} (You)</div>
+                ):(
+                  <div id="article-detail-article-name"> {comment.user_temp_name}</div>
+                )}
                 <div id="article-detail-article-meta">
                   <div> {comment.user_static_points}p</div>‧
                   <div> {comment.user_school.toUpperCase()}</div>‧
@@ -647,8 +797,6 @@ const ArticleDetail = () => {
                 </div>
 
                 <div id="article-detail-comment-buttons">
-                    {!comment.deleted && (
-                      <>
                         
                         <button
                         onClick={() => toggleCommentLike(comment.id, comment.like_status)}
@@ -663,8 +811,6 @@ const ArticleDetail = () => {
                           >
                           Reply {comment.comments_count}
                           </button>
-                      </>
-                    )}
                     {(comment.user == user && !comment.deleted) && (
                       <>
                         { comment.editing ? (
@@ -745,8 +891,12 @@ const ArticleDetail = () => {
                           {comment.nested_comments.map((nested_comment) => (
 
                             <div key={nested_comment.id} id="article-detail-comment-reply-nested-comment">
-
-                            <div id="article-detail-article-name"> {nested_comment.user_temp_name}</div>
+                            {user == comment.user ? (
+                              <div id="article-detail-article-name"> {nested_comment.user_temp_name} (You)</div>
+                            ):(
+                              <div id="article-detail-article-name"> {nested_comment.user_temp_name}</div>
+                            )}
+                            
                             <div id="article-detail-article-meta">
                                 <div> {nested_comment.user_static_points}p</div>‧
                                 <div> {nested_comment.user_school.toUpperCase()}</div>‧
