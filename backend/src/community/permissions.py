@@ -61,9 +61,9 @@ class Comment_IsAuthenticated(permissions.BasePermission):
             if article_instance.unicon:
                 return True
 
-            # Block if the article is from other school
-            if article_instance.user.school != request.user.school:
-                return False
+            # Allow if the article is from other school
+            if article_instance.user.school == request.user.school:
+                return True
 
         return True
     
@@ -71,7 +71,7 @@ class Comment_IsAuthenticated(permissions.BasePermission):
         view_name = getattr(view, 'action')
         author_only_actions = ['destroy', 'partial_update']
         same_school_only_actions = ['like', 'unlike', 'retrieve']
-
+        
         if view_name in author_only_actions:
             if obj.user == request.user:
                 return True
@@ -81,8 +81,8 @@ class Comment_IsAuthenticated(permissions.BasePermission):
             if obj.article.unicon:
                 return True
 
-            # Block if the article is from other school
-            if obj.user.school != request.user.school:
-                return False
+            # Allow if the article is from other school
+            if obj.user.school == request.user.school:
+                return True
         
         return False

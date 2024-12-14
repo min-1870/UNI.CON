@@ -319,10 +319,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         article_instance = self.get_object()
 
-        # Block the modification for the deleted object
-        if article_instance.deleted:
-            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
-        
         user_instance = request.user
 
         # Create relational data
@@ -344,10 +340,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         article_instance = self.get_object()
         user_instance = request.user
-
-        # Block the modification for the deleted object
-        if article_instance.deleted:
-            return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
         # Create relational data
         _, deleted = ArticleLike.objects.filter(user=user_instance, article=article_instance).delete()
@@ -480,10 +472,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         comment_instance = self.get_object()
 
-        # Block the modification for the deleted object
-        if comment_instance.deleted:
-            return Response({'detail':'The comment is deleted.'},status=status.HTTP_400_BAD_REQUEST)
-        
         user_instance = request.user
 
         # Create relational data
@@ -501,11 +489,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def unlike(self, request, pk=None):
 
         comment_instance = self.get_object()
-
-        # Block the modification for the deleted object
-        if comment_instance.deleted:
-            return Response({'detail':'The comment is deleted.'},status=status.HTTP_400_BAD_REQUEST)
-        
         user_instance = request.user
 
         # Create relational data
