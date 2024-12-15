@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import './PostArticle.css';
+import './constants.css';
 
 
 const PostArticle = () => {
@@ -9,6 +10,9 @@ const PostArticle = () => {
   const [body, setBody] = useState('');  
   const [unicon, setUnicon] = useState(false);  
   const [courses, setCourses] = useState([]);  
+  const [course, setCourse] = useState('');  
+  const [error, setError] = useState(false);    
+  const [errorMsg, setErrorMsg] = useState('');    
   const accessToken = localStorage.getItem("access");
   const points = localStorage.getItem('points') || 0;
   const initial = localStorage.getItem('initial') || '';
@@ -16,46 +20,60 @@ const PostArticle = () => {
   const navigate = useNavigate();
 
   const handleAddCrouseButton = async () => {
-    const newCourse = '';
-    setUnicon(false);
-    setCourses((prevCourses) => [
-      ...prevCourses, 
-      newCourse       
-    ]);
-  };
-  const handleAddCrouseTextarea = async ( value, index) => {
-    setCourses((prevCourses) =>
-      prevCourses.map((course, i) => (i === index ? value : course))
-    );
-  };
+    if (courses.includes(course.toUpperCase().trim())){
+      setError(true)
+      setErrorMsg(`The "${course}" already exists.`)
+    }else if (course.length == 0){
+      setError(true)
+      setErrorMsg(`The course name cannot be empty.`)
+    }else{
+      setCourses((prevCourses) => [
+        ...prevCourses, 
+        course.toUpperCase().trim()
+      ]);
+      setCourse('')
+    }
+   };
 
+   const handleRemoveCrouseButton = async (index) => {
+    setCourses((prevCourses) =>
+      prevCourses.filter((_, i) => i !== index)
+    );
+   };
+  
   const handleUniconToggle = async () => {
     setUnicon(!unicon);
   };
 
   const handlePostArticleButton = async () => {
-    try {
-        const response = await axios.post(
-            `http://127.0.0.1:8000/community/article/`,
-            {
-            title: title,
-            body: body,
-            unicon: unicon,
-            course_code: courses
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        console.log(response)
-        if (response.status == 201){
-          navigate(`/article/${response.data.id}`)
-        }
-    } catch (error) {
-      console.error("Error submitting article:", error);
+    if (title.length == 0 || body.length == 0){
+    setError(true)
+    setErrorMsg(`The title or body cannot be empty.`)
+    }else{
+      try {
+          const response = await axios.post(
+              `http://127.0.0.1:8000/community/article/`,
+              {
+              title: title,
+              body: body,
+              unicon: unicon,
+              course_code: unicon ? [] : courses
+              },
+              {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+              }
+          );
+          console.log(response)
+          if (response.status == 201){
+            navigate(`/article/${response.data.id}`)
+          }
+      } catch (error) {
+        setError(true)
+        setErrorMsg(error)
+      }
     }
   };
 
@@ -91,51 +109,57 @@ const PostArticle = () => {
             placeholder="Write your body here..."
           />
         </div>
-        {/* <div id="post-article-buttons">
-          {( unicon || (!unicon && courses.length == 0)) && (
-              <button
+
+          
+        <div id="post-article-add-course">
+          <input
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                id="post-article-add-course-input"
+                placeholder='add courses here..'
+                disabled={unicon?true:false}
+          />
+          <button
               onClick={() => handleAddCrouseButton()}
+              id="grayButton"
+              className="add"
+              disabled={unicon?true:false}
+            >
+              Add
+          </button>
+          {courses.map((course, index) => (
+            
+            <button
+                onClick={() => handleRemoveCrouseButton(index)}
+                id="grayButton"
+                key={index}
+                disabled={unicon?true:false}
               >
-              {unicon ? "Add courses (This will disable UNI.CON)" : "Add courses"}
-              </button>
-            )
-          } 
+                {course}
+            </button>
+
+          ))}
         </div>
-        <div id="post-article-courses">
-            { (!unicon && courses.length > 0) && (
-              <>
-                {courses.map((course, index) => (
-                  <div key={index} id="post-article-course">
-                    <textarea
-                      value={course}
-                      id="post-article-textarea"
-                      onChange={(e) => handleAddCrouseTextarea(e.target.value, index)}
-                      placeholder="Write your body here..."
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={() => handleAddCrouseButton()}
-                >
-                  Add More
-                </button>
-              </>
-            )}
-        </div> */}
+        
         <div id="post-article-buttons">
+          {error &&(
+            <div id='error-msg'>
+              {errorMsg}
+            </div>
+          )}
+          
+          <button
+            onClick={() => navigate('/community')}
+            id="redButton"
+          >
+            Cancel
+          </button>
           
         <button
           onClick={() => handlePostArticleButton()}
-          id="post-article-submit"
+          id="greenButton"
         >
           Submit
-        </button>
-          
-        <button
-          onClick={() => navigate('/community')}
-          id="post-article-cancel"
-        >
-          Cancel
         </button>
         </div>
       </div>

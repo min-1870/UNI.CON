@@ -68,6 +68,17 @@ width: 200px;
   display: flex;
   gap: 14px;
 }
+#community-article-info{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+#community-article-name-meta{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
 #unicon-meta{
   color: #fff;
   font-size: 0.8rem;
@@ -78,9 +89,22 @@ width: 200px;
   gap: 4px;
   margin-bottom: 25px;
 }
-
-
-
+#unicon-meta .view-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#unicon-edited{
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+#community-article-unicon-initial{
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
 
 #pagination {
   display: flex;

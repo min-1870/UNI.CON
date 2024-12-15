@@ -71,7 +71,22 @@
   display: flex;
   gap: 14px;
 }
-
+#article-detail-article-info{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+#article-detail-article-name-meta{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+#article-detail-article-unicon-initial{
+  font-size: 2rem;
+  font-weight: 700;
+  color: #dfe4eb;
+}
 
 
 
