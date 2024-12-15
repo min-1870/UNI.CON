@@ -38,10 +38,8 @@ const Community = () => {
         },
         params: { page },
       });
-      console.log(response);
-      // const { results, count } = response.data;
+      console.log(response.data);
       setArticles(response.data.results.articles);
-      // setTotalPages(Math.ceil(count / 10));
       setNextArticlePage(response.data.next)
     } catch (error) {
       console.error("Error fetching articles:", error);
@@ -196,6 +194,21 @@ const Community = () => {
                 </div>
                 <hr id="line"></hr>
                 <div id="body" >{article.body}</div>
+                {/* {article.course_code.length != 0 && (
+                  <div id="courses">
+                    {article.course_code.map((course, index) => (
+                      
+                      <button
+                          onClick={() => handleRemoveCrouseButton(index)}
+                          id="grayButton"
+                          key={index}
+                        >
+                          {course}
+                      </button>
+
+                    ))}
+                  </div>
+                )} */}
                 </div>
                 {(!article.deleted && article.edited) &&(
                   <div id={article.unicon ? "unicon-edited" : "edited"}>edited</div>

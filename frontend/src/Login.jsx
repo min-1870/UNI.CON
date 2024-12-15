@@ -47,7 +47,7 @@ const Login = () => {
         setError('An unexpected error occurred. Please try again.');
       }
     } catch (err) {
-      setError('Failed to connect to the server.');
+      setError(`Failed to connect to the server. ${err}`);
     } finally {
       setLoading(false);
     }

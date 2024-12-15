@@ -66,7 +66,6 @@ const PostArticle = () => {
               },
               }
           );
-          console.log(response)
           if (response.status == 201){
             navigate(`/article/${response.data.id}`)
           }

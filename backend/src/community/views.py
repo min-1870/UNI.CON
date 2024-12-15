@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from account.models import User
+from django.contrib.postgres.aggregates import ArrayAgg
+
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -59,11 +61,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             ),
             like_status=Exists(
                 liked_articles
-            ),
-            course_code=Subquery(
-                ArticleCourse.objects.filter(
-                    article=OuterRef('pk')
-                ).values('course__code')[:1]
             )
         )
 
@@ -109,11 +106,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             ),
             like_status=Exists(
                 liked_articles
-            ),
-            course_code=Subquery(
-                ArticleCourse.objects.filter(
-                    article=OuterRef('pk')
-                ).values('course__code')[:1]
             )
         )
 
@@ -160,11 +152,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             ),
             like_status=Exists(
                 liked_articles
-            ),
-            course_code=Subquery(
-                ArticleCourse.objects.filter(
-                    article=OuterRef('pk')
-                ).values('course__code')[:1]
             )
         )
 
@@ -447,7 +434,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Annotate the queryset with the like_status using Exists
         nested_comment_queryset = nested_comment_queryset.annotate(
             like_status=Exists(liked_comments),
-            user_school=F('user__school__id'),
+            user_school=F('user__school__initial'),
             user_temp_name=Subquery(user_info_subquery.values('user_temp_name')[:1]),
             user_static_points=Subquery(user_info_subquery.values('user_static_points')[:1]),
         )       
