@@ -1,20 +1,13 @@
+from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
+from django.db.models import OuterRef, Subquery, Exists, F, Sum, Func, Value
 from .models import Article, Comment
-from django.db.models import Sum, F, Count, Q
-from django.db.models import F, Q
+from account.models import User
 from decouple import config
-import numpy as np
 from openai import OpenAI
+import numpy as np
 import faiss
 
 
-def update_article_engagement_score(article_instance):
-    article_instance.engagement_score = (
-        (F('views_count') * 1) +
-        (F('likes_count') * 2) +
-        (F('comments_count') * 3)
-    )
-    
-    article_instance.save(update_fields=['engagement_score'])
 
 def get_embedding(text, model="text-embedding-3-small"):
    text = text.replace("\n", " ")
@@ -37,6 +30,132 @@ def add_embedding_to_faiss(article_embedding, article_id):
 def search_similar_embeddings(embedding, k=100):
     _, ids = index.search(np.array([embedding]), k=k)
     return ids[0]
+
+
+
+def annotate_articles(queryset, user_instance):
+            
+    queryset = queryset.annotate(
+        like_status=Exists(
+            Subquery(
+                ArticleLike.objects.filter(
+                    user=user_instance,
+                    article=OuterRef('pk')
+                )
+            )
+        ),
+        user_school=Subquery(
+            User.objects.filter(
+                id=OuterRef('user')
+            ).values('school__initial')[:1]
+        ),
+        user_temp_name=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef('pk'),
+                user=OuterRef('user')
+            ).values('user_temp_name')[:1]
+        ),
+        user_static_points=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef('pk'),
+                user=OuterRef('user')
+            ).values('user_static_points')[:1]
+        ),
+        course_code=Subquery(
+            ArticleCourse.objects.filter(
+                article=OuterRef('pk')
+            )
+            .values('course__code')
+            .annotate(course_codes=Func(
+                F('course__code'),
+                Value(','),
+                function='GROUP_CONCAT'
+            ))
+            .values('course_codes')[:1],
+        )
+    )
+
+    return queryset
+
+def annotate_article(article_instance, user_instance):
+    
+    article_instance.user_school = article_instance.user.school.initial
+
+    articleUser_instance = ArticleUser.objects.get(
+        article=article_instance,
+        user=article_instance.user
+    )
+    article_instance.user_temp_name = articleUser_instance.user_temp_name
+    article_instance.user_static_points = articleUser_instance.user_static_points
+
+    course_codes = ArticleCourse.objects.filter(article=article_instance).values_list('course__code', flat=True)
+    article_instance.course_code = ', '.join(course_codes)
+
+    exist = ArticleLike.objects.filter(article=article_instance, user=user_instance).exists()
+    article_instance.like_status = exist
+    
+    return article_instance
+
+def update_article_engagement_score(article_instance):
+    article_instance.engagement_score = (
+        (F('views_count') * 1) +
+        (F('likes_count') * 2) +
+        (F('comments_count') * 3)
+    )
+    
+    article_instance.save(update_fields=['engagement_score'])
+    article_instance.refresh_from_db()
+
+    return article_instance
+
+def annotate_comments(queryset, user_instance):
+
+    # Annotate the queryset with the like_status using Exists
+    queryset = queryset.annotate(
+        like_status=Exists(
+            Subquery(
+                CommentLike.objects.filter(
+                    user=user_instance,
+                    comment=OuterRef('pk')
+                )
+            )
+        ),
+        user_temp_name=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef('pk'),
+                user=OuterRef('user')
+            ).values('user_temp_name')[:1]
+        ),
+        user_static_points=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef('pk'),
+                user=OuterRef('user')
+            ).values('user_static_points')[:1]
+        ),
+        user_school=Subquery(
+            User.objects.filter(
+                id=OuterRef('user')
+            ).values('school__initial')[:1]
+        ),
+    )
+
+    return queryset
+
+def annotate_comment(comment_instance, user_instance):
+    
+    comment_instance.user_school = article_instance.user.school.initial
+
+    articleUser_instance = ArticleUser.objects.get(
+        article=comment_instance.article,
+        user=comment_instance.user
+    )
+    comment_instance.user_temp_name = articleUser_instance.user_temp_name
+    comment_instance.user_static_points = articleUser_instance.user_static_points
+
+    exist = CommentLike.objects.filter(comment=comment_instance, user=user_instance).exists()
+    comment_instance.like_status = exist
+    
+    return comment_instance
 
 def get_current_user_points(user_id):
 
@@ -67,13 +186,15 @@ def get_current_user_points(user_id):
 
     return total_points
 
+def reset_faiss():
+    index.reset()
+
+
 
 client = OpenAI(
     api_key=config("OPENAI_API_KEY")
 )
 
-def reset_faiss():
-    index.reset()
 
 try:
     index = faiss.read_index("index_file.idx")
