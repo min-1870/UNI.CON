@@ -11,7 +11,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     user_temp_name = serializers.CharField(read_only=True)
     user_static_points = serializers.IntegerField(read_only=True)
     course_code = serializers.JSONField(required=True)
-    # search_content = serializers.CharField(required=False)
+    search_content = serializers.CharField(required=False)
 
     class Meta:
         model = Article
@@ -43,6 +43,9 @@ class ArticleSerializer(serializers.ModelSerializer):
 
             # Read & Write
             'course_code',
+
+            # Write Only
+            'search_content',
 
             ]
 

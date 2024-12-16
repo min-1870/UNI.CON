@@ -90,6 +90,43 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'articles': article_serializer.data
         })
 
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        user_instance = request.user
+
+        # Block if the body or the title is not in the request
+        if not 'search_content' in request.data.keys():
+            return Response({'detail':'The property is missing.'},status=status.HTTP_400_BAD_REQUEST)
+        
+        # Block if the body or the title is empty
+        search_content = request.data.get('search_content', '').strip()
+        if len(search_content) == 0:
+            return Response({'detail':'The search_content is empty.'},status=status.HTTP_400_BAD_REQUEST)
+        
+        embedding_vector = get_embedding(search_content, )
+        
+        # Add extra properties
+        queryset = annotate_articles(self.get_queryset(), user_instance)
+
+        # Fetch Ids of the article based on the similarity
+        ids = search_similar_embeddings(embedding_vector, len(self.get_queryset()))
+        
+        # Fetch the article based on the fetched id while maintaining the order
+        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+        articles = queryset.filter(pk__in=ids).order_by(order)
+
+        # Set up pagination for articles
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+
+        # Apply pagination to the articles queryset
+        paginated_articles = paginator.paginate_queryset(articles, request)
+        article_serializer = ArticleSerializer(paginated_articles, many=True)
+        
+        return paginator.get_paginated_response({
+            'articles': article_serializer.data
+        })
+
     def update(self, request, *args, **kwargs):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
 
