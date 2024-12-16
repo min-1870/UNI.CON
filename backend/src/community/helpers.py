@@ -143,7 +143,7 @@ def annotate_comments(queryset, user_instance):
 
 def annotate_comment(comment_instance, user_instance):
     
-    comment_instance.user_school = article_instance.user.school.initial
+    comment_instance.user_school = comment_instance.user.school.initial
 
     articleUser_instance = ArticleUser.objects.get(
         article=comment_instance.article,

@@ -1,5 +1,5 @@
 
-from .helpers import update_article_engagement_score, search_similar_embeddings, update_preference_vector, annotate_articles, annotate_article, annotate_comments, annotate_comment
+from .helpers import update_article_engagement_score, search_similar_embeddings, update_preference_vector, annotate_articles, annotate_article, annotate_comments, annotate_comment, get_embedding
 from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
 from .models import Article, Comment, ArticleLike, CommentLike
 from .serializer import ArticleSerializer, CommentSerializer
@@ -275,6 +275,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         comment_instance = self.get_object()
+        user_instance = request.user
 
         # Block the modification for the deleted object
         if comment_instance.deleted:
@@ -306,6 +307,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         comment_instance = self.get_object()       
+        user_instance = request.user
 
         # Block the modification for the deleted object
         if comment_instance.deleted:
@@ -352,7 +354,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[Comment_IsAuthenticated])
     def like(self, request, pk=None):
-
         comment_instance = self.get_object()
         user_instance = request.user
 
@@ -364,11 +365,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Update likes_count of the comment
         comment_instance.likes_count = F('likes_count') + 1
         comment_instance.save(update_fields=['likes_count'])
-
-        # Append new text to the existing body
-        comment_instance.body = new_body
-        comment_instance.edited = True
-        comment_instance.save(update_fields=['body', 'edited'])
 
         #fetch the updated instance
         comment_instance.refresh_from_db()
@@ -382,7 +378,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], permission_classes=[Comment_IsAuthenticated])
     def unlike(self, request, pk=None):
-
         comment_instance = self.get_object()
         user_instance = request.user
 
@@ -394,11 +389,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Update likes_count of the comment
         comment_instance.likes_count = F('likes_count') - 1
         comment_instance.save(update_fields=['likes_count'])
-
-        # Append new text to the existing body
-        comment_instance.body = new_body
-        comment_instance.edited = True
-        comment_instance.save(update_fields=['body', 'edited'])
 
         #fetch the updated instance
         comment_instance.refresh_from_db()

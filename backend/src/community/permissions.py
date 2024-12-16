@@ -62,8 +62,8 @@ class Comment_IsAuthenticated(permissions.BasePermission):
                 return True
 
             # Allow if the article is from other school
-            if article_instance.user.school == request.user.school:
-                return True
+            if article_instance.user.school != request.user.school:
+                return False
 
         return True
     
