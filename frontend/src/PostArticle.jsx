@@ -130,7 +130,7 @@ const PostArticle = () => {
             
             <button
                 onClick={() => handleRemoveCrouseButton(index)}
-                id="grayButton"
+                id="emptyGrayButton"
                 key={index}
                 disabled={unicon?true:false}
               >
