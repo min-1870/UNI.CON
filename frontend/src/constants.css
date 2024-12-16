@@ -38,6 +38,14 @@
     margin-bottom: 25px;
 }
 
+#courses{
+    display: flex;
+    justify-content: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+    font-size: 0.7rem;
+}
+
 #like{
     display: flex; 
     justify-content: center;
@@ -81,6 +89,20 @@
     display: flex; 
     background-color: #e2e8f0;
     color: #2D3748;
+    border-radius: 50px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+#grayButton svg{
+    margin-right: 9px;
+}
+
+#emptyGrayButton{
+    display: flex; 
+    background-color: #e2e8f043;
+    color: #2D3748;
+    border: 1px solid #e2e8f0;
     border-radius: 50px;
     display: flex; 
     justify-content: center;

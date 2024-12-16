@@ -700,6 +700,21 @@ const ArticleDetail = () => {
                 <div id="body">{article.body}</div>
                 
               )}
+              {article.course_code.length != 0 && (
+                  <div id="courses">
+                    {article.course_code.split(",").map((course, index) => (
+                      
+                      <button
+                          id="emptyGrayButton"
+                          key={index}
+                          disabled={true}
+                        >
+                          {course}
+                      </button>
+
+                    ))}
+                  </div>
+                )}
               {(!article.deleted && article.edited) &&(
                 <div id="edited">edited</div>
               )}
