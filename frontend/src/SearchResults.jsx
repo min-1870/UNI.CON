@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "./constants";
 import axios from "axios";
 import './Community.css';
 import './constants.css';
@@ -21,7 +22,7 @@ const SearchResults = () => {
     setLoading(true);
     
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/community/article/search?search_content=${search_content}`, {
+      const response = await axios.get(`${API_URL}/community/article/search?search_content=${search_content}`, {
         headers: {
           "Content-Type": "application/json",
           'Authorization': `Bearer ${accessToken}`,
@@ -72,8 +73,8 @@ const SearchResults = () => {
     if (article) {
       try {
         const url = article.like_status
-          ? `http://127.0.0.1:8000/community/article/${articleId}/unlike/`
-          : `http://127.0.0.1:8000/community/article/${articleId}/like/`;
+          ? `${API_URL}/community/article/${articleId}/unlike/`
+          : `${API_URL}/community/article/${articleId}/like/`;
 
         await axios.post(url, {}, {
           headers: {

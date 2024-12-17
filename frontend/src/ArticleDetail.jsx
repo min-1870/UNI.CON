@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { API_URL } from "./constants";
 import axios from "axios";
 import './ArticleDetail.css';
 import './constants.css';
@@ -29,7 +30,7 @@ const ArticleDetail = () => {
   const fetchArticleDetails = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/community/article/${articleId}`, {
+      const response = await axios.get(`${API_URL}/community/article/${articleId}`, {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${accessToken}`,
@@ -110,7 +111,7 @@ const ArticleDetail = () => {
     setSubmittingComment(true);
     try {
         const response = await axios.post(
-            `http://127.0.0.1:8000/community/comment/`,
+            `${API_URL}/community/comment/`,
             {
             body: newComment,
             article: articleId,
@@ -146,8 +147,8 @@ const ArticleDetail = () => {
 
   const handleCommentDelete = async (comment_id, nested_comment_id=false) => {
     const url = nested_comment_id
-    ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/`
-    : `http://127.0.0.1:8000/community/comment/${comment_id}/`;
+    ? `${API_URL}/community/comment/${nested_comment_id}/`
+    : `${API_URL}/community/comment/${comment_id}/`;
     try {
         const response = await axios.delete(
             url,
@@ -301,8 +302,8 @@ const ArticleDetail = () => {
   
   const handleEditCommentSave = async (comment_id, value, nested_comment_id=false) => {
     const url = nested_comment_id 
-    ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/`
-    : `http://127.0.0.1:8000/community/comment/${comment_id}/`;
+    ? `${API_URL}/community/comment/${nested_comment_id}/`
+    : `${API_URL}/community/comment/${comment_id}/`;
     
     try {
         const response = await axios.patch(
@@ -366,7 +367,7 @@ const ArticleDetail = () => {
           }
           : comment
     ));
-    const url = `http://127.0.0.1:8000/community/comment/${comment_id}/`
+    const url = `${API_URL}/community/comment/${comment_id}/`
     try {
         const response = await axios.get(
             url,
@@ -421,7 +422,7 @@ const ArticleDetail = () => {
   };
   
   const handleReplyCommentSave = async (comment_id, value) => {
-    const url = `http://127.0.0.1:8000/community/comment/`
+    const url = `${API_URL}/community/comment/`
     console.log(comment_id, value)
     try {
         const response = await axios.post(
@@ -471,8 +472,8 @@ const ArticleDetail = () => {
     if (!article) return;
 
     const endpoint = article.like_status
-      ? `http://127.0.0.1:8000/community/article/${article.id}/unlike/`
-      : `http://127.0.0.1:8000/community/article/${article.id}/like/`;
+      ? `${API_URL}/community/article/${article.id}/unlike/`
+      : `${API_URL}/community/article/${article.id}/like/`;
     try {
       const response = await axios.post(
         endpoint,
@@ -501,11 +502,11 @@ const ArticleDetail = () => {
   const toggleCommentLike = async (comment_id, currentLikeStatus, nested_comment_id=false) => {
     const url = nested_comment_id
     ?  currentLikeStatus 
-      ? `http://127.0.0.1:8000/community/comment/${nested_comment_id}/unlike/`
-      : `http://127.0.0.1:8000/community/comment/${nested_comment_id}/like/`
+      ? `${API_URL}/community/comment/${nested_comment_id}/unlike/`
+      : `${API_URL}/community/comment/${nested_comment_id}/like/`
     : currentLikeStatus
-      ? `http://127.0.0.1:8000/community/comment/${comment_id}/unlike/`
-      : `http://127.0.0.1:8000/community/comment/${comment_id}/like/`;
+      ? `${API_URL}/community/comment/${comment_id}/unlike/`
+      : `${API_URL}/community/comment/${comment_id}/like/`;
     try {
         const response = await axios.post(
             url,
@@ -577,7 +578,7 @@ const ArticleDetail = () => {
   const handleArticleEditSave = async () => {
     try {
         const response = await axios.patch(
-            `http://127.0.0.1:8000/community/article/${articleId}/`,
+            `${API_URL}/community/article/${articleId}/`,
             {
               "body": article.body_edit_text_area
             },
@@ -620,7 +621,7 @@ const ArticleDetail = () => {
   const handleArticleDelete = async () => {
     try {
         const response = await axios.delete(
-            `http://127.0.0.1:8000/community/article/${articleId}/`,
+            `${API_URL}/community/article/${articleId}/`,
             {
             headers: {
                 "Content-Type": "application/json",

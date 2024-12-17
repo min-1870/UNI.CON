@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { API_URL } from "./constants";
 import './Register.css';
 
 const Register = () => {
@@ -23,7 +24,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/account/register/submit', {
+      const response = await fetch(`${API_URL}/account/register/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

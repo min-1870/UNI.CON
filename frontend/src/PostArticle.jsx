@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { API_URL } from "./constants";
 import axios from "axios";
 import './PostArticle.css';
 import './constants.css';
@@ -52,7 +53,7 @@ const PostArticle = () => {
     }else{
       try {
           const response = await axios.post(
-              `http://127.0.0.1:8000/community/article/`,
+              `${API_URL}/community/article/`,
               {
               title: title,
               body: body,

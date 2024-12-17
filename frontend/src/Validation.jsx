@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { API_URL } from "./constants";
 import './Validation.css';
 
 const Validation = () => {
@@ -15,7 +16,7 @@ const Validation = () => {
     setLoading(true);
     setError('');
 
-    const response = await fetch('http://127.0.0.1:8000/account/register/confirm', {
+    const response = await fetch(`${API_URL}/account/register/confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

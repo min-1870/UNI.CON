@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "./constants";
 import axios from "axios";
 import './Community.css';
 import './constants.css';
@@ -18,9 +19,9 @@ const Community = () => {
   const navigate = useNavigate();
 
   const apiEndpoints = {
-    recent: "http://127.0.0.1:8000/community/article",
-    hot: "http://127.0.0.1:8000/community/article/hot",
-    preference: "http://127.0.0.1:8000/community/article/preference",
+    recent: `${API_URL}/community/article`,
+    hot: `${API_URL}/community/article/hot`,
+    preference: `${API_URL}/community/article/preference`,
   };
 
   useEffect(() => {
@@ -84,8 +85,8 @@ const Community = () => {
     if (article) {
       try {
         const url = article.like_status
-          ? `http://127.0.0.1:8000/community/article/${articleId}/unlike/`
-          : `http://127.0.0.1:8000/community/article/${articleId}/like/`;
+          ? `${API_URL}/community/article/${articleId}/unlike/`
+          : `${API_URL}/community/article/${articleId}/like/`;
 
         await axios.post(url, {}, {
           headers: {
