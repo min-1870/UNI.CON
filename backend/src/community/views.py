@@ -93,16 +93,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def search(self, request):
         user_instance = request.user
-
-        # Block if the body or the title is not in the request
-        if not 'search_content' in request.data.keys():
-            return Response({'detail':'The property is missing.'},status=status.HTTP_400_BAD_REQUEST)
         
         # Block if the body or the title is empty
-        search_content = request.data.get('search_content', '').strip()
+        search_content = request.GET.get('search_content', '').strip()
         if len(search_content) == 0:
             return Response({'detail':'The search_content is empty.'},status=status.HTTP_400_BAD_REQUEST)
-        
+        print(search_content)
         embedding_vector = get_embedding(search_content, )
         
         # Add extra properties

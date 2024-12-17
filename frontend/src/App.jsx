@@ -8,6 +8,7 @@ import Navbar from './Navbar';
 import Community from './Community';
 import ArticleDetail from './ArticleDetail';
 import PostArticle from './PostArticle';
+import SearchResults from './SearchResults';
 import './App.css';
 
 const App = () => {
@@ -21,6 +22,7 @@ const App = () => {
               <Route path="/validation" element={<Validation />} />
               <Route path="/community" element={<Community />} />
               <Route path="/postarticle" element={<PostArticle />} />
+              <Route path="/searchresults" element={<SearchResults />} />
               <Route path="/article/:articleId" element={<ArticleDetail />} /> 
             </Routes>
         </div>

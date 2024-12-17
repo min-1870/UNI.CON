@@ -1,5 +1,6 @@
 from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
 from django.db.models import OuterRef, Subquery, Exists, F, Sum, Func, Value
+from django.db.models.functions import Coalesce
 from .models import Article, Comment
 from account.models import User
 from decouple import config
@@ -61,17 +62,20 @@ def annotate_articles(queryset, user_instance):
                 user=OuterRef('user')
             ).values('user_static_points')[:1]
         ),
-        course_code=Subquery(
-            ArticleCourse.objects.filter(
-                article=OuterRef('pk')
-            )
-            .values('course__code')
-            .annotate(course_codes=Func(
-                F('course__code'),
-                Value(','),
-                function='GROUP_CONCAT'
-            ))
-            .values('course_codes')[:1],
+        course_code=Coalesce(
+            Subquery(
+                ArticleCourse.objects.filter(
+                    article=OuterRef('pk')
+                )
+                .values('course__code')
+                .annotate(course_codes=Func(
+                    F('course__code'),
+                    Value(','),
+                    function='GROUP_CONCAT'
+                ))
+                .values('course_codes')[:1],
+            ),
+            Value("")
         )
     )
 
@@ -89,8 +93,8 @@ def annotate_article(article_instance, user_instance):
     article_instance.user_static_points = articleUser_instance.user_static_points
 
     course_codes = ArticleCourse.objects.filter(article=article_instance).values_list('course__code', flat=True)
-    article_instance.course_code = ', '.join(course_codes)
-
+    article_instance.course_code = ', '.join(course_codes) if course_codes else ''
+    
     exist = ArticleLike.objects.filter(article=article_instance, user=user_instance).exists()
     article_instance.like_status = exist
     

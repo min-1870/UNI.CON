@@ -17,7 +17,17 @@ const Navbar = () => {
   }; 
 
   const handleWrite = () => {    
-    navigate("/postarticle")
+    navigate("/postarticle");
+  };
+
+  const handleSearch = () => {
+    navigate(`/searchresults?search_content=${search}`);
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
   };
 
   return (
@@ -27,7 +37,7 @@ const Navbar = () => {
       
         <div id="navbar">
                 
-        <div id="navbar-logo">
+        <div id="navbar-logo" onClick={() => {navigate(`/community/`);setSearch("");}}>
           <div id="navbar-title">UNI.CON</div>
           <div id="navbar-initial" style={{color:color}}>{initial.toUpperCase()}</div>
         </div>
@@ -35,8 +45,9 @@ const Navbar = () => {
         <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
               id="navbar-search"
-              placeholder='Search Keywords     - Sorry.. We are still working on this feature :/'
+              placeholder='Search anything here'
         />
 
 
