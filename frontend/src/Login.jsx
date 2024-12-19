@@ -25,19 +25,19 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/account/login/submit`, {
+      const response = await fetch(`${API_URL}/account/user/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-
-      if (response.status === 202) {
+      
+      if (response.status === 200) {
         const data = await response.json();
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
-        localStorage.setItem('user', data.user);
+        localStorage.setItem('user', data.id);
         localStorage.setItem('color', data.color);
         localStorage.setItem('initial', data.initial);
         localStorage.setItem('points', data.points);

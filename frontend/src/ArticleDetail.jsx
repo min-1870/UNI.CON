@@ -40,7 +40,7 @@ const ArticleDetail = () => {
       setArticle(article);
       setComments(comments);
       setNextCommentPage(response.data.next);
-      console.log(response.data);
+      
     } catch (error) {
       console.error("Error fetching article details:", error);
     } finally {
@@ -123,7 +123,7 @@ const ArticleDetail = () => {
             },
             }
         );
-        console.log(response)
+        
         if (response.status == 201){
             setComments((prevComments) => [
                 {
@@ -160,7 +160,7 @@ const ArticleDetail = () => {
             }
         );
         
-        if (response.status == 204){
+        if (response.status == 200){
 
 
           if (nested_comment_id)  {
@@ -173,8 +173,8 @@ const ArticleDetail = () => {
                       nested_comment.id === nested_comment_id
                         ? {
                             ...nested_comment,
-                            deleted: true,
-                            body: "[DELETED CONTENT]"
+                            deleted: response.data.deleted,
+                            body: response.data.body
                           }
                         : nested_comment
                     ),
@@ -185,8 +185,8 @@ const ArticleDetail = () => {
             setComments((prevComments) =>
               prevComments.map(comment =>
                 comment.id === comment_id ? { ...comment,
-                    deleted: true,
-                    body: "[DELETED CONTENT]"
+                    deleted: response.data.deleted,
+                    body: response.data.body
                 } : comment
               )
             );
@@ -201,7 +201,6 @@ const ArticleDetail = () => {
   const handleEditComment = async (comment_id, nested_comment_id=false) => {
     
     if (nested_comment_id)  {
-      console.log('this is nested comment')
       setComments((prevComments) =>
       prevComments.map((comment) =>
         comment.id === comment_id
@@ -333,7 +332,7 @@ const ArticleDetail = () => {
                         ? {
                             ...nested_comment,
                             editing: false,
-                            body: value
+                            body: response.data.body
                           }
                         : nested_comment
                     ),
@@ -345,7 +344,7 @@ const ArticleDetail = () => {
               prevComments.map(comment =>
                 comment.id === comment_id ? { ...comment,
                     editing: false,
-                    body: value
+                    body: response.data.body
                 } : comment
               )
             );
@@ -423,7 +422,7 @@ const ArticleDetail = () => {
   
   const handleReplyCommentSave = async (comment_id, value) => {
     const url = `${API_URL}/community/comment/`
-    console.log(comment_id, value)
+    
     try {
         const response = await axios.post(
             url,
@@ -441,7 +440,7 @@ const ArticleDetail = () => {
         );
         
         if (response.status == 201){
-          console.log(response.data)
+          
           setComments((prevComments) =>
           prevComments.map((comment) =>
             comment.id === comment_id
@@ -488,10 +487,8 @@ const ArticleDetail = () => {
       if (response.status == 200){
         setArticle((prevArticle) => ({
             ...prevArticle,
-            like_status: !prevArticle.like_status,
-            likes_count: prevArticle.like_status
-              ? prevArticle.likes_count - 1
-              : prevArticle.likes_count + 1,
+            like_status: response.data.like_status,
+            likes_count: response.data.likes_count
         }));
       }
     } catch (error) {
@@ -518,7 +515,7 @@ const ArticleDetail = () => {
             },
             }
         );
-        if (response.status == 201){
+        if (response.status == 200){
           if (nested_comment_id)  {
             setComments((prevComments) =>
             prevComments.map((comment) =>
@@ -529,10 +526,8 @@ const ArticleDetail = () => {
                       nested_comment.id === nested_comment_id
                         ? {
                             ...nested_comment,
-                            like_status: !currentLikeStatus,
-                            likes_count: currentLikeStatus
-                            ? nested_comment.likes_count - 1
-                            : nested_comment.likes_count + 1,
+                            like_status: response.data.like_status,
+                            likes_count: response.data.likes_count
                           }
                         : nested_comment
                     ),
@@ -545,10 +540,8 @@ const ArticleDetail = () => {
                 comment.id === comment_id
                   ? {
                       ...comment,
-                      like_status: !currentLikeStatus,
-                      likes_count: currentLikeStatus
-                      ? comment.likes_count - 1
-                      : comment.likes_count + 1,
+                      like_status: response.data.like_status,
+                      likes_count: response.data.likes_count
                   }
                   : comment
             ));
@@ -630,11 +623,12 @@ const ArticleDetail = () => {
             }
         );
         
-        if (response.status == 204){
+        if (response.status == 200){
           setArticle((prevArticle)=> ({
             ...prevArticle,
-            title: '[DELETED ARTICLE]',
-            body: '[DELETED CONTENT]'
+            title: response.data.title,
+            body: response.data.body,
+            deleted: response.data.deleted
           }));
         }
     } catch (error) {
@@ -736,8 +730,8 @@ const ArticleDetail = () => {
                     {article.comments_count}
                   </button>
               </div>
-              {user==article.user &&(
-              <div class="edit-delete">
+              {(user==article.user && ! article.deleted) &&(
+              <div className="edit-delete">
                 {article.editing ? (
                   <>
                   <button

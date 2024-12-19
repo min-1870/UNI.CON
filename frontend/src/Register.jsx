@@ -24,7 +24,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/account/register/submit`, {
+      const response = await fetch(`${API_URL}/account/user/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

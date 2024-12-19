@@ -16,7 +16,7 @@ const Validation = () => {
     setLoading(true);
     setError('');
 
-    const response = await fetch(`${API_URL}/account/register/confirm`, {
+    const response = await fetch(`${API_URL}/account/user/validate/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ const Validation = () => {
       }),
     });
 
-    if (response.status === 202) {
+    if (response.status === 200) {
       navigate("/community");
     } else {
       const data = await response.json();

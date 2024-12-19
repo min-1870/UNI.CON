@@ -9,13 +9,11 @@ const Community = () => {
   const [articles, setArticles] = useState([]);
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [page, setPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(1);
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
   const accessToken = localStorage.getItem('access');
   const color = localStorage.getItem('color');
   const user = localStorage.getItem('user');
-  const initial = localStorage.getItem('initial');
   const navigate = useNavigate();
 
   const apiEndpoints = {
@@ -39,7 +37,7 @@ const Community = () => {
         },
         params: { page },
       });
-      console.log(response.data);
+      
       setArticles(response.data.results.articles);
       setNextArticlePage(response.data.next)
     } catch (error) {
@@ -80,31 +78,32 @@ const Community = () => {
 
   };  
 
-  const handleLike = async (articleId) => {
-    const article = articles.find((a) => a.id === articleId);
-    if (article) {
-      try {
-        const url = article.like_status
-          ? `${API_URL}/community/article/${articleId}/unlike/`
-          : `${API_URL}/community/article/${articleId}/like/`;
+  const handleLike = async (article_id) => {
+    const article = articles.find((article) => article.id === article_id);
+    
+    try {
+      const url = article.like_status
+        ? `${API_URL}/community/article/${article_id}/unlike/`
+        : `${API_URL}/community/article/${article_id}/like/`;
 
-        await axios.post(url, {}, {
-          headers: {
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-
-        article.like_status = !article.like_status;
-        article.likes_count = article.like_status
-          ? article.likes_count + 1
-          : article.likes_count - 1;
-
-        setArticles([...articles]);
-      } catch (error) {
-        console.error("Error toggling like status:", error);
-      }
-    }
+        const response = await axios.post(url, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      setArticles((prevArticles) =>
+        prevArticles.map(article =>
+          article.id === article_id ? { ...article,
+              like_status: response.data.like_status,
+              likes_count: response.data.likes_count
+          } : article 
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling like status:", error);
+    }    
   };
 
   return (
