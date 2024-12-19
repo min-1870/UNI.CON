@@ -1,8 +1,10 @@
-from .helpers import get_current_user_points, get_embedding, add_embedding_to_faiss
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
+from .embedding_utils import get_embedding, add_embedding_to_faiss
+from .database_utils import get_current_user_points
 from rest_framework import serializers
 from randomname import get_name
 from django.db.models import F
+
 
 class ArticleSerializer(serializers.ModelSerializer):
     
@@ -10,7 +12,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     user_school = serializers.CharField(read_only=True)
     user_temp_name = serializers.CharField(read_only=True)
     user_static_points = serializers.IntegerField(read_only=True)
-    course_code = serializers.JSONField(required=True)
+    course_code = serializers.JSONField(required=False)
     search_content = serializers.CharField(required=False)
 
     class Meta:

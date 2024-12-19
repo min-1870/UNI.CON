@@ -1,14 +1,16 @@
-
-from .helpers import update_article_engagement_score, search_similar_embeddings, update_preference_vector, annotate_articles, annotate_article, annotate_comments, annotate_comment, get_embedding
+from .cache_utils import get_set_serialized_annotated_article_caches, get_set_serialized_annotated_article_cache
+from .database_utils import update_article_engagement_score, annotate_comments, annotate_comment
+from .embedding_utils import search_similar_embeddings, get_embedding, update_preference_vector
 from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
+from django.db.models import Case, When, F, Q, OuterRef, Subquery, Exists
 from .models import Article, Comment, ArticleLike, CommentLike
 from .serializer import ArticleSerializer, CommentSerializer
 from rest_framework.pagination import PageNumberPagination
 from .constants import DELETED_BODY, DELETED_TITLE
-from django.db.models import Case, When, F, Q
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
+
 
 
 class ArticleViewSet(viewsets.ModelViewSet):
@@ -17,32 +19,40 @@ class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
 
     def get_queryset(self):
-        user = self.request.user 
+        user_instance = self.request.user 
         
         # Filter articles based on user's school or if the article is unicon
         queryset = Article.objects.filter(
-            Q(user__school=user.school) | Q(unicon=True)
+            Q(user__school=user_instance.school) | Q(unicon=True)
+        ).annotate(
+            like_status=Exists(
+                Subquery(
+                    ArticleLike.objects.filter(
+                        user=user_instance,
+                        article=OuterRef('pk')
+                    )
+                )
+            )
         )
-        
+
         return queryset
+
 
     def list(self, request, *args, **kwargs):
         user_instance = request.user
 
-        # Set up pagination for articles
+        
         paginator = PageNumberPagination()
         paginator.page_size = 10
         
-        # Add extra properties
-        queryset = annotate_articles(self.get_queryset(), user_instance)
+        # Gather the Article Ids for the pagination
+        paginated_article_instances = paginator.paginate_queryset(self.get_queryset(), request)
+        article_serializer_data = self.serializer_class(paginated_article_instances, many=True).data
+        response_data = {
+            'articles': get_set_serialized_annotated_article_caches(article_serializer_data, paginated_article_instances),
+        }
         
-        # Apply pagination to the articles queryset
-        paginated_articles = paginator.paginate_queryset(queryset, request)
-        article_serializer = ArticleSerializer(paginated_articles, many=True)
-        
-        return paginator.get_paginated_response({
-            'articles': article_serializer.data
-        })
+        return paginator.get_paginated_response(response_data)
     
     @action(detail=False, methods=['get'])
     def hot(self, request):
@@ -51,18 +61,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
-        
-        # Add extra properties
-        queryset = annotate_articles(self.get_queryset(), user_instance)
 
         # Apply pagination to the articles queryset
-        sorted_articles = queryset.order_by('-engagement_score')
-        paginated_articles = paginator.paginate_queryset(sorted_articles, request)
-        article_serializer = ArticleSerializer(paginated_articles, many=True)
+        sorted_articles = self.get_queryset().order_by('-engagement_score')
+        paginated_article_instances = paginator.paginate_queryset(sorted_articles, request)
+        article_serializer_data = self.serializer_class(paginated_article_instances, many=True).data
+        response_data = {
+            'articles': get_set_serialized_annotated_article_caches(article_serializer_data, paginated_article_instances),
+        }
         
-        return paginator.get_paginated_response({
-            'articles': article_serializer.data
-        })
+        return paginator.get_paginated_response(response_data)
     
     @action(detail=False, methods=['get'])
     def preference(self, request):
@@ -71,24 +79,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
-        
-        # Add extra properties
-        queryset = annotate_articles(self.get_queryset(), user_instance)
 
         # Fetch Ids of the article based on the similarity
         ids = search_similar_embeddings(user_instance.embedding_vector, len(self.get_queryset()))
         
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        articles = queryset.filter(pk__in=ids).order_by(order)
+        articles = self.get_queryset().filter(pk__in=ids).order_by(order)
 
         # Apply pagination to the articles queryset
-        paginated_articles = paginator.paginate_queryset(articles, request)
-        article_serializer = ArticleSerializer(paginated_articles, many=True)
+        paginated_article_instances = paginator.paginate_queryset(articles, request)
+        article_serializer_data = self.serializer_class(paginated_article_instances, many=True).data
+        response_data = {
+            'articles': get_set_serialized_annotated_article_caches(article_serializer_data, paginated_article_instances),
+        }
         
-        return paginator.get_paginated_response({
-            'articles': article_serializer.data
-        })
+        return paginator.get_paginated_response(response_data)
 
     @action(detail=False, methods=['get'])
     def search(self, request):
@@ -98,30 +104,29 @@ class ArticleViewSet(viewsets.ModelViewSet):
         search_content = request.GET.get('search_content', '').strip()
         if len(search_content) == 0:
             return Response({'detail':'The search_content is empty.'},status=status.HTTP_400_BAD_REQUEST)
-        print(search_content)
-        embedding_vector = get_embedding(search_content, )
         
-        # Add extra properties
-        queryset = annotate_articles(self.get_queryset(), user_instance)
+        # Get embedding vectors for the search keywords
+        embedding_vector = get_embedding(search_content)
 
         # Fetch Ids of the article based on the similarity
         ids = search_similar_embeddings(embedding_vector, len(self.get_queryset()))
         
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        articles = queryset.filter(pk__in=ids).order_by(order)
+        articles = self.get_queryset().filter(pk__in=ids).order_by(order)
 
         # Set up pagination for articles
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
         # Apply pagination to the articles queryset
-        paginated_articles = paginator.paginate_queryset(articles, request)
-        article_serializer = ArticleSerializer(paginated_articles, many=True)
+        paginated_article_instances = paginator.paginate_queryset(articles, request)
+        article_serializer_data = self.serializer_class(paginated_article_instances, many=True).data
+        response_data = {
+            'articles': get_set_serialized_annotated_article_caches(article_serializer_data, paginated_article_instances),
+        }
         
-        return paginator.get_paginated_response({
-            'articles': article_serializer.data
-        })
+        return paginator.get_paginated_response(response_data)
 
     def update(self, request, *args, **kwargs):
         return Response({'detail':'This action is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
@@ -145,19 +150,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'detail':'The title or body is empty.'},status=status.HTTP_400_BAD_REQUEST)
         
         # Append new text to the existing body
-        article_instance.title = title
-        article_instance.body = body
-        article_instance.edited = True
-        article_instance.save(update_fields=['title', 'body', 'edited'])
+        updated_fields = {'title':title, 'body':body, 'edited':True}
+        article_instance.title = updated_fields['title']
+        article_instance.body = updated_fields['body']
+        article_instance.edited = updated_fields['edited']
+        article_instance.save(update_fields=updated_fields.keys())
 
         #fetch the updated instance
         article_instance.refresh_from_db()
 
-        # Annotate the extra properties
-        article_instance = annotate_article(article_instance, user_instance)
-
-        serializer = self.get_serializer(article_instance)
-        return Response(serializer.data)
+        serialized_article = self.get_serializer(article_instance).data
+        serialized_annotated_article = get_set_serialized_annotated_article_cache(
+            serialized_article, 
+            article_instance, 
+            updated_fields
+        )
+        return Response(serialized_annotated_article)
 
     def retrieve(self, request, *args, **kwargs):
         user_instance = request.user
@@ -178,9 +186,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update engagement score
         article_instance = update_article_engagement_score(article_instance)
 
-        # Annotate the extra properties
-        article_instance = annotate_article(article_instance, user_instance)
-
         # Fetch the comments related to the article and parent_comment is null
         comment_queryset = Comment.objects.filter(
             article=article_instance, 
@@ -196,13 +201,18 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Apply pagination to the comments queryset
         paginated_comments = paginator.paginate_queryset(comment_queryset, request)
-        comment_serializer = CommentSerializer(paginated_comments, many=True)
+        serialized_comments = CommentSerializer(paginated_comments, many=True).data
         
         # Construct response using paginated response
-        article_data = ArticleSerializer(article_instance).data
+        serialized_article = ArticleSerializer(article_instance).data
+        serialized_annotated_article = get_set_serialized_annotated_article_cache(
+            serialized_article, 
+            article_instance, 
+            {'views_count':article_instance.views_count}
+        )
         return paginator.get_paginated_response({
-            'article': article_data,
-            'comments': comment_serializer.data
+            'article': serialized_annotated_article,
+            'comments': serialized_comments
         })
     
     def destroy(self, request, *args, **kwargs):
@@ -214,20 +224,23 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'detail':'The article is deleted.'},status=status.HTTP_400_BAD_REQUEST)
 
         # Remove and save original content
-        article_instance.title = DELETED_TITLE
-        article_instance.body = DELETED_BODY
-        article_instance.deleted = True
-        article_instance.save(update_fields=['title', 'body', 'deleted'])
+        updated_fields = {'title':DELETED_TITLE, 'body':DELETED_BODY, 'deleted':True}
+        article_instance.title = updated_fields['title']
+        article_instance.body = updated_fields['body']
+        article_instance.deleted = updated_fields['deleted']
+        article_instance.save(update_fields=updated_fields.keys())
 
         #fetch the updated instance
         article_instance.refresh_from_db()
-        
-        # Annotate the extra properties
-        article_instance = annotate_article(article_instance, user_instance)
 
         # Construct the response using serializer
-        article_data = ArticleSerializer(article_instance).data
-        return Response(article_data, status=status.HTTP_204_NO_CONTENT)
+        serialized_article = self.get_serializer(article_instance).data
+        serialized_annotated_article = get_set_serialized_annotated_article_cache(
+            serialized_article, 
+            article_instance, 
+            updated_fields
+        )
+        return Response(serialized_annotated_article, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], permission_classes=[Article_IsAuthenticated])
     def like(self, request, pk=None):
@@ -243,19 +256,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update likes_count of the article
         article_instance.likes_count = F('likes_count') + 1
         article_instance.save(update_fields=['likes_count'])
-
+        article_instance.like_status = True
         #fetch the updated instance
         article_instance.refresh_from_db()
-
-        # Update engagement score
-        article_instance = update_article_engagement_score(article_instance)
-
-        # Annotate the extra properties
-        article_instance = annotate_article(article_instance, user_instance)
-
-        article_data = ArticleSerializer(article_instance).data
-
-        return Response(article_data, status=status.HTTP_200_OK)  
+        
+        # Construct the response using serializer
+        serialized_article = self.get_serializer(article_instance).data
+        serialized_annotated_article = get_set_serialized_annotated_article_cache(
+            serialized_article, 
+            article_instance, 
+            {
+                'likes_count':article_instance.likes_count,
+            }
+        )
+        return Response(serialized_annotated_article, status=status.HTTP_200_OK)  
     
     @action(detail=True, methods=['post'], permission_classes=[Article_IsAuthenticated])
     def unlike(self, request, pk=None):
@@ -271,19 +285,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update likes_count of the article
         article_instance.likes_count = F('likes_count') - 1
         article_instance.save(update_fields=['likes_count'])
-
+        article_instance.like_status = False
+        
         #fetch the updated instance
         article_instance.refresh_from_db()
 
-        # Update engagement score
-        article_instance = update_article_engagement_score(article_instance)
-
-        # Annotate the extra properties
-        article_instance = annotate_article(article_instance, user_instance)
-
-        article_data = ArticleSerializer(article_instance).data
-
-        return Response(article_data, status=status.HTTP_200_OK)  
+        # Construct the response using serializer
+        serialized_article = self.get_serializer(article_instance).data
+        serialized_annotated_article = get_set_serialized_annotated_article_cache(
+            serialized_article, 
+            article_instance, 
+            {
+                'likes_count':article_instance.likes_count,
+            }
+        )
+        return Response(serialized_annotated_article, status=status.HTTP_200_OK)  
 
 class CommentViewSet(viewsets.ModelViewSet):
 

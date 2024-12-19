@@ -1,104 +1,9 @@
-from .models import Article, Comment, ArticleLike, CommentLike, ArticleCourse, ArticleUser
-from django.db.models import OuterRef, Subquery, Exists, F, Sum, Func, Value
-from django.db.models.functions import Coalesce
+from .models import Article, Comment, CommentLike, ArticleUser
+from django.db.models import OuterRef, Subquery, Exists, F, Sum
 from .models import Article, Comment
 from account.models import User
-from decouple import config
-from openai import OpenAI
-import numpy as np
-import faiss
 
 
-
-def get_embedding(text, model="text-embedding-3-small"):
-   text = text.replace("\n", " ")
-   return client.embeddings.create(input = [text], model=model).data[0].embedding
-
-def calculate_similarity(vector_1, vector_2):
-    return np.dot(vector_1, vector_2) / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2))
-
-def update_preference_vector(user_embeddings, article_embedding, alpha=0.1):
-    user_embeddings = np.array(user_embeddings)  
-    article_embedding = np.array(article_embedding)    
-    return ((1 - alpha) * user_embeddings + alpha * article_embedding).tolist()
-
-def add_embedding_to_faiss(article_embedding, article_id):
-    article_embedding = np.array([article_embedding])
-    article_id = np.array([article_id])
-    index.add_with_ids(article_embedding, article_id)
-    faiss.write_index(index, "index.idx")    
-
-def search_similar_embeddings(embedding, k=100):
-    _, ids = index.search(np.array([embedding]), k=k)
-    return ids[0]
-
-
-
-def annotate_articles(queryset, user_instance):
-            
-    queryset = queryset.annotate(
-        like_status=Exists(
-            Subquery(
-                ArticleLike.objects.filter(
-                    user=user_instance,
-                    article=OuterRef('pk')
-                )
-            )
-        ),
-        user_school=Subquery(
-            User.objects.filter(
-                id=OuterRef('user')
-            ).values('school__initial')[:1]
-        ),
-        user_temp_name=Subquery(
-            ArticleUser.objects.filter(
-                article=OuterRef('pk'),
-                user=OuterRef('user')
-            ).values('user_temp_name')[:1]
-        ),
-        user_static_points=Subquery(
-            ArticleUser.objects.filter(
-                article=OuterRef('pk'),
-                user=OuterRef('user')
-            ).values('user_static_points')[:1]
-        ),
-        course_code=Coalesce(
-            Subquery(
-                ArticleCourse.objects.filter(
-                    article=OuterRef('pk')
-                )
-                .values('course__code')
-                .annotate(course_codes=Func(
-                    F('course__code'),
-                    Value(','),
-                    function='GROUP_CONCAT'
-                ))
-                .values('course_codes')[:1],
-            ),
-            Value("")
-        )
-    )
-
-    return queryset
-
-def annotate_article(article_instance, user_instance):
-    
-    article_instance.user_school = article_instance.user.school.initial
-
-    articleUser_instance = ArticleUser.objects.get(
-        article=article_instance,
-        user=article_instance.user
-    )
-    article_instance.user_temp_name = articleUser_instance.user_temp_name
-    article_instance.user_static_points = articleUser_instance.user_static_points
-
-    course_codes = ArticleCourse.objects.filter(article=article_instance).values_list('course__code', flat=True)
-    article_instance.course_code = ', '.join(course_codes) if course_codes else ''
-    
-    exist = ArticleLike.objects.filter(article=article_instance, user=user_instance).exists()
-    article_instance.like_status = exist
-    
-    return article_instance
 
 def update_article_engagement_score(article_instance):
     article_instance.engagement_score = (
@@ -190,23 +95,6 @@ def get_current_user_points(user_id):
 
     return total_points
 
-def reset_faiss():
-    index.reset()
-
-
-
-client = OpenAI(
-    api_key=config("OPENAI_API_KEY")
-)
-
-
-try:
-    index = faiss.read_index("index_file.idx")
-except Exception:
-    index = faiss.IndexFlatL2(1536)
-    index = faiss.IndexIDMap(index)
-    for article_instance in Article.objects.all():
-        add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
         
 # INITIAL_ARTICLE_SCORE_GRAVITY = 1.8
 # ARTICLE_SCORE_GRAVITY_RESET_MINUTES = 5
