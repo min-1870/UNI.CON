@@ -194,14 +194,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Annotate extra properties to the comments
         comment_queryset = annotate_comments(comment_queryset, user_instance)
-
+        
         # Set up pagination for comments
         paginator = PageNumberPagination()
         paginator.page_size = 10
 
         # Apply pagination to the comments queryset
-        paginated_comments = paginator.paginate_queryset(comment_queryset, request)
-        serialized_comments = CommentSerializer(paginated_comments, many=True).data
+        paginated_comment_instances = paginator.paginate_queryset(comment_queryset, request)
+        serialized_comments = CommentSerializer(paginated_comment_instances, many=True).data
         
         # Construct response using paginated response
         serialized_article = ArticleSerializer(article_instance).data
@@ -240,7 +240,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article_instance, 
             updated_fields
         )
-        return Response(serialized_annotated_article, status=status.HTTP_204_NO_CONTENT)
+        return Response(serialized_annotated_article, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[Article_IsAuthenticated])
     def like(self, request, pk=None):
@@ -286,7 +286,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article_instance.likes_count = F('likes_count') - 1
         article_instance.save(update_fields=['likes_count'])
         article_instance.like_status = False
-        
+
         #fetch the updated instance
         article_instance.refresh_from_db()
 
@@ -375,7 +375,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         # Serialize the comment and return the response
         serializer = self.get_serializer(comment_instance)
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         user_instance = request.user

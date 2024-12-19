@@ -31,13 +31,13 @@ def annotate_comments(queryset, user_instance):
         ),
         user_temp_name=Subquery(
             ArticleUser.objects.filter(
-                article=OuterRef('pk'),
+                article=OuterRef('article'),
                 user=OuterRef('user')
             ).values('user_temp_name')[:1]
         ),
         user_static_points=Subquery(
             ArticleUser.objects.filter(
-                article=OuterRef('pk'),
+                article=OuterRef('article'),
                 user=OuterRef('user')
             ).values('user_static_points')[:1]
         ),
