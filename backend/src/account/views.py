@@ -41,7 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Check the missing property
-        if not "validation_code" in request.data.keys():
+        if "validation_code" not in request.data.keys():
             return Response(
                 {"detail": "The property is missing."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -81,11 +81,6 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "This action is not allowed."}, status=status.HTTP_403_FORBIDDEN
-        )
-
-    def partial_update(self, request, *args, **kwargs):
         return Response(
             {"detail": "This action is not allowed."}, status=status.HTTP_403_FORBIDDEN
         )

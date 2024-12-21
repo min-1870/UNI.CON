@@ -13,7 +13,7 @@ from django.urls import reverse
 from datetime import datetime
 from copy import deepcopy
 import numpy as np
-import json
+# import json
 from .helpers import reset_faiss
 from .constants import (
     REGISTER_SUBMIT_NAME,
@@ -33,7 +33,6 @@ from .constants import (
     MOCK_ARTICLE_RESPONSE_KEYS,
     MOCK_COMMENT,
     MOCK_COMMENT_RESPONSE_KEYS,
-    MOCK_COMMENT,
     MOCK_USER_1,
     MOCK_USER_2,
     MOCK_USER_3,
@@ -130,9 +129,7 @@ class articleModificationTests(APITestCase):
 
         # Post an article with courses
         user_instance = register_account(self.client, MOCK_USER_1)
-        response = article(
-            self.client, "post", MOCK_ARTICLE_WITH_COURSES, instance=False
-        )
+        response = article(self.client, "post", MOCK_ARTICLE_WITH_COURSES, instance=False)
 
         # Validate Status Code
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -318,9 +315,7 @@ class articleModificationTests(APITestCase):
         article_instance = article(self.client, "post", MOCK_ARTICLE)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
 
         # Validate Status Code
@@ -340,13 +335,11 @@ class articleModificationTests(APITestCase):
 
     def test_like_article_again(self):
         # Post an article
-        user_instance = register_account(self.client, MOCK_USER_1)
+        register_account(self.client, MOCK_USER_1, False)
         article_instance = article(self.client, "post", MOCK_ARTICLE)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
 
         # Validate Status Code
@@ -357,13 +350,9 @@ class articleModificationTests(APITestCase):
         self.assertSetEqual(article_keys, MOCK_ARTICLE_RESPONSE_KEYS)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
-        self.assertEqual(
-            like_article_response.status_code, status.HTTP_304_NOT_MODIFIED
-        )
+        self.assertEqual(like_article_response.status_code, status.HTTP_304_NOT_MODIFIED)
 
     def test_like_article_by_other(self):
         # Post an article
@@ -375,9 +364,7 @@ class articleModificationTests(APITestCase):
         user_instance = register_account(self.client, MOCK_USER_2)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
 
         # Validate Status Code
@@ -404,9 +391,7 @@ class articleModificationTests(APITestCase):
         self.client.credentials()
         register_account(self.client, MOCK_USER_3, False)
 
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
 
         # Validate Status Code
@@ -418,9 +403,7 @@ class articleModificationTests(APITestCase):
         article_instance = article(self.client, "post", MOCK_ARTICLE)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         self.client.post(like_article_url)
 
         # Unlike an article
@@ -469,9 +452,7 @@ class articleModificationTests(APITestCase):
         user_instance = register_account(self.client, MOCK_USER_2)
 
         # Like an article
-        like_article_url = reverse(
-            ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id}
-        )
+        like_article_url = reverse(ARTICLE_LIKE_NAME, kwargs={"pk": article_instance.id})
         like_article_response = self.client.post(like_article_url)
 
         # Validate Status Code
@@ -519,9 +500,7 @@ class articleRetrieveTests(APITestCase):
         self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
 
         # Validate the article response structure
-        article_keys = set(
-            retrieve_an_article_response.data["results"]["article"].keys()
-        )
+        article_keys = set(retrieve_an_article_response.data["results"]["article"].keys())
         self.assertSetEqual(article_keys, MOCK_ARTICLE_RESPONSE_KEYS)
 
         # Validate the article
@@ -576,9 +555,7 @@ class articleRetrieveTests(APITestCase):
         self.assertEqual(retrieve_an_article_response.status_code, status.HTTP_200_OK)
 
         # Validate the response structure
-        article_keys = set(
-            retrieve_an_article_response.data["results"]["article"].keys()
-        )
+        article_keys = set(retrieve_an_article_response.data["results"]["article"].keys())
         self.assertSetEqual(article_keys, MOCK_ARTICLE_RESPONSE_KEYS)
 
         # Validate the article
@@ -674,13 +651,20 @@ class articleRetrieveTests(APITestCase):
         reset_faiss()
         food_article = deepcopy(MOCK_ARTICLE)
         food_article["body"] = (
-            "Food is a universal language that connects people across cultures and traditions. It’s not just about nourishment; it’s an expression of history, creativity, and community. From street food in bustling markets to gourmet meals in fine dining, every dish tells a story of flavors, techniques, and memories shared."
+            """Food is a universal language that connects people across cultures
+             and traditions. It’s not just about nourishment; it’s an expression
+             of history, creativity, and community. From street food in bustling
+             markets to gourmet meals in fine dining, every dish tells a story
+             of flavors, techniques, and memories shared."""
         )
         food_article_instance = article(self.client, "post", food_article)
 
         exam_article = deepcopy(MOCK_ARTICLE)
         exam_article["body"] = (
-            "Exams are often used in educational settings, professional certifications, and recruitment processes to measure competence and understanding. Preparation, focus, and time management are key to success in exams."
+            """Exams are often used in educational settings, professional
+            certifications, and recruitment processes to measure competence
+            and understanding. Preparation, focus, and time management are
+            key to success in exams."""
         )
         exam_article_instance = article(self.client, "post", exam_article)
 
@@ -766,18 +750,14 @@ class commentModificationTests(APITestCase):
         self.assertSetEqual(article_keys, MOCK_COMMENT_RESPONSE_KEYS)
 
         # Validate the database
-        exist = Comment.objects.filter(
-            id=post_nested_comment_response.data["id"]
-        ).exists
+        exist = Comment.objects.filter(id=post_nested_comment_response.data["id"]).exists
         self.assertTrue(exist)
         nested_comment_instance = Comment.objects.get(
             pk=post_nested_comment_response.data["id"]
         )
         self.assertEqual(nested_comment_instance.user, user_instance)
         self.assertEqual(nested_comment_instance.body, MOCK_COMMENT["body"])
-        parent_comment_instance = Comment.objects.get(
-            pk=post_comment_response.data["id"]
-        )
+        parent_comment_instance = Comment.objects.get(pk=post_comment_response.data["id"])
         self.assertEqual(parent_comment_instance.comments_count, 1)
         article_instance = Article.objects.get(pk=article_instance.id)
         self.assertEqual(article_instance.comments_count, 2)
@@ -1007,9 +987,7 @@ class commentModificationTests(APITestCase):
         register_account(self.client, MOCK_USER_3, False)
 
         # Like a comment
-        like_comment_url = reverse(
-            COMMENT_LIKE_NAME, kwargs={"pk": comment_instance.id}
-        )
+        like_comment_url = reverse(COMMENT_LIKE_NAME, kwargs={"pk": comment_instance.id})
         like_comment_response = self.client.post(like_comment_url)
 
         # Validate the status code

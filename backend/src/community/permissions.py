@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from .models import Article, Comment
+from .models import Article
 
 
 class Article_IsAuthenticated(permissions.BasePermission):

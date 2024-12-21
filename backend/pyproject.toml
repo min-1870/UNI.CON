@@ -1,4 +1,5 @@
 [tool.black]
+line-length = 90
 include = '(src/account|src/community)'
 extend-exclude = '''
 /(

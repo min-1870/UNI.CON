@@ -119,9 +119,7 @@ class ArticleSerializer(serializers.ModelSerializer):
                     article=article_instance, course=course_instance
                 )
 
-            article_instance.course_code = [
-                code.upper().strip() for code in course_code
-            ]
+            article_instance.course_code = [code.upper().strip() for code in course_code]
         else:
             article_instance.course_code = []
 

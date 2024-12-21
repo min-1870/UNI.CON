@@ -37,9 +37,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         ).annotate(
             like_status=Exists(
                 Subquery(
-                    ArticleLike.objects.filter(
-                        user=user_instance, article=OuterRef("pk")
-                    )
+                    ArticleLike.objects.filter(user=user_instance, article=OuterRef("pk"))
                 )
             )
         )
@@ -47,7 +45,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        user_instance = request.user
 
         paginator = PageNumberPagination()
         paginator.page_size = 10
@@ -69,7 +66,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def hot(self, request):
-        user_instance = request.user
 
         # Set up pagination for articles
         paginator = PageNumberPagination()
@@ -123,7 +119,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def search(self, request):
-        user_instance = request.user
 
         # Block if the body or the title is empty
         search_content = request.GET.get("search_content", "").strip()
@@ -166,7 +161,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
 
     def partial_update(self, request, *args, **kwargs):
-        user_instance = request.user
         article_instance = self.get_object()
 
         # Block the modification for the deleted object
@@ -177,7 +171,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
 
         # Block if the body or the title is not in the request
-        if (not "body" in request.data.keys()) or (not "title" in request.data.keys()):
+        if ("body" not in request.data.keys()) or ("title" not in request.data.keys()):
             return Response(
                 {"detail": "The property is missing."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -261,7 +255,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        user_instance = request.user
         article_instance = self.get_object()
 
         # Block the modification for the deleted object
@@ -395,7 +388,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         # Block if the body is not in the request
-        if not "body" in request.data.keys():
+        if "body" not in request.data.keys():
             return Response(
                 {"detail": "The body is missing."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -471,9 +464,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         paginator.page_size = 10
 
         # Apply pagination to the comments queryset
-        paginated_comments = paginator.paginate_queryset(
-            nested_comment_queryset, request
-        )
+        paginated_comments = paginator.paginate_queryset(nested_comment_queryset, request)
         comment_serializer = CommentSerializer(paginated_comments, many=True)
 
         return paginator.get_paginated_response(
