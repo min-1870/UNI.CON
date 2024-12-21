@@ -5,10 +5,10 @@ from django.urls import path, include
 
 router = DefaultRouter()
 
-router.register(r'article', ArticleViewSet, basename='article')
-router.register(r'comment', CommentViewSet, basename='comment')
+router.register(r"article", ArticleViewSet, basename="article")
+router.register(r"comment", CommentViewSet, basename="comment")
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

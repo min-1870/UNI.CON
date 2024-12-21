@@ -1,0 +1,18 @@
+[flake8]
+exclude =
+    .vscode,
+    include,
+    lib,
+    scripts
+    src/__pycache__,
+    src/.vscode,
+    src/account/__pycache__,
+    src/account/migrations,
+    src/account/admin.py,
+    src/account/__init__.py,
+    src/community/__pycache__,
+    src/community/migrations,
+    src/community/admin.py,
+    src/community/__init__.py,
+    src/src
+
