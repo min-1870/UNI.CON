@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
+import fetchNewAccessToken from "./utils";
 import { API_URL } from "./constants";
 import axios from "axios";
 import './ArticleDetail.css';
@@ -14,7 +15,7 @@ const ArticleDetail = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const accessToken = localStorage.getItem("access");
+  let accessToken = localStorage.getItem("access");
   const color = localStorage.getItem("color");
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
@@ -42,7 +43,20 @@ const ArticleDetail = () => {
       setNextCommentPage(response.data.next);
       
     } catch (error) {
-      console.error("Error fetching article details:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.get(`${API_URL}/community/article/${articleId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
+        const { article, comments } = response.data.results;
+        setArticle(article);
+        setComments(comments);
+        setNextCommentPage(response.data.next);
+      }
     } finally {
       setLoading(false);
     }
@@ -64,7 +78,22 @@ const ArticleDetail = () => {
       setComments((prev) => [...prev, ...filteredComments]);
       setNextCommentPage(response.data.next);
     } catch (error) {
-      console.error("Error loading more comments:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.get(
+          nextCommentPage, {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+        });
+        const filteredComments = response.data.results.comments.filter(
+          (comment) => !comments.some((localComment) => localComment.id === comment.id)
+        );
+        setComments((prev) => [...prev, ...filteredComments]);
+        setNextCommentPage(response.data.next);
+      }
     } finally {
       setLoadingMore(false);
     }
@@ -83,7 +112,32 @@ const ArticleDetail = () => {
             },
       });
 
-      if (response.status == 200) {
+      const filteredComments = response.data.results.nested_comments.filter(
+        (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
+      );      
+      setComments((prevComments) =>
+        prevComments.map(comment =>
+          comment.id === comment_id ? { ...comment,
+              nested_comments: [...comment.nested_comments, ...filteredComments],
+              show_nested_comments: true,
+              next_comment_page: response.data.next
+          } : comment 
+        )
+      );
+      
+
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.get(
+          comment.next_comment_page, {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+        });
+
         const filteredComments = response.data.results.nested_comments.filter(
           (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
         );      
@@ -97,9 +151,6 @@ const ArticleDetail = () => {
           )
         );
       }
-
-    } catch (error) {
-      console.error("Error loading more comments:", error);
     } finally {
       setLoadingMore(false);
     }
@@ -124,22 +175,51 @@ const ArticleDetail = () => {
             }
         );
         
-        if (response.status == 201){
-            setComments((prevComments) => [
-                {
-                ...response.data,
-                body: response.data.body,
-                user_temp_name: response.data.user_temp_name,
-                user_static_points: response.data.user_static_points,
-                user_school: response.data.user_school,
-                like_status: response.data.like_status,
-                },
-                ...prevComments,
-            ]);
-        }
+        setComments((prevComments) => [
+          {
+            ...response.data,
+            body: response.data.body,
+            user_temp_name: response.data.user_temp_name,
+            user_static_points: response.data.user_static_points,
+            user_school: response.data.user_school,
+            like_status: response.data.like_status,
+          },
+            ...prevComments,
+        ]);
+        
         setNewComment(""); 
     } catch (error) {
-      console.error("Error submitting comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+          const response = await axios.post(
+              `${API_URL}/community/comment/`,
+              {
+              body: newComment,
+              article: articleId,
+              },
+              {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+              }
+          );
+          
+          setComments((prevComments) => [
+            {
+              ...response.data,
+              body: response.data.body,
+              user_temp_name: response.data.user_temp_name,
+              user_static_points: response.data.user_static_points,
+              user_school: response.data.user_school,
+              like_status: response.data.like_status,
+              },
+              ...prevComments,
+          ]);
+        
+          setNewComment(""); 
+      }
     } finally {
       setSubmittingComment(false);
     }
@@ -194,7 +274,53 @@ const ArticleDetail = () => {
 
         }
     } catch (error) {
-      console.error("Error delete comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.delete(
+            url,
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+            }
+        );
+        
+        if (response.status == 200){
+
+
+          if (nested_comment_id)  {
+            setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === comment_id
+                ? {
+                    ...comment,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            deleted: response.data.deleted,
+                            body: response.data.body
+                          }
+                        : nested_comment
+                    ),
+                }
+                : comment
+            )); 
+          }else{
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    deleted: response.data.deleted,
+                    body: response.data.body
+                } : comment
+              )
+            );
+          }
+
+        }
+      }
     }
   };
 
@@ -351,7 +477,55 @@ const ArticleDetail = () => {
           }
         }
     } catch (error) {
-      console.error("Error edit comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.patch(
+            url,
+            {
+              "body": value
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+
+          
+          if (nested_comment_id)  {
+            setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === comment_id
+                ? {
+                    ...comment,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            editing: false,
+                            body: response.data.body
+                          }
+                        : nested_comment
+                    ),
+                }
+                : comment
+            )); 
+          }else{          
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    editing: false,
+                    body: response.data.body
+                } : comment
+              )
+            );
+          }
+        }
+      }
     }
   };
   
@@ -391,7 +565,32 @@ const ArticleDetail = () => {
             );
         }
     } catch (error) {
-      console.error("Error edit comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.get(
+            url,
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+          
+            setComments((prevComments) =>
+              prevComments.map(comment =>
+                comment.id === comment_id ? { ...comment,
+                    nested_comments: response.data.results.nested_comments,
+                    show_nested_comments: true,
+                    next_comment_page: response.data.next
+                } : comment 
+              )
+            );
+        }
+      }
     }
   };
 
@@ -463,7 +662,48 @@ const ArticleDetail = () => {
           )); 
         }
     } catch (error) {
-      console.error("Error edit comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.post(
+            url,
+            {
+              "body": value,
+              "article": articleId,
+              "parent_comment": comment_id
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 201){
+          
+          setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === comment_id
+              ? {
+                  ...comment,
+                  nested_comments: [
+                    {
+                      ...response.data, 
+                      body: response.data.body,
+                      user_temp_name: response.data.user_temp_name,
+                      user_static_points: response.data.user_static_points,
+                      user_school: response.data.user_school,
+                      like_status: response.data.like_status,
+                    },
+                    ...comment.nested_comments, 
+                  ],
+                  reply_text_area: ''
+              }
+              : comment
+          )); 
+        }
+      }
     }
   };
   
@@ -492,7 +732,27 @@ const ArticleDetail = () => {
         }));
       }
     } catch (error) {
-      console.error("Error toggling article like:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.post(
+          endpoint,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${accessToken}`,
+            },
+          }
+        );
+        if (response.status == 200){
+          setArticle((prevArticle) => ({
+              ...prevArticle,
+              like_status: response.data.like_status,
+              likes_count: response.data.likes_count
+          }));
+        }
+      }
     }
   };
 
@@ -548,7 +808,52 @@ const ArticleDetail = () => {
           }
         }
     } catch (error) {
-      console.error("Error toggling comment like:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.post(
+            url,
+            {},
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+            }
+        );
+        if (response.status == 200){
+          if (nested_comment_id)  {
+            setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === comment_id
+                ? {
+                    ...comment,
+                    nested_comments: comment.nested_comments.map((nested_comment) =>
+                      nested_comment.id === nested_comment_id
+                        ? {
+                            ...nested_comment,
+                            like_status: response.data.like_status,
+                            likes_count: response.data.likes_count
+                          }
+                        : nested_comment
+                    ),
+                }
+                : comment
+            )); 
+          }else{
+            setComments((prevComments) =>
+              prevComments.map((comment) =>
+                comment.id === comment_id
+                  ? {
+                      ...comment,
+                      like_status: response.data.like_status,
+                      likes_count: response.data.likes_count
+                  }
+                  : comment
+            ));
+          }
+        }
+      }
     }
   };
 
@@ -593,7 +898,32 @@ const ArticleDetail = () => {
           }));
         }
     } catch (error) {
-      console.error("Error edit comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.patch(
+            `${API_URL}/community/article/${articleId}/`,
+            {
+              "body": article.body_edit_text_area
+            },
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            }
+            }
+        );
+        
+        if (response.status == 200){
+          setArticle((prevArticle)=> ({
+            ...prevArticle,
+            title_edit_text_area: '',
+            body_edit_text_area: '',
+            editing: false,
+            body: response.data.body
+          }));
+        }
+      }
     }
   };
 
@@ -632,7 +962,28 @@ const ArticleDetail = () => {
           }));
         }
     } catch (error) {
-      console.error("Error delete comment:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.delete(
+            `${API_URL}/community/article/${articleId}/`,
+            {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            },
+            }
+        );
+        
+        if (response.status == 200){
+          setArticle((prevArticle)=> ({
+            ...prevArticle,
+            title: response.data.title,
+            body: response.data.body,
+            deleted: response.data.deleted
+          }));
+        }
+      }
     }
   };
 

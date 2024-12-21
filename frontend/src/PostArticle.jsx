@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import fetchNewAccessToken from "./utils";
 import React, { useState } from "react";
 import { API_URL } from "./constants";
 import axios from "axios";
@@ -14,7 +15,7 @@ const PostArticle = () => {
   const [course, setCourse] = useState('');  
   const [error, setError] = useState(false);    
   const [errorMsg, setErrorMsg] = useState('');    
-  const accessToken = localStorage.getItem("access");
+  let accessToken = localStorage.getItem('access');
   const points = localStorage.getItem('points') || 0;
   const initial = localStorage.getItem('initial') || '';
   const color = localStorage.getItem('color') || '#000';
@@ -71,8 +72,32 @@ const PostArticle = () => {
             navigate(`/article/${response.data.id}`)
           }
       } catch (error) {
-        setError(true)
-        setErrorMsg(error)
+        if (error.response && error.response.status === 401) {
+          await fetchNewAccessToken(navigate);
+          accessToken = localStorage.getItem('access');
+          const response = await axios.post(
+              `${API_URL}/community/article/`,
+              {
+              title: title,
+              body: body,
+              unicon: unicon,
+              course_code: unicon ? [] : courses
+              },
+              {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+              }
+          );
+          if (response.status == 201){
+            navigate(`/article/${response.data.id}`)
+          }
+
+        }else{
+          setError(true)
+          setErrorMsg(error)
+        }
       }
     }
   };

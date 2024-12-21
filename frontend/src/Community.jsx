@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "./constants";
+import fetchNewAccessToken from "./utils";
 import axios from "axios";
 import './Community.css';
 import './constants.css';
@@ -11,7 +12,7 @@ const Community = () => {
   const [page, setPage] = useState(1);
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
-  const accessToken = localStorage.getItem('access');
+  let accessToken = localStorage.getItem('access');
   const color = localStorage.getItem('color');
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
@@ -37,11 +38,24 @@ const Community = () => {
         },
         params: { page },
       });
-      
       setArticles(response.data.results.articles);
       setNextArticlePage(response.data.next)
     } catch (error) {
-      console.error("Error fetching articles:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        
+        const response = await axios.get(apiEndpoints[sortOption], {
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          params: { page },
+        });
+        setArticles(response.data.results.articles);
+        setNextArticlePage(response.data.next)
+    }
+      
     } finally {
       setLoading(false);
     }
@@ -64,16 +78,25 @@ const Community = () => {
                 "Authorization": `Bearer ${accessToken}`,
             },
       });
-
       setArticles((prev) => [...prev, ...response.data.results.articles]);
       setNextArticlePage(response.data.next);
     } catch (error) {
-      console.error("Error loading more articles:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const response = await axios.get(
+          nextArticlePage, {
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${accessToken}`,
+              },
+        });
+        setArticles((prev) => [...prev, ...response.data.results.articles]);
+        setNextArticlePage(response.data.next);
+      }
     } finally {
       window.scrollTo(0, scrollPosition);
       setLoading(false);
-      
-
     }
 
   };  
@@ -86,13 +109,12 @@ const Community = () => {
         ? `${API_URL}/community/article/${article_id}/unlike/`
         : `${API_URL}/community/article/${article_id}/like/`;
 
-        const response = await axios.post(url, {}, {
+      const response = await axios.post(url, {}, {
         headers: {
           "Content-Type": "application/json",
           'Authorization': `Bearer ${accessToken}`,
         },
       });
-      
       setArticles((prevArticles) =>
         prevArticles.map(article =>
           article.id === article_id ? { ...article,
@@ -101,8 +123,30 @@ const Community = () => {
           } : article 
         )
       );
+      
     } catch (error) {
-      console.error("Error toggling like status:", error);
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const url = article.like_status
+          ? `${API_URL}/community/article/${article_id}/unlike/`
+          : `${API_URL}/community/article/${article_id}/like/`;
+
+        const response = await axios.post(url, {}, {
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        setArticles((prevArticles) =>
+          prevArticles.map(article =>
+            article.id === article_id ? { ...article,
+                like_status: response.data.like_status,
+                likes_count: response.data.likes_count
+            } : article 
+          )
+        );
+      }
     }    
   };
 
