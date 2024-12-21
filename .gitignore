@@ -172,6 +172,7 @@ include/
 scripts/
 pyvenv.cfg
 index.idx
+backend/src/.vscode/
 
 
 # Spyder project settings
