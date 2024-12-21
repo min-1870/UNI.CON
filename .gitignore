@@ -167,7 +167,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-**/.vscode/
+.vscode/
+include/
+scripts/
+pyvenv.cfg
 
 
 # Spyder project settings
