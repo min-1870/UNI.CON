@@ -171,6 +171,7 @@ venv.bak/
 include/
 scripts/
 pyvenv.cfg
+index.idx
 
 
 # Spyder project settings
