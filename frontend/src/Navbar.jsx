@@ -4,11 +4,12 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [search, setSearch] = useState('');
-  const accessToken = localStorage.getItem('access') || null;
+  const is_validated = JSON.parse(localStorage.getItem('is_validated')) || false;
   const initial = localStorage.getItem('initial') || '';
   const color = localStorage.getItem('color') || '#000';
   const points = localStorage.getItem('points');
   const navigate = useNavigate();
+
   
   const handleLogout = () => {
     localStorage.clear()
@@ -32,7 +33,7 @@ const Navbar = () => {
 
   return (
     <>
-    {accessToken && (
+    {(is_validated) && (
     <nav id="navbar-container">
       
         <div id="navbar">

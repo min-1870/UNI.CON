@@ -32,8 +32,7 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
-      
-      if (response.status === 200) {
+      if (response.status === 403) {
         const data = await response.json();
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
@@ -41,6 +40,17 @@ const Login = () => {
         localStorage.setItem('color', data.color);
         localStorage.setItem('initial', data.initial);
         localStorage.setItem('points', data.points);
+        localStorage.setItem('is_validated', data.is_validated);
+        navigate("/validation");
+      } else if (response.status === 200) {
+        const data = await response.json();
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+        localStorage.setItem('user', data.id);
+        localStorage.setItem('color', data.color);
+        localStorage.setItem('initial', data.initial);
+        localStorage.setItem('points', data.points);
+        localStorage.setItem('is_validated', data.is_validated);
         navigate("/community")
       } else if (response.status === 401) {
         setError('Incorrect email or password.');

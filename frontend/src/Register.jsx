@@ -31,7 +31,6 @@ const Register = () => {
         },
         body: JSON.stringify({ 'email':email, 'password':password }),
       });
-      console.log(response.status);
 
       if (response.status === 201) {
         response.json().then((data) => {
@@ -41,15 +40,14 @@ const Register = () => {
           localStorage.setItem('color', data.color);
           localStorage.setItem('initial', data.initial);
           localStorage.setItem('points', data.points);
+          localStorage.setItem('is_validated', data.is_validated);
           navigate("/validation");
         }).catch((error) => {
           console.error('Error parsing JSON:', error);
         });
-      } else if (response.status === 401) {
-        setError('Incorrect email or password.');
-
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        
+        setError(response.data);
       }
     } catch (err) {
       setError('Failed to connect to the server.');

@@ -1,34 +1,61 @@
 
 
 #validation-container {
-    height: 100%;
-    display: flex;    
-    margin-top: 20%;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
   }
-  #validation {
-    max-width: 400px;
-    padding: 40px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  }
-  #validation-title {
-    text-align: center;
-    margin-top: 20px;
-  }
-  #validation-form {
+  #validation-title-description{
+    width: 450px;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    margin-bottom: 65px;
   }
-  #validation-inputGroup {
-    margin-bottom: 15px;
+  
+  #validation-title{
+    color:#007bff;
+    font-size: 2rem;
+    font-weight: 500;
   }
-  .validation-input {
+  
+  #validation-description{
+    color:#000000;
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: center;
+  }
+  #validation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #validation-form{
+    max-width: 500px;
+    min-width: 450px;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    -webkit-box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    -moz-box-shadow: 0px 1px 42px -21px rgba(0,0,0,0.43);
+    border-radius: 15px;
+  }
+  #validation-input {
     width: 100%;
+    min-height: 45px;
+    margin-bottom: 25px;
     padding: 8px;
-    margin-top: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
+    border: 1px solid #E2E8F0;
+    border-radius: 15px;
+    background-color: #ffffff;
+    color: #555e68;
+    font-size: 1rem; 
   }
   #validation-error {
     color: red;
@@ -36,11 +63,14 @@
     margin-bottom: 15px;
   }
   #validation-button {
+    margin-top: 30px;
     padding: 10px;
-    margin-top: 20px;
-    border: none;
-    border-radius: 4px;
+    min-height: 45px;
+    border: None;
+    border-radius: 15px;
     background: #007bff;
     color: #fff;
     cursor: pointer;
+    font-size: 0.7rem; 
+    font-weight: bold;
   }
