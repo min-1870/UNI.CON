@@ -1,5 +1,5 @@
+from .embedding_utils import get_embedding, add_embedding_to_faiss, get_faiss_index
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
-from .embedding_utils import get_embedding, add_embedding_to_faiss
 from .database_utils import get_current_user_points
 from rest_framework import serializers
 from randomname import get_name
@@ -97,7 +97,11 @@ class ArticleSerializer(serializers.ModelSerializer):
         article_instance = Article.objects.create(**validated_data)
 
         # Add the embedding to faiss
-        add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
+        add_embedding_to_faiss(
+            get_faiss_index(),
+            article_instance.embedding_vector,
+            article_instance.id,
+        )
 
         # Create the temporary username for the author
         user_temp_name = get_name()

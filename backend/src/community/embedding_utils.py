@@ -4,6 +4,8 @@ from openai import OpenAI
 import numpy as np
 import faiss
 
+client = OpenAI(api_key=config("OPENAI_API_KEY"))
+
 
 def get_embedding(text, model="text-embedding-3-small"):
     text = text.replace("\n", " ")
@@ -22,29 +24,34 @@ def update_preference_vector(user_embeddings, article_embedding, alpha=0.1):
     return ((1 - alpha) * user_embeddings + alpha * article_embedding).tolist()
 
 
-def add_embedding_to_faiss(article_embedding, article_id):
+def add_embedding_to_faiss(index, article_embedding, article_id):
     article_embedding = np.array([article_embedding])
     article_id = np.array([article_id])
     index.add_with_ids(article_embedding, article_id)
     faiss.write_index(index, "index.idx")
 
 
-def search_similar_embeddings(embedding, k=100):
+def search_similar_embeddings(index, embedding, k=100):
     _, ids = index.search(np.array([embedding]), k=k)
     return ids[0]
 
 
-def reset_faiss():
+def reset_faiss(index):
     index.reset()
-
-
-client = OpenAI(api_key=config("OPENAI_API_KEY"))
-
-
-try:
-    index = faiss.read_index("index_file.idx")
-except Exception:
-    index = faiss.IndexFlatL2(1536)
-    index = faiss.IndexIDMap(index)
     for article_instance in Article.objects.all():
-        add_embedding_to_faiss(article_instance.embedding_vector, article_instance.id)
+        add_embedding_to_faiss(
+            index, article_instance.embedding_vector, article_instance.id
+        )
+
+
+def get_faiss_index():
+    try:
+        index = faiss.read_index("index_file.idx")
+    except Exception:
+        index = faiss.IndexFlatL2(1536)
+        index = faiss.IndexIDMap(index)
+        for article_instance in Article.objects.all():
+            add_embedding_to_faiss(
+                index, article_instance.embedding_vector, article_instance.id
+            )
+    return index

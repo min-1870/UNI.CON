@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
             "points",
             "refresh",
             "access",
+            "is_validated",
         ]
         extra_kwargs = {
             "email": {"required": True, "allow_blank": False},
@@ -60,7 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data["password"] = make_password(validated_data["password"])
         validated_data["last_login"] = timezone.now()
         validated_data["validation_code"] = str(random.randint(100000, 999999))
-        validated_data["username"] = validated_data["validation_code"]
+        validated_data["username"] = validated_data["email"]
         validated_data["school"] = School.objects.get(id=school["id"])
 
         user_instance = User.objects.create(**validated_data)

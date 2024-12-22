@@ -18,7 +18,6 @@ class School(models.Model):
 class User(AbstractUser):
     email = models.CharField(max_length=254, default="unknown", null=False, unique=True)
     validation_code = models.CharField(max_length=6, default="000000", null=False)
-    points = models.BigIntegerField(default=100, null=False)
     is_validated = models.BooleanField(default=False, null=False)
     is_active = models.BooleanField(default=True, null=False)
     is_staff = models.BooleanField(default=False, null=False)

@@ -8,13 +8,15 @@ from .models import (
     User,
 )
 from rest_framework.test import APITestCase, APIClient
+from django.core.cache import cache
 from rest_framework import status
 from django.urls import reverse
 from datetime import datetime
 from copy import deepcopy
 import numpy as np
+
 # import json
-from .helpers import reset_faiss
+from .embedding_utils import reset_faiss, get_faiss_index
 from .constants import (
     REGISTER_SUBMIT_NAME,
     REGISTER_CONFIRM_VIEW_NAME,
@@ -94,6 +96,7 @@ class articleModificationTests(APITestCase):
     fixtures = ["fixtures.json"]
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
 
     def test_post_article(self):
@@ -278,7 +281,7 @@ class articleModificationTests(APITestCase):
         )
 
         # Validate Status Code
-        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(delete_response.status_code, status.HTTP_200_OK)
 
         # Validate response structure
         article_keys = set(delete_response.data.keys())
@@ -482,6 +485,7 @@ class articleRetrieveTests(APITestCase):
     fixtures = ["fixtures.json"]
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
 
     def test_retrieve_an_article(self):
@@ -610,6 +614,9 @@ class articleRetrieveTests(APITestCase):
             current_article_time = datetime.strptime(
                 articles[i]["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
             )
+            previous_article_time = datetime.strptime(
+                articles[i - 1]["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
             self.assertTrue(previous_article_time > current_article_time)
 
     def test_retrieve_articles_sorted_by_score(self):
@@ -634,6 +641,7 @@ class articleRetrieveTests(APITestCase):
         # Validate the order of Articles
         articles = retrieve_articles_response.data["results"]["articles"]
         previous_article_comment_count = articles[0]["comments_count"]
+
         for i in range(1, len(articles)):
 
             # Validate the response structure
@@ -641,6 +649,8 @@ class articleRetrieveTests(APITestCase):
 
             # Validate the order
             current_article_comment_count = articles[i]["comments_count"]
+            previous_article_comment_count = articles[i - 1]["comments_count"]
+
             self.assertTrue(
                 previous_article_comment_count > current_article_comment_count
             )
@@ -648,7 +658,7 @@ class articleRetrieveTests(APITestCase):
     def test_retrieve_articles_sorted_by_preference(self):
 
         register_account(self.client, MOCK_USER_1)
-        reset_faiss()
+        reset_faiss(get_faiss_index())
         food_article = deepcopy(MOCK_ARTICLE)
         food_article["body"] = (
             """Food is a universal language that connects people across cultures
@@ -696,6 +706,7 @@ class commentModificationTests(APITestCase):
     fixtures = ["fixtures.json"]
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
 
     def test_post_comment(self):
@@ -854,7 +865,7 @@ class commentModificationTests(APITestCase):
         delete_response = self.client.delete(url, format="json")
 
         # Validate the status code
-        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(delete_response.status_code, status.HTTP_200_OK)
 
         # Validate response structure
         article_keys = set(delete_response.data.keys())
@@ -1101,6 +1112,7 @@ class commentRetrieveTests(APITestCase):
     fixtures = ["fixtures.json"]
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
 
     def test_retrieve_nested_comments(self):

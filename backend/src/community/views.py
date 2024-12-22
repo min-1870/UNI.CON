@@ -8,6 +8,7 @@ from .database_utils import (
     annotate_comment,
 )
 from .embedding_utils import (
+    get_faiss_index,
     search_similar_embeddings,
     get_embedding,
     update_preference_vector,
@@ -97,7 +98,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Fetch Ids of the article based on the similarity
         ids = search_similar_embeddings(
-            user_instance.embedding_vector, len(self.get_queryset())
+            get_faiss_index(), user_instance.embedding_vector, len(self.get_queryset())
         )
 
         # Fetch the article based on the fetched id while maintaining the order
@@ -132,7 +133,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
         embedding_vector = get_embedding(search_content)
 
         # Fetch Ids of the article based on the similarity
-        ids = search_similar_embeddings(embedding_vector, len(self.get_queryset()))
+        ids = search_similar_embeddings(
+            get_faiss_index(), embedding_vector, len(self.get_queryset())
+        )
 
         # Fetch the article based on the fetched id while maintaining the order
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
