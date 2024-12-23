@@ -13,6 +13,7 @@ class School(models.Model):
     name = models.CharField(max_length=200, default="unknown", null=False)
     color = models.CharField(max_length=7, default="#000000", null=False)
     initial = models.CharField(max_length=10, default="unknown", null=False)
+    email_identifier = models.CharField(max_length=10, default="unknown", null=False)
 
 
 class User(AbstractUser):

@@ -7,11 +7,11 @@ def send_otp():
     pass
 
 
-def get_school_from_email(email):
-    schools = School.objects.values_list("id", "name", "initial")
-    for id, name, initial in schools:
-        if initial in email[email.index("@") :]:  # noqa
-            return {"id": id, "name": name, "initial": initial}
+def get_school_id_from_email(email):
+    schools = School.objects.values_list("id", "email_identifier")
+    for pk, email_identifier in schools:
+        if email_identifier in email[email.index("@") :]:  # noqa
+            return pk
     return False
 
 

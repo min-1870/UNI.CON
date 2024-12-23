@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status
 from .serializers import UserSerializer
 from rest_framework.decorators import action
-from .helpers import send_otp, annotate_user
+from .utils import send_otp, annotate_user
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
 

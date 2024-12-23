@@ -1,38 +1,62 @@
 [
     {
       "model": "account.school",
-      "pk": 0,
+      "pk": 1,
       "fields": {
         "name": "University of New South Wales",
         "color": "#FFA500",
-        "initial": "unsw"
-      }
-    },
-    {
-      "model": "account.school",
-      "pk": 1,
-      "fields": {
-        "name": "University of Technology Sydney",
-        "color": "#0000FF",
-        "initial": "uts"
+        "initial": "unsw",
+        "email_identifier": "unsw"
       }
     },
     {
       "model": "account.school",
       "pk": 2,
       "fields": {
-        "name": "The University of Sydney",
-        "color": "#0000FF",
-        "initial": "usyd"
+        "name": "University of Technology Sydney",
+        "color": "#0f48e2",
+        "initial": "uts",
+        "email_identifier": "uts"
       }
     },
     {
       "model": "account.school",
       "pk": 3,
       "fields": {
+        "name": "The University of Sydney",
+        "color": "#e04428",
+        "initial": "usyd",
+        "email_identifier": "sydney"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 4,
+      "fields": {
         "name": "Macquarie University",
-        "color": "#0000FF",
-        "initial": "mu"
+        "color": "#76232f",
+        "initial": "mq",
+        "email_identifier": "mq"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 5,
+      "fields": {
+        "name": "University of Melbourne",
+        "color": "#000f46",
+        "initial": "unimelb",
+        "email_identifier": "unimelb"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 5,
+      "fields": {
+        "name": "RMIT University",
+        "color": "#e5251a",
+        "initial": "rmit",
+        "email_identifier": "rmit"
       }
     }
 ]

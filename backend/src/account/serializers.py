@@ -1,8 +1,8 @@
+from .utils import get_school_id_from_email, annotate_user
 from django.contrib.auth.hashers import make_password
-from .helpers import get_school_from_email, annotate_user
 from rest_framework import serializers
-from .models import User, School
 from django.utils import timezone
+from .models import User
 import random
 import re
 
@@ -29,8 +29,15 @@ class UserSerializer(serializers.ModelSerializer):
             "is_validated",
         ]
         extra_kwargs = {
+            "id": {"read_only": True},
             "email": {"required": True, "allow_blank": False},
-            "password": {"required": True, "allow_blank": False, "write_only": True},
+            "password": {
+                "required": True,
+                "allow_blank": False,
+                "write_only": True,
+                "min_length": 8,
+            },
+            "validation_code": {"write_only": True, "min_length": 6},
             "validation_code": {
                 "required": False,
                 "allow_blank": False,
@@ -41,28 +48,27 @@ class UserSerializer(serializers.ModelSerializer):
     def validate(self, data):
 
         pattern = r"^[\w\.-]+@[\w\.-]+\.edu[\w\.-]+$"
-        school = get_school_from_email(data["email"])
 
         if not re.match(pattern, data["email"]):
-            raise serializers.ValidationError("Invalid email")
+            raise serializers.ValidationError("I don't think it is an email..")
+
+        school = get_school_id_from_email(data["email"])
 
         if not school:
-            raise serializers.ValidationError("Invalid school")
+            raise serializers.ValidationError("We do not support the school.")
+        data["school"] = school
 
-        if len(data["password"]) < 8:
-            raise serializers.ValidationError("Invalid password")
+        if User.objects.filter(email=data["email"]).exists():
+            raise serializers.ValidationError("Email is already in use.")
 
         return data
 
     def create(self, validated_data):
 
-        school = get_school_from_email(validated_data["email"])
-
         validated_data["password"] = make_password(validated_data["password"])
         validated_data["last_login"] = timezone.now()
         validated_data["validation_code"] = str(random.randint(100000, 999999))
         validated_data["username"] = validated_data["email"]
-        validated_data["school"] = School.objects.get(id=school["id"])
 
         user_instance = User.objects.create(**validated_data)
 
