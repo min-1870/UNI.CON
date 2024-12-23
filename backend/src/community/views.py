@@ -36,6 +36,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         queryset = Article.objects.filter(
             Q(user__school=user_instance.school) | Q(unicon=True)
         ).annotate(
+            # Annotate user specific data
             like_status=Exists(
                 Subquery(
                     ArticleLike.objects.filter(user=user_instance, article=OuterRef("pk"))

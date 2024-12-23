@@ -33,6 +33,7 @@ def get_set_serialized_annotated_article_caches(
                 annotate_article(article_instance)
             ).data
 
+            # Store the articles to bulk upload to cache
             set_many_serialized_annotated_articles[cache_key] = (
                 serialized_annotated_article
             )
@@ -67,7 +68,7 @@ def get_set_serialized_annotated_article_cache(
     # If the cache is hit but there are updated data
     elif updated_fields:
 
-        # Store the updated data to the cache
+        # Fix the updated data to the cache
         for updated_field in updated_fields:
             serialized_annotated_article[updated_field] = updated_fields[updated_field]
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)

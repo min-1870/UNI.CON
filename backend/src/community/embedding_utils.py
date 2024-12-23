@@ -1,21 +1,21 @@
+from .constants import (
+    EMBEDDING_VECTOR_SIZE,
+    EMBEDDING_VECTOR_MODEL,
+    ENV_OPENAI_API_KEY,
+    INDEX_FILE_NAME,
+)
 from decouple import config
 from .models import Article
 from openai import OpenAI
 import numpy as np
 import faiss
 
-client = OpenAI(api_key=config("OPENAI_API_KEY"))
+client = OpenAI(api_key=config(ENV_OPENAI_API_KEY))
 
 
-def get_embedding(text, model="text-embedding-3-small"):
+def get_embedding(text, model=EMBEDDING_VECTOR_MODEL):
     text = text.replace("\n", " ")
     return client.embeddings.create(input=[text], model=model).data[0].embedding
-
-
-def calculate_similarity(vector_1, vector_2):
-    return np.dot(vector_1, vector_2) / (
-        np.linalg.norm(vector_1) * np.linalg.norm(vector_2)
-    )
 
 
 def update_preference_vector(user_embeddings, article_embedding, alpha=0.1):
@@ -28,7 +28,7 @@ def add_embedding_to_faiss(index, article_embedding, article_id):
     article_embedding = np.array([article_embedding])
     article_id = np.array([article_id])
     index.add_with_ids(article_embedding, article_id)
-    faiss.write_index(index, "index.idx")
+    faiss.write_index(index, INDEX_FILE_NAME)
 
 
 def search_similar_embeddings(index, embedding, k=100):
@@ -36,7 +36,7 @@ def search_similar_embeddings(index, embedding, k=100):
     return ids[0]
 
 
-def reset_faiss(index):
+def reset_faiss(index):  # This function only for testcases
     index.reset()
     for article_instance in Article.objects.all():
         add_embedding_to_faiss(
@@ -46,9 +46,9 @@ def reset_faiss(index):
 
 def get_faiss_index():
     try:
-        index = faiss.read_index("index_file.idx")
+        index = faiss.read_index(INDEX_FILE_NAME)
     except Exception:
-        index = faiss.IndexFlatL2(1536)
+        index = faiss.IndexFlatL2(EMBEDDING_VECTOR_SIZE)
         index = faiss.IndexIDMap(index)
         for article_instance in Article.objects.all():
             add_embedding_to_faiss(
