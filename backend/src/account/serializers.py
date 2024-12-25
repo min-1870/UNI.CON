@@ -2,7 +2,7 @@ from .utils import get_school_id_from_email, annotate_user
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.utils import timezone
-from .models import User
+from .models import User, School
 import random
 import re
 
@@ -37,11 +37,11 @@ class UserSerializer(serializers.ModelSerializer):
                 "write_only": True,
                 "min_length": 8,
             },
-            "validation_code": {"write_only": True, "min_length": 6},
             "validation_code": {
                 "required": False,
                 "allow_blank": False,
                 "write_only": True,
+                "min_length": 6,
             },
         }
 
@@ -52,11 +52,11 @@ class UserSerializer(serializers.ModelSerializer):
         if not re.match(pattern, data["email"]):
             raise serializers.ValidationError("I don't think it is an email..")
 
-        school = get_school_id_from_email(data["email"])
+        school_id = get_school_id_from_email(data["email"])
 
-        if not school:
+        if not school_id:
             raise serializers.ValidationError("We do not support the school.")
-        data["school"] = school
+        data["school"] = School.objects.get(pk=school_id)
 
         if User.objects.filter(email=data["email"]).exists():
             raise serializers.ValidationError("Email is already in use.")

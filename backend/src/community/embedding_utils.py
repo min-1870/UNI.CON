@@ -42,6 +42,7 @@ def reset_faiss(index):  # This function only for testcases
         add_embedding_to_faiss(
             index, article_instance.embedding_vector, article_instance.id
         )
+    faiss.write_index(index, INDEX_FILE_NAME)
 
 
 def get_faiss_index():

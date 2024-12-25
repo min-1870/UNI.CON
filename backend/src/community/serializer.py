@@ -1,9 +1,43 @@
 from .embedding_utils import get_embedding, add_embedding_to_faiss, get_faiss_index
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
 from .database_utils import get_current_user_points
+from .constants import ARTICLES_CACHE_KEY
 from rest_framework import serializers
+from django.core.cache import cache
 from randomname import get_name
 from django.db.models import F
+
+
+class ArticleResponseSerializer(serializers.ModelSerializer):
+
+    like_status = serializers.BooleanField(read_only=True)
+    user_school = serializers.CharField(read_only=True)
+    user_temp_name = serializers.CharField(read_only=True)
+    user_static_points = serializers.IntegerField(read_only=True)
+    course_code = serializers.JSONField(required=False)
+
+    class Meta:
+        model = Article
+        fields = [
+            # In Article Model
+            "id",
+            "user",
+            "created_at",
+            "views_count",
+            "comments_count",
+            "likes_count",
+            "deleted",
+            "edited",
+            "title",
+            "body",
+            "unicon",
+            # Not in Article Model
+            "like_status",
+            "user_school",
+            "user_static_points",
+            "user_temp_name",
+            "course_code",
+        ]
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -102,6 +136,13 @@ class ArticleSerializer(serializers.ModelSerializer):
             article_instance.embedding_vector,
             article_instance.id,
         )
+
+        # Add article id to the cache
+        cache_key = ARTICLES_CACHE_KEY(user_instance.school.id, "article-list")
+        article_ids = cache.get(cache_key)
+        if article_ids:
+            article_ids.insert(0, article_instance.id)
+            cache.set(cache_key, article_ids)
 
         # Create the temporary username for the author
         user_temp_name = get_name()

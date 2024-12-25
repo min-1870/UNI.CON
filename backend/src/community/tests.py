@@ -486,6 +486,7 @@ class articleRetrieveTests(APITestCase):
 
     def setUp(self):
         cache.clear()
+        reset_faiss(get_faiss_index())
         self.client = APIClient()
 
     def test_retrieve_an_article(self):
@@ -658,7 +659,6 @@ class articleRetrieveTests(APITestCase):
     def test_retrieve_articles_sorted_by_preference(self):
 
         register_account(self.client, MOCK_USER_1)
-        reset_faiss(get_faiss_index())
         food_article = deepcopy(MOCK_ARTICLE)
         food_article["body"] = (
             """Food is a universal language that connects people across cultures
@@ -690,6 +690,7 @@ class articleRetrieveTests(APITestCase):
 
         # Validate the response structure
         articles = retrieve_articles_response.data["results"]["articles"]
+
         self.assertSetEqual(set(articles[0].keys()), MOCK_ARTICLE_RESPONSE_KEYS)
         self.assertSetEqual(set(articles[1].keys()), MOCK_ARTICLE_RESPONSE_KEYS)
 

@@ -1,97 +1,188 @@
+from .constants import (
+    CACHE_TIMEOUT,
+    PAGINATOR_SIZE,
+    ARTICLE_CACHE_KEY,
+    ARTICLES_LIKE_CACHE_KEY,
+)
+from django.db.models import OuterRef, Subquery, F, Func, Value
+from .database_utils import update_article_engagement_score
+from .models import ArticleUser, ArticleCourse, ArticleLike
+from .serializer import ArticleResponseSerializer
+from django.db.models.functions import Coalesce
 from django.core.cache import cache
-from .serializer import ArticleSerializer
-from .constants import CACHE_TIMEOUT
-from .models import ArticleUser, ArticleCourse
+from account.models import User
 
 
-def get_set_serialized_annotated_article_caches(
-    serialized_articles, paginated_article_instances
-):
-    # Gather the Article Ids for the pagination
-    article_ids = [f"article_{article['id']}" for article in serialized_articles]
+def get_set_paginated_annotated_articles_response_cache(request, queryset, cache_key):
+    # Cache the all article ids for the school
+    all_article_ids = cache.get(cache_key)
+    if not all_article_ids:
+        all_article_ids = list(queryset.values_list("id", flat=True))
+        cache.set(cache_key, all_article_ids, CACHE_TIMEOUT)
 
+    # Calculate the number of articles created
+    articles_count = len(all_article_ids)
+    user_specific_articles_count = int(request.query_params.get("count", articles_count))
+    created_articles_count = articles_count - user_specific_articles_count
+
+    # Slice for the portion of the key based on the page
+    page_number = int(request.query_params.get("page", 1))
+    start_index = (page_number - 1) * PAGINATOR_SIZE + created_articles_count
+    end_index = start_index + PAGINATOR_SIZE + created_articles_count
+    page_article_ids = all_article_ids[start_index:end_index]
+
+    # Bulk cache the articles in the page
+    missing_ids = []
     serialized_annotated_articles = []
-    set_many_serialized_annotated_articles = {}
-
-    # Cache the additional article ids
-    serialized_annotated_article_caches = cache.get_many(article_ids)
-
-    for i, serialized_article in enumerate(serialized_articles):
-
-        # Check the cache hit
-        cache_key = f"article_{serialized_article['id']}"
-        serialized_annotated_article = serialized_annotated_article_caches.get(
-            cache_key, False
+    serialized_annotated_articles_cache = cache.get_many(
+        [ARTICLE_CACHE_KEY(pk) for pk in page_article_ids]
+    )
+    for pk in page_article_ids:
+        cache_key = ARTICLE_CACHE_KEY(pk)
+        serialized_annotated_article = serialized_annotated_articles_cache.get(
+            cache_key, None
         )
 
-        # If the cache missed
-        if not serialized_annotated_article:
+        # Collect the missing article ids
+        if serialized_annotated_article is None:
+            missing_ids.append(pk)
+            serialized_annotated_articles.append(pk)
+        else:
+            serialized_annotated_articles.append(serialized_annotated_article)
 
-            # Make an annotated_article to set the cache
-            article_instance = paginated_article_instances[i]
-            serialized_annotated_article = ArticleSerializer(
-                annotate_article(article_instance)
-            ).data
+    # Query all of the missing article ids
+    missing_annotated_article_queryset = queryset.filter(pk__in=missing_ids).annotate(
+        user_school=Subquery(
+            User.objects.filter(id=OuterRef("user")).values("school__initial")[:1]
+        ),
+        user_temp_name=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef("pk"), user=OuterRef("user")
+            ).values("user_temp_name")[:1]
+        ),
+        user_static_points=Subquery(
+            ArticleUser.objects.filter(
+                article=OuterRef("pk"), user=OuterRef("user")
+            ).values("user_static_points")[:1]
+        ),
+        course_code=Coalesce(
+            Subquery(
+                ArticleCourse.objects.filter(article=OuterRef("pk"))
+                .values("course__code")
+                .annotate(
+                    course_codes=Func(
+                        F("course__code"), Value(","), function="GROUP_CONCAT"
+                    )
+                )
+                .values("course_codes")[:1],
+            ),
+            Value(""),
+        ),
+    )
 
-            # Store the articles to bulk upload to cache
-            set_many_serialized_annotated_articles[cache_key] = (
-                serialized_annotated_article
+    # Serialized the missing articles
+    missing_serialized_annotated_articles = ArticleResponseSerializer(
+        missing_annotated_article_queryset, many=True
+    ).data
+    missing_serialized_annotated_articles = {
+        ARTICLE_CACHE_KEY(article["id"]): article
+        for article in missing_serialized_annotated_articles
+    }
+
+    # Set annotated article cache in bulk
+    cache.set_many(missing_serialized_annotated_articles, timeout=CACHE_TIMEOUT)
+
+    # Cache user like status in bulk
+    user_instance = request.user
+    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
+    user_liked_articles = cache.get(cache_key, None)
+    if user_liked_articles is None:
+        user_liked_articles = ArticleLike.objects.filter(user=user_instance).values_list(
+            "article", flat=True
+        )
+        user_liked_articles = {pk: True for pk in user_liked_articles}
+        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+
+    # Insert the missing article into the list while maintain the order
+    for i, pk_or_article in enumerate(serialized_annotated_articles):
+
+        # For missed articles only
+        if isinstance(pk_or_article, int):
+
+            # Insert the missed article to the result
+            serialized_annotated_articles[i] = missing_serialized_annotated_articles.get(
+                ARTICLE_CACHE_KEY(pk_or_article)
             )
 
-        # Attache the user specific attribute
-        serialized_annotated_article["like_status"] = serialized_article["like_status"]
+        # Attach user specific data
+        like_status = user_liked_articles.get(
+            serialized_annotated_articles[i]["id"], False
+        )
+        serialized_annotated_articles[i]["like_status"] = like_status
 
-        serialized_annotated_articles.append(serialized_annotated_article)
+    # Construct the response data with necessary pagination attributes
+    url = request.build_absolute_uri()
+    if end_index < articles_count:
+        next_page = f"{url.split('?')[0]}?page={page_number + 1}&count={user_specific_articles_count}"
+    else:
+        next_page = None
+    return {
+        "count": user_specific_articles_count,
+        "next": next_page,
+        "results": {"articles": serialized_annotated_articles},
+    }
 
-    cache.set_many(set_many_serialized_annotated_articles, timeout=CACHE_TIMEOUT)
 
-    return serialized_annotated_articles
-
-
-def get_set_serialized_annotated_article_cache(
-    serialized_article, article_instance, updated_fields=[]
+def get_set_serialized_annotated_article_response_cache(
+    request, article_instance, updated_fields={}
 ):
+    cache_key = ARTICLE_CACHE_KEY(article_instance.id)
+
+    # Update attributes for updated fields
+    if len(updated_fields) != 0:
+        for field, value in updated_fields.items():
+            setattr(article_instance, field, value)
+        article_instance.save(update_fields=updated_fields.keys())
+        article_instance.refresh_from_db()
+        article_instance = update_article_engagement_score(article_instance)
+        cache.delete(cache_key)
 
     # Cache the annotated article
-    cache_key = f"article_{serialized_article['id']}"
     serialized_annotated_article = cache.get(cache_key)
+    user_instance = request.user
 
     # If the cache missed
     if not serialized_annotated_article:
 
+        # Annotate article instance
+        article_instance.user_school = article_instance.user.school.initial
+        articleUser_instance = ArticleUser.objects.get(
+            article=article_instance, user=article_instance.user
+        )
+        article_instance.user_temp_name = articleUser_instance.user_temp_name
+        article_instance.user_static_points = articleUser_instance.user_static_points
+        course_codes = ArticleCourse.objects.filter(article=article_instance).values_list(
+            "course__code", flat=True
+        )
+        article_instance.course_code = ", ".join(course_codes) if course_codes else ""
+
         # Make an annotated_article to set the cache
-        serialized_annotated_article = ArticleSerializer(
-            annotate_article(article_instance)
-        ).data
-        cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
-
-    # If the cache is hit but there are updated data
-    elif updated_fields:
-
-        # Fix the updated data to the cache
-        for updated_field in updated_fields:
-            serialized_annotated_article[updated_field] = updated_fields[updated_field]
+        serialized_annotated_article = ArticleResponseSerializer(article_instance).data
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
     # Attache the user specific attribute
-    serialized_annotated_article["like_status"] = serialized_article["like_status"]
+    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
+    user_liked_articles = cache.get(cache_key, None)
+
+    # If the cache miss fetch them
+    if user_liked_articles is None:
+        user_liked_articles = ArticleLike.objects.filter(user=user_instance).values_list(
+            "article", flat=True
+        )
+        user_liked_articles = {pk: True for pk in user_liked_articles}
+        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+
+    like_status = user_liked_articles.get(article_instance.id, False)
+    serialized_annotated_article["like_status"] = like_status
 
     return serialized_annotated_article
-
-
-def annotate_article(article_instance):
-
-    article_instance.user_school = article_instance.user.school.initial
-
-    articleUser_instance = ArticleUser.objects.get(
-        article=article_instance, user=article_instance.user
-    )
-    article_instance.user_temp_name = articleUser_instance.user_temp_name
-    article_instance.user_static_points = articleUser_instance.user_static_points
-
-    course_codes = ArticleCourse.objects.filter(article=article_instance).values_list(
-        "course__code", flat=True
-    )
-    article_instance.course_code = ", ".join(course_codes) if course_codes else ""
-
-    return article_instance

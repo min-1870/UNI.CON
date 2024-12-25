@@ -3,6 +3,18 @@ EMBEDDING_VECTOR_SIZE = 1536
 EMBEDDING_VECTOR_MODEL = "text-embedding-3-small"
 ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
 INDEX_FILE_NAME = "index.idx"
+PAGINATOR_SIZE = 10
+
+
+ARTICLE_CACHE_KEY = (
+    lambda article_id: f"ARTICLE_{article_id}"
+)
+ARTICLES_CACHE_KEY = (
+    lambda school_id, view_name, identifier="": f"{school_id}_{view_name}_{identifier}"
+)
+ARTICLES_LIKE_CACHE_KEY = (
+    lambda user_id: f"{user_id}_LIKE"
+)
 
 DELETED_TITLE = "[DELETED ARTICLE]"
 DELETED_BODY = "[DELETED CONTENT]"
