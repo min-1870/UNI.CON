@@ -1,0 +1,11 @@
+services:
+  web:
+    image: unicon_drf_backend_image
+    container_name: unicon_drf_backend_container
+    volumes:
+      - .:/app
+      - ./db.sqlite3:/app/db.sqlite3
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
