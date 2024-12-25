@@ -1,6 +1,6 @@
 services:
   web:
-    image: unicon_drf_backend_image
+    build: .
     container_name: unicon_drf_backend_container
     volumes:
       - .:/app
