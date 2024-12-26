@@ -1,6 +1,6 @@
 from .cache_utils import (
-    get_set_serialized_annotated_article_response_cache,
-    get_set_paginated_annotated_articles_response_cache,
+    cache_serialized_article,
+    cache_paginated_articles
 )
 from .database_utils import (
     annotate_comments,
@@ -47,24 +47,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        user_instance = request.user
 
-        response_data = get_set_paginated_annotated_articles_response_cache(
+        response_data = cache_paginated_articles(
             request,
             self.get_queryset(),
-            ARTICLES_CACHE_KEY(user_instance.school.id, resolve(request.path).view_name),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def hot(self, request):
-        user_instance = request.user
 
-        response_data = get_set_paginated_annotated_articles_response_cache(
+        response_data = cache_paginated_articles(
             request,
             self.get_queryset().order_by("-engagement_score"),
-            ARTICLES_CACHE_KEY(user_instance.school.id, resolve(request.path).view_name),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -82,7 +78,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
 
-        response_data = get_set_paginated_annotated_articles_response_cache(
+        response_data = cache_paginated_articles(
             request,
             queryset,
             ARTICLES_CACHE_KEY(
@@ -115,7 +111,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
 
         user_instance = request.user
-        response_data = get_set_paginated_annotated_articles_response_cache(
+        response_data = cache_paginated_articles(
             request,
             queryset,
             ARTICLES_CACHE_KEY(
@@ -158,7 +154,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Update the article attributes
         updated_fields = {"title": title, "body": body, "edited": True}
-        response_data = get_set_serialized_annotated_article_response_cache(
+        response_data = cache_serialized_article(
             request, article_instance, updated_fields
         )
         return Response(response_data, status=status.HTTP_200_OK)
@@ -195,7 +191,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         ).data
 
         # Update the article attributes
-        article_response_data = get_set_serialized_annotated_article_response_cache(
+        article_response_data = cache_serialized_article(
             request, article_instance, {"views_count": F("views_count") + 1}
         )
 
@@ -215,7 +211,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Update the article attributes
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
-        response_data = get_set_serialized_annotated_article_response_cache(
+        response_data = cache_serialized_article(
             request, article_instance, updated_fields
         )
         return Response(response_data, status=status.HTTP_200_OK)
@@ -248,7 +244,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
 
         # Update the article attributes
-        response_data = get_set_serialized_annotated_article_response_cache(
+        response_data = cache_serialized_article(
             request, article_instance, {"likes_count": F("likes_count") + 1}
         )
         return Response(response_data, status=status.HTTP_200_OK)
@@ -281,7 +277,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
 
         # Update the article attributes
-        response_data = get_set_serialized_annotated_article_response_cache(
+        response_data = cache_serialized_article(
             request, article_instance, {"likes_count": F("likes_count") - 1}
         )
         return Response(response_data, status=status.HTTP_200_OK)
