@@ -112,7 +112,7 @@ const ArticleDetail = () => {
             },
       });
 
-      const filteredComments = response.data.results.nested_comments.filter(
+      const filteredComments = response.data.results.comments.filter(
         (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
       );      
       setComments((prevComments) =>
@@ -138,7 +138,7 @@ const ArticleDetail = () => {
               },
         });
 
-        const filteredComments = response.data.results.nested_comments.filter(
+        const filteredComments = response.data.results.comments.filter(
           (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
         );      
         setComments((prevComments) =>
@@ -557,7 +557,7 @@ const ArticleDetail = () => {
             setComments((prevComments) =>
               prevComments.map(comment =>
                 comment.id === comment_id ? { ...comment,
-                    nested_comments: response.data.results.nested_comments,
+                    nested_comments: response.data.results.comments,
                     show_nested_comments: true,
                     next_comment_page: response.data.next
                 } : comment 
@@ -583,7 +583,7 @@ const ArticleDetail = () => {
             setComments((prevComments) =>
               prevComments.map(comment =>
                 comment.id === comment_id ? { ...comment,
-                    nested_comments: response.data.results.nested_comments,
+                    nested_comments: response.data.results.comments,
                     show_nested_comments: true,
                     next_comment_page: response.data.next
                 } : comment 
@@ -1141,8 +1141,8 @@ const ArticleDetail = () => {
         <div id="article-detail-comments">
           
           {comments.map((comment) => (
-            <>
-              <div key={comment.id} id="article-detail-comment">
+            <div key={comment.id}>
+              <div id="article-detail-comment">
                 {user == comment.user ? (
                   <div id="name"> {comment.user_temp_name} (You)</div>
                 ):(
@@ -1374,7 +1374,7 @@ const ArticleDetail = () => {
                 )}
               </div>
 
-            </>
+            </div>
           ))}
 
         </div>
