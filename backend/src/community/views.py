@@ -1,6 +1,8 @@
 from .cache_utils import (
     cache_serialized_article,
-    cache_paginated_articles
+    cache_paginated_articles,
+    cache_serialized_comment,
+    cache_paginated_comments
 )
 from .database_utils import (
     annotate_comments,
@@ -170,34 +172,18 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance.embedding_vector = updated_preference_vector
         user_instance.save(update_fields=["embedding_vector"])
 
-        # Fetch the comments related to the article and parent_comment is null
-        comment_queryset = Comment.objects.filter(
-            article=article_instance, parent_comment__isnull=True
-        ).order_by("-created_at")
-
-        # Annotate extra properties to the comments
-        comment_queryset = annotate_comments(comment_queryset, user_instance)
-
-        # Set up pagination for comments
-        paginator = PageNumberPagination()
-        paginator.page_size = 10
-
-        # Apply pagination to the comments queryset
-        paginated_comment_instances = paginator.paginate_queryset(
-            comment_queryset, request
-        )
-        serialized_comments = CommentSerializer(
-            paginated_comment_instances, many=True
-        ).data
-
         # Update the article attributes
         article_response_data = cache_serialized_article(
             request, article_instance, {"views_count": F("views_count") + 1}
         )
 
-        return paginator.get_paginated_response(
-            {"article": article_response_data, "comments": serialized_comments}
+        comments_response_data = cache_paginated_comments(
+            request, article_instance
         )
+
+        comments_response_data["results"]["article"] = article_response_data
+
+        return Response(comments_response_data)
 
     def destroy(self, request, *args, **kwargs):
         article_instance = self.get_object()
@@ -332,20 +318,10 @@ class CommentViewSet(viewsets.ModelViewSet):
                 {"detail": "The body is empty."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Append new text to the existing body
-        comment_instance.body = body
-        comment_instance.edited = True
-        comment_instance.save(update_fields=["body", "edited"])
+        updated_fields = {"body":body, "edited":True}
+        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
 
-        # fetch the updated instance
-        comment_instance.refresh_from_db()
-
-        # Annotate the extra properties
-        comment_instance = annotate_comment(comment_instance, user_instance)
-
-        # Serialize the comment and return the response
-        serializer = self.get_serializer(comment_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serialized_comment, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         comment_instance = self.get_object()
@@ -356,52 +332,21 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "The article is deleted."},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
+            )        
 
-        # Remove and save original content
-        comment_instance.body = DELETED_BODY
-        comment_instance.deleted = True
-        comment_instance.save(update_fields=["body", "deleted"])
+        updated_fields = {"body":DELETED_BODY, "deleted":True}
+        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
 
-        # fetch the updated instance
-        comment_instance.refresh_from_db()
-
-        # Annotate the extra properties
-        comment_instance = annotate_comment(comment_instance, user_instance)
-
-        # Serialize the comment and return the response
-        serializer = self.get_serializer(comment_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serialized_comment, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
-        user_instance = request.user
+        
         comment_instance = self.get_object()
 
-        # Fetch the nested comments related to the parent comment
-        nested_comment_queryset = (
-            self.get_queryset()
-            .filter(
-                parent_comment=comment_instance,
-            )
-            .order_by("-created_at")
-        )
+        article_instance = comment_instance.article
+        paginated_comments = cache_paginated_comments(request, article_instance, comment_instance)
 
-        # Annotate extra properties to the comments
-        nested_comment_queryset = annotate_comments(
-            nested_comment_queryset, user_instance
-        )
-
-        # Set up pagination for comments
-        paginator = PageNumberPagination()
-        paginator.page_size = 10
-
-        # Apply pagination to the comments queryset
-        paginated_comments = paginator.paginate_queryset(nested_comment_queryset, request)
-        comment_serializer = CommentSerializer(paginated_comments, many=True)
-
-        return paginator.get_paginated_response(
-            {"nested_comments": comment_serializer.data}
-        )
+        return Response(paginated_comments)
 
     @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
     def like(self, request, pk=None):
@@ -418,19 +363,11 @@ class CommentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_304_NOT_MODIFIED,
             )
 
-        # Update likes_count of the comment
-        comment_instance.likes_count = F("likes_count") + 1
-        comment_instance.save(update_fields=["likes_count"])
+        updated_fields = {"likes_count":F("likes_count") + 1}
+        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
 
-        # fetch the updated instance
-        comment_instance.refresh_from_db()
-
-        # Annotate the extra properties
-        comment_instance = annotate_comment(comment_instance, user_instance)
-
-        # Serialize the comment and return the response
-        serializer = self.get_serializer(comment_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serialized_comment, status=status.HTTP_200_OK)
+        
 
     @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
     def unlike(self, request, pk=None):
@@ -447,16 +384,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_304_NOT_MODIFIED,
             )
 
-        # Update likes_count of the comment
-        comment_instance.likes_count = F("likes_count") - 1
-        comment_instance.save(update_fields=["likes_count"])
-
-        # fetch the updated instance
-        comment_instance.refresh_from_db()
-
-        # Annotate the extra properties
-        comment_instance = annotate_comment(comment_instance, user_instance)
-
-        # Serialize the comment and return the response
-        serializer = self.get_serializer(comment_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        updated_fields = {"likes_count":F("likes_count") - 1}
+        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
+        
+        return Response(serialized_comment, status=status.HTTP_200_OK)

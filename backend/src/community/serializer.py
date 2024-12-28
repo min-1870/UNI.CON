@@ -1,7 +1,7 @@
 from .embedding_utils import get_embedding, add_embedding_to_faiss, get_faiss_index
 from .models import Article, Course, Comment, ArticleCourse, ArticleUser
 from .database_utils import get_current_user_points
-from .constants import ARTICLES_CACHE_KEY
+from .constants import ARTICLES_CACHE_KEY, COMMENTS_CACHE_KEY, CACHE_TIMEOUT
 from rest_framework import serializers
 from django.core.cache import cache
 from randomname import get_name
@@ -271,6 +271,13 @@ class CommentSerializer(serializers.ModelSerializer):
             parent_comment_instance.comments_count = F("comments_count") + 1
             parent_comment_instance.save(update_fields=["comments_count"])
 
+            # Cache the comments
+            cache_key = COMMENTS_CACHE_KEY(
+                comment_instance.article.id,
+                comment_instance.parent_comment if comment_instance.parent_comment else "" 
+            )
+            comments_cache = cache.get(cache_key)
+
         # Save the new comment
         comment_instance = Comment.objects.create(**validated_data)
 
@@ -298,5 +305,23 @@ class CommentSerializer(serializers.ModelSerializer):
         comment_instance.user_static_points = user_static_points
         comment_instance.user_school = user_instance.school.initial
         comment_instance.like_status = False
+
+        # Cache the comments
+        cache_key = COMMENTS_CACHE_KEY(
+            comment_instance.article.id,
+            comment_instance.parent_comment if comment_instance.parent_comment else "" 
+        )
+        comments_cache = cache.get(cache_key)
+
+        if comments_cache:
+            # Update the total count
+            comments_cache["total_comments"] += 1
+
+            # Serialize and insert the comment at the beginning of cache
+            serialized_comment = CommentSerializer(comment_instance).data
+            comments = {serialized_comment["id"]:serialized_comment}
+            comments = comments.update(comments_cache["comments"])
+            comments_cache["comments"] = comments
+            cache.set(cache_key, comments_cache, CACHE_TIMEOUT)
 
         return comment_instance
