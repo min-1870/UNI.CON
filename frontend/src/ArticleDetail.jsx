@@ -878,6 +878,7 @@ const ArticleDetail = () => {
         const response = await axios.patch(
             `${API_URL}/community/article/${articleId}/`,
             {
+              "title": article.title_edit_text_area,
               "body": article.body_edit_text_area
             },
             {
@@ -904,6 +905,7 @@ const ArticleDetail = () => {
         const response = await axios.patch(
             `${API_URL}/community/article/${articleId}/`,
             {
+              "title": article.title_edit_text_area,
               "body": article.body_edit_text_area
             },
             {
