@@ -1,4 +1,4 @@
-from .views import ArticleViewSet, CommentViewSet
+from community.views import ArticleViewSet, CommentViewSet
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 

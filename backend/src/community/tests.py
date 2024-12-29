@@ -16,7 +16,7 @@ from copy import deepcopy
 import numpy as np
 
 # import json
-from .embedding_utils import reset_faiss, get_faiss_index
+from community.utils import reset_faiss, get_faiss_index
 from .constants import (
     REGISTER_SUBMIT_NAME,
     REGISTER_CONFIRM_VIEW_NAME,
@@ -1133,12 +1133,12 @@ class commentRetrieveTests(APITestCase):
 
         # Validate the nested comment response structure
         nested_comment_keys = set(
-            retrieve_comment_response.data["results"]["nested_comments"][0].keys()
+            retrieve_comment_response.data["results"]["comments"][0].keys()
         )
         self.assertSetEqual(nested_comment_keys, MOCK_COMMENT_RESPONSE_KEYS)
 
         # Validate the nested comment
         self.assertEqual(
             nested_comment_instance.id,
-            retrieve_comment_response.data["results"]["nested_comments"][0]["id"],
+            retrieve_comment_response.data["results"]["comments"][0]["id"],
         )

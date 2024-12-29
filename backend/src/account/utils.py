@@ -1,5 +1,5 @@
 from rest_framework_simplejwt.tokens import RefreshToken
-from community.database_utils import get_current_user_points
+from community.utils import get_current_user_points
 from .models import School
 
 

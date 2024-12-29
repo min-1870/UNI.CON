@@ -16,7 +16,7 @@ ARTICLES_LIKE_CACHE_KEY = (
     lambda user_id: f"{user_id}_LIKED_ARTICLES"
 )
 COMMENTS_CACHE_KEY = (
-    lambda article_id, comment_id="" : f"ARTICLE_{article_id}_COMMENT_{comment_id}"
+    lambda article_id, comment_id="": f"ARTICLE_{article_id}_COMMENT_{comment_id}"
 )
 COMMENTS_LIKE_CACHE_KEY = (
     lambda user_id: f"{user_id}_LIKED_COMMENTS"

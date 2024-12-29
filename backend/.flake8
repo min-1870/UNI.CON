@@ -15,5 +15,7 @@ exclude =
     src/community/migrations,
     src/community/admin.py,
     src/community/__init__.py,
+    src/community/utils/__init__.py,
+    src/community/views/__init__.py,
     src/src
 

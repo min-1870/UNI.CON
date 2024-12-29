@@ -1,11 +1,11 @@
-from .constants import (
+from community.constants import (
     EMBEDDING_VECTOR_SIZE,
     EMBEDDING_VECTOR_MODEL,
     ENV_OPENAI_API_KEY,
     INDEX_FILE_NAME,
 )
+from community.models import Article
 from decouple import config
-from .models import Article
 from openai import OpenAI
 import numpy as np
 import faiss

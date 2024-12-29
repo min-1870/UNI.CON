@@ -1,30 +1,25 @@
-from .cache_utils import (
+from community.utils import (
     cache_serialized_article,
     cache_paginated_articles,
-    cache_serialized_comment,
-    cache_paginated_comments
-)
-from .database_utils import (
-    annotate_comments,
-    annotate_comment,
-)
-from .embedding_utils import (
+    cache_paginated_comments,
     get_faiss_index,
     search_similar_embeddings,
     get_embedding,
     update_preference_vector,
+    add_embedding_to_faiss,
+    get_set_temp_name_static_points,
+    ArticleResponseSerializer,
 )
-from .permissions import Article_IsAuthenticated, Comment_IsAuthenticated
-from .constants import (
+from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
     ARTICLES_LIKE_CACHE_KEY,
     CACHE_TIMEOUT,
 )
-from .models import Article, Comment, ArticleLike, CommentLike
-from .serializer import ArticleSerializer, CommentSerializer
-from rest_framework.pagination import PageNumberPagination
+from community.models import Article, ArticleLike, Course, ArticleCourse
+from community.permissions import Article_IsAuthenticated
+from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -47,6 +42,57 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
 
         return queryset
+
+    def create(self, request, *args, **kwargs):
+
+        # Create the article
+        user_instance = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        article_instance = serializer.instance
+
+        # Add the embedding to faiss
+        add_embedding_to_faiss(
+            get_faiss_index(),
+            article_instance.embedding_vector,
+            article_instance.id,
+        )
+
+        # Link the foreign key for each course code if necessary
+        course_code = request.data.get("course_code")
+        if len(course_code) != 0:
+            for code in course_code:
+                course_instance, _ = Course.objects.get_or_create(
+                    code=code.upper().strip(), school=user_instance.school
+                )
+                ArticleCourse.objects.create(
+                    article=article_instance, course=course_instance
+                )
+
+            article_instance.course_code = [code.upper().strip() for code in course_code]
+        else:
+            article_instance.course_code = []
+
+        # Add article id to the cache
+        cache_key = ARTICLES_CACHE_KEY(user_instance.school.id, "article-list")
+        article_ids = cache.get(cache_key)
+        if article_ids:
+            article_ids.insert(0, article_instance.id)
+            cache.set(cache_key, article_ids)
+
+        # Add extra properties for the response
+        user_temp_name, user_static_points = get_set_temp_name_static_points(
+            article_instance, user_instance
+        )
+        article_instance.user_temp_name = user_temp_name
+        article_instance.user_static_points = user_static_points
+        article_instance.user_school = user_instance.school
+        article_instance.like_status = False
+
+        # Custom response
+        article_response_data = ArticleResponseSerializer(article_instance).data
+        return Response(article_response_data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
 
@@ -177,9 +223,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request, article_instance, {"views_count": F("views_count") + 1}
         )
 
-        comments_response_data = cache_paginated_comments(
-            request, article_instance
-        )
+        comments_response_data = cache_paginated_comments(request, article_instance)
 
         comments_response_data["results"]["article"] = article_response_data
 
@@ -267,124 +311,3 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request, article_instance, {"likes_count": F("likes_count") - 1}
         )
         return Response(response_data, status=status.HTTP_200_OK)
-
-
-class CommentViewSet(viewsets.ModelViewSet):
-
-    permission_classes = [Comment_IsAuthenticated]
-    serializer_class = CommentSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-
-        # Filter articles based on user's school or if the article is unicon
-        queryset = Comment.objects.filter(
-            Q(user__school=user.school) | Q(article__unicon=True)
-        )
-
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "This action is not allowed."}, status=status.HTTP_403_FORBIDDEN
-        )
-
-    def update(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "This action is not allowed."}, status=status.HTTP_403_FORBIDDEN
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        comment_instance = self.get_object()
-        user_instance = request.user
-
-        # Block the modification for the deleted object
-        if comment_instance.deleted:
-            return Response(
-                {"detail": "The article is deleted."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Block if the body is not in the request
-        if "body" not in request.data.keys():
-            return Response(
-                {"detail": "The body is missing."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Block if the body is empty
-        body = request.data.get("body", "").strip()
-        if len(body) == 0:
-            return Response(
-                {"detail": "The body is empty."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        updated_fields = {"body":body, "edited":True}
-        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
-
-        return Response(serialized_comment, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        comment_instance = self.get_object()
-        user_instance = request.user
-
-        # Block the modification for the deleted object
-        if comment_instance.deleted:
-            return Response(
-                {"detail": "The article is deleted."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )        
-
-        updated_fields = {"body":DELETED_BODY, "deleted":True}
-        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
-
-        return Response(serialized_comment, status=status.HTTP_200_OK)
-
-    def retrieve(self, request, *args, **kwargs):
-        
-        comment_instance = self.get_object()
-
-        article_instance = comment_instance.article
-        paginated_comments = cache_paginated_comments(request, article_instance, comment_instance)
-
-        return Response(paginated_comments)
-
-    @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
-    def like(self, request, pk=None):
-        comment_instance = self.get_object()
-        user_instance = request.user
-
-        # Create relational data
-        _, created = CommentLike.objects.get_or_create(
-            user=user_instance, comment=comment_instance
-        )
-        if not created:
-            return Response(
-                {"detail": "The comment already liked by the user."},
-                status=status.HTTP_304_NOT_MODIFIED,
-            )
-
-        updated_fields = {"likes_count":F("likes_count") + 1}
-        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
-
-        return Response(serialized_comment, status=status.HTTP_200_OK)
-        
-
-    @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
-    def unlike(self, request, pk=None):
-        comment_instance = self.get_object()
-        user_instance = request.user
-
-        # Create relational data
-        _, deleted = CommentLike.objects.filter(
-            user=user_instance, comment=comment_instance
-        ).delete()
-        if not deleted:
-            return Response(
-                {"detail": "The comment already unliked by the user."},
-                status=status.HTTP_304_NOT_MODIFIED,
-            )
-
-        updated_fields = {"likes_count":F("likes_count") - 1}
-        serialized_comment = cache_serialized_comment(comment_instance, updated_fields)
-        
-        return Response(serialized_comment, status=status.HTTP_200_OK)
