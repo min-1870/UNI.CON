@@ -13,7 +13,7 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./conf.d:/etc/nginx/conf.d
+      - ./nginx/conf.d:/etc/nginx/conf.d
     ports:
       - "80:80"
       - "443:443"
