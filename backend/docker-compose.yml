@@ -18,6 +18,10 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - django
+      - web 
     networks:
       - app-network
+
+networks:
+  app-network:
+    driver: bridge
