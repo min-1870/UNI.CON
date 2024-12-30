@@ -1,5 +1,5 @@
 services:
-  web:
+  drf:
     build: .
     container_name: unicon_drf_backend_container
     volumes:
@@ -13,12 +13,12 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx:/etc/nginx/conf.d
+      - ./conf.d:/etc/nginx/conf.d
     ports:
       - "80:80"
       - "443:443"
     depends_on:
-      - web 
+      - drf 
     networks:
       - app-network
 
