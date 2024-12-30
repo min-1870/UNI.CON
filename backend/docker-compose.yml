@@ -9,3 +9,15 @@ services:
       - "8000:8000"
     env_file:
       - .env
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - django
+    networks:
+      - app-network
