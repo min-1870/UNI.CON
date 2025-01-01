@@ -15,7 +15,7 @@ from datetime import timedelta
 from decouple import config
 import sys
 
-ENV_DEBUG = config("DEBUG")
+ENV_DEBUG = True if config("DEBUG").lower() == "true" else False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
