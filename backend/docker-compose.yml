@@ -9,11 +9,14 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    networks:
+      - app-network
 
   nginx:
     image: nginx:latest
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
     ports:
       - "80:80"
       - "443:443"
