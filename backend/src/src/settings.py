@@ -66,10 +66,11 @@ if ENV_DEBUG:
         }
     }
 else:
+    print(ENV_DEBUG)
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': 'redis://host.docker.internal:6379',
+            'LOCATION': 'redis://redis:6379',
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             }

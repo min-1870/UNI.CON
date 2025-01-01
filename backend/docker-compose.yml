@@ -12,16 +12,27 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:latest
+    container_name: unicon_redis_container
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   nginx:
     image: nginx:latest
+    container_name: unicon_nginx_container
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
+      - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - drf 
+      - reids
     networks:
       - app-network
 
