@@ -105,7 +105,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Frontend URL
+    "https://unicon.min1870.com",
 ]
 
 ROOT_URLCONF = 'src.urls'
