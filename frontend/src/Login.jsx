@@ -21,6 +21,7 @@ const Login = () => {
 
     if (!email || !password) {
       setError('Please fill out both fields.');
+      setLoading(false);
       return;
     }
 
