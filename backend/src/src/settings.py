@@ -66,7 +66,6 @@ if ENV_DEBUG:
         }
     }
 else:
-    print(ENV_DEBUG)
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
