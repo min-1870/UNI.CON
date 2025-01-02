@@ -1,0 +1,49 @@
+name: main
+
+on:
+  push:
+    branches:
+      - main  # Trigger when you push to main branch
+  pull_request:
+    branches:
+      - main  # Trigger when you pull from main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Setup SSH key
+      run: |
+        echo "${{ secrets.EC2_INSTANCE_SECRET_KEY }}" > key.pem
+        chmod 600 key.pem
+    
+    - name: Connect to EC2 and run commends
+      run: |
+        ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@54.79.110.156 << EOF
+        
+          # Locate to the docker directory
+          cd /home/ec2-user/UNI.CON/backend
+
+          # Shut down the running docker containers
+          sudo docker-compose down
+          
+          # Wait for the containers fully terminate
+          sleep 2
+
+          # Locate to the repository directory
+          cd /home/ec2-user/UNI.CON
+          
+          # Pull the latest code
+          git pull
+          
+          # Wait for the git fully pull
+          sleep 2
+
+          # Locate to the docker directory
+          cd /home/ec2-user/UNI.CON/backend
+
+          # Rebuild the image and run the container
+          sudo docker-compose up --build -d
+
+        EOF
