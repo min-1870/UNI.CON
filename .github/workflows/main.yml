@@ -22,7 +22,7 @@ jobs:
       run: |
         ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@54.79.110.156 << EOF
         
-          # Locate to the docker directory
+          # Locate to the docker directory 
           cd /home/ec2-user/UNI.CON/backend
 
           # Shut down the running docker containers
