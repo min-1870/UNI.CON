@@ -2,13 +2,28 @@
 .vscode/
 
 # frontend-specific
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*# Logs
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Runtime data
 *.pid
@@ -50,6 +65,7 @@ __pycache__/
 build/
 develop-eggs/
 downloads/
+dist/
 eggs/
 .eggs/
 lib/
@@ -203,3 +219,4 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+!frontend/dist/
