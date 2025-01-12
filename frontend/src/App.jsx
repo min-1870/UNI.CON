@@ -11,6 +11,7 @@ import PostArticle from './PostArticle';
 import SearchResults from './SearchResults';
 import './App.css';
 
+
 const App = () => {
   return (
     <Router>
