@@ -15,8 +15,6 @@ from datetime import timedelta
 from decouple import config
 import sys
 
-ENV_DEBUG = True if config("DEBUG").lower() == "true" else False
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,17 +26,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = ENV_DEBUG
+DEBUG = True if config("DEBUG").lower() == "true" else False
 
 # HTTPS Settings
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-ALLOWED_HOSTS = [config("DOMAIN")]
-SECURE_HSTS_SECONDS = 31536000  # Enable HTTP Strict Transport Security (HSTS)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_SSL_REDIRECT = True  # Redirect all HTTP requests to HTTPS
-CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are sent over HTTPS
-SESSION_COOKIE_SECURE = True  # Ensure session cookies are sent over HTTPS
+if DEBUG:
+    ALLOWED_HOSTS = []
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    ALLOWED_HOSTS = [config("DOMAIN")]
+    SECURE_HSTS_SECONDS = 31536000  # Enable HTTP Strict Transport Security (HSTS)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True  # Redirect all HTTP requests to HTTPS
+    CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are sent over HTTPS
+    SESSION_COOKIE_SECURE = True  # Ensure session cookies are sent over HTTPS
 
 
 # Application definition
@@ -55,26 +57,15 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
-if ENV_DEBUG:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379',
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis:6379',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': 'redis://redis:6379',
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
-        }
-    }
+}
 
 
 INSTALLED_APPS = [
@@ -130,6 +121,7 @@ WSGI_APPLICATION = 'src.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
 
 DATABASES = {
     'default': {

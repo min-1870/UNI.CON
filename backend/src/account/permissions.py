@@ -13,6 +13,7 @@ class User_IsAuthenticated(permissions.BasePermission):
             return True
 
         # Block not validated user
+        print(view_name)
         if not request.user.is_validated:
             return False
 
