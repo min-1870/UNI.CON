@@ -134,6 +134,7 @@ Navigate to the `UNI.CON/backend/` directory, then build the image and run the c
 | --- | --- | --- |
 | Correct request | 202 Accepted | **TESTED**✅ |
 | Incorrect email or password | 401 Unauthorized | **TESTED**✅ |
+| Invalidate email | 403 Forbidden | **TESTED**✅ |
 
 ### `POST` `account/user/`
 
