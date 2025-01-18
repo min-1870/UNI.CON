@@ -48,6 +48,7 @@ package-lock.json
 
 # Django
 db.sqlite3
+postgresql/
 *.log
 media/
 staticfiles/
