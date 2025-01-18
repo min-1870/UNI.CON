@@ -108,7 +108,7 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
                 .values("course__code")
                 .annotate(
                     course_codes=Func(
-                        F("course__code"), Value(","), function="GROUP_CONCAT"
+                        F("course__code"), Value(","), function="STRING_AGG"
                     )
                 )
                 .values("course_codes")[:1],
