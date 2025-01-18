@@ -72,6 +72,7 @@ The `.env` file contains secrets and configuration settings for debug mode that 
 
 - .env → `UNI.CON/backend/`
 - postgresql/ → `UNI.CON/backend/`
+
 ![backend_structure.png](imgs/backend_structure.png)
 
 ### 1. Change to Debug mode
