@@ -63,12 +63,20 @@ The `likes_count` and `comment_count` may seem redundant since they can be calcu
 - docker-compose
 - node.js
 - Necessary files
-    - .env
-    - db.sqlite3
+    - `.env`
+    - `postgresql/`
+
+### 0. Place the necessary files
+
+The `.env` file contains secrets and configuration settings for debug mode that need to be modified later. The `postgresql/` directory contains **PostgreSQL** data, including table structures and values.
+
+- .env → `UNI.CON/backend/`
+- postgresql/ → `UNI.CON/backend/`
+![backend_structure.png](imgs/backend_structure.png)
 
 ### 1. Change to Debug mode
 
-Place the necessary files in the `UNI.CON/backend/` directory. In the `.env` file, change `DEBUG` from `False` to `True`.
+After placing the necessary files in the `UNI.CON/backend/` directory, change the `DEBUG` setting from `False` to `True` in the `.env` file.
 
 ```docker
 DEBUG = True
