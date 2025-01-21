@@ -43,20 +43,20 @@
       "model": "account.school",
       "pk": 5,
       "fields": {
-        "name": "University of Melbourne",
-        "color": "#000f46",
-        "initial": "unimelb",
-        "email_identifier": "unimelb"
-      }
-    },
-    {
-      "model": "account.school",
-      "pk": 5,
-      "fields": {
         "name": "RMIT University",
         "color": "#e5251a",
         "initial": "rmit",
         "email_identifier": "rmit"
+      }
+    },
+    {
+      "model": "account.school",
+      "pk": 6,
+      "fields": {
+        "name": "University of Melbourne",
+        "color": "#000f46",
+        "initial": "unimelb",
+        "email_identifier": "unimelb"
       }
     }
 ]
