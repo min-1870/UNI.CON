@@ -18,7 +18,7 @@ const Login = () => {
     const demo_users = [
       { email: 'root@unsw.edu.au', password: 'rootroot' },
       { email: 'root@sydney.edu.au', password: 'rootroot' },
-      { email: 'root@unimel.edu.au', password: 'rootroot' },
+      { email: 'root@unimelb.edu.au', password: 'rootroot' },
       { email: 'root@uts.edu.au', password: 'rootroot' },
       { email: 'root@rmit.edu.au', password: 'rootroot' }
     ]
