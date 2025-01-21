@@ -14,6 +14,19 @@ const Login = () => {
     navigate("/register");
   };
 
+  const signInRandomUser = async () => {
+    const demo_users = [
+      { email: 'root@unsw.edu.au', password: 'rootroot' },
+      { email: 'root@sydney.edu.au', password: 'rootroot' },
+      { email: 'root@unimel.edu.au', password: 'rootroot' },
+      { email: 'root@uts.edu.au', password: 'rootroot' },
+      { email: 'root@rmit.edu.au', password: 'rootroot' }
+    ]
+    const randomUser = demo_users[Math.floor(Math.random() * demo_users.length)];
+    setEmail(randomUser.email)
+    setPassword(randomUser.password)
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -104,6 +117,15 @@ const Login = () => {
           <div id="login-sign-up-description">Don't have an account?</div>
           <span id="login-sign-up-link" onClick={handleNavigateToRegister}>Sign Up</span>
         </div>
+        
+        
+        <button 
+          onClick={signInRandomUser}
+          id="login-button"
+        >
+          DEBUG MODE: Sign in as a random user
+        </button>
+        
       </div>
       <div id="login-logo">
         <p>UNI.CON</p>
