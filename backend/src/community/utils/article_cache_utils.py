@@ -4,8 +4,9 @@ from community.constants import (
     ARTICLE_CACHE_KEY,
     ARTICLES_CACHE_KEY,
     ARTICLES_LIKE_CACHE_KEY,
+    ARTICLES_VIEW_CACHE_KEY,
 )
-from community.models import ArticleUser, ArticleCourse, ArticleLike
+from community.models import ArticleUser, ArticleCourse, ArticleLike, ArticleView
 from django.db.models import OuterRef, Subquery, F, Func, Value
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
@@ -139,6 +140,16 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
         user_liked_articles = {pk: True for pk in user_liked_articles}
         cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
 
+    # Cache user view status in bulk
+    cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
+    user_viewed_articles = cache.get(cache_key, None)
+    if user_viewed_articles is None:
+        user_viewed_articles = ArticleLike.objects.filter(user=user_instance).values_list(
+            "article", flat=True
+        )
+        user_viewed_articles = {pk: True for pk in user_viewed_articles}
+        cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
+
     # Insert the articles and attach user specific data while maintain the order
     for i, pk_or_article in enumerate(serialized_annotated_articles):
 
@@ -155,6 +166,11 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
             serialized_annotated_articles[i]["id"], False
         )
         serialized_annotated_articles[i]["like_status"] = like_status
+
+        view_status = user_viewed_articles.get(
+            serialized_annotated_articles[i]["id"], False
+        )
+        serialized_annotated_articles[i]["view_status"] = view_status
 
     return serialized_annotated_articles
 
@@ -222,3 +238,15 @@ def cache_user_liked_articles(user_instance, article_instance, like_status):
         user_liked_articles = {pk: True for pk in user_liked_articles}
     user_liked_articles[article_instance.id] = like_status
     cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+
+def cache_user_viewed_articles(user_instance, article_instance):
+    
+    cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
+    user_viewed_articles = cache.get(cache_key, None)
+    if user_viewed_articles is None:
+        user_viewed_articles = ArticleView.objects.filter(
+            user=user_instance
+        ).values_list("article", flat=True)
+        user_viewed_articles = {pk: True for pk in user_viewed_articles}
+    user_viewed_articles[article_instance.id] = True
+    cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)

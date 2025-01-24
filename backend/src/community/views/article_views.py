@@ -10,15 +10,14 @@ from community.utils import (
     get_set_temp_name_static_points,
     ArticleResponseSerializer,
     cache_user_liked_articles,
+    cache_user_viewed_articles
 )
 from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
-    ARTICLES_LIKE_CACHE_KEY,
-    CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleLike, Course, ArticleCourse
+from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
@@ -223,6 +222,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article_response_data = cache_serialized_article(
             request, article_instance, {"views_count": F("views_count") + 1}
         )
+
+        # Create relational data
+        ArticleView.objects.get_or_create(
+            user=user_instance, article=article_instance
+        )
+
+        # Set view status cache
+        cache_user_viewed_articles(user_instance, article_instance)
 
         comments_response_data = cache_paginated_comments(request, article_instance)
 
