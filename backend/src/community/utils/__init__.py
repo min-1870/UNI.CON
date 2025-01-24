@@ -1,6 +1,7 @@
 from .article_cache_utils import (
     cache_serialized_article,
     cache_paginated_articles,
+    cache_user_liked_articles,
 )
 from .database_utils import (
     update_article_engagement_score,

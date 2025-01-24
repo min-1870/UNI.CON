@@ -209,3 +209,16 @@ def cache_serialized_article(request, article_instance, updated_fields={}):
     serialized_annotated_article["like_status"] = like_status
 
     return serialized_annotated_article
+
+
+def cache_user_liked_articles(user_instance, article_instance, like_status):
+    
+    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
+    user_liked_articles = cache.get(cache_key, None)
+    if user_liked_articles is None:
+        user_liked_articles = ArticleLike.objects.filter(
+            user=user_instance
+        ).values_list("article", flat=True)
+        user_liked_articles = {pk: True for pk in user_liked_articles}
+    user_liked_articles[article_instance.id] = like_status
+    cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
