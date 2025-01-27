@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main  # Trigger when you push to main branch
+      
   pull_request:
+    types:
+      - closed  # Trigger only when a pull request is closed
     branches:
-      - main  # Trigger when you pull from main branch
+      - main  # The PR must target the main branch
 
 jobs:
   build:
