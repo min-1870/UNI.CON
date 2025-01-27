@@ -48,6 +48,11 @@ class ArticleCourse(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=False)
 
 
+class ArticleView(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+
+
 class Comment(models.Model):
     body = models.TextField(default="unknown", null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)

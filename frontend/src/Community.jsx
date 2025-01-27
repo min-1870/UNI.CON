@@ -205,7 +205,7 @@ const Community = () => {
           <div id="community-article-list">
             {articles.map((article) => (
               <div 
-                id={article.unicon ? "community-article-unicon":"community-article"}
+                id={article.unicon ? article.view_status ? "community-article-unicon-viewed": "community-article-unicon": article.view_status ?"community-article-viewed":"community-article"}
                 key={article.id}
               >
                 <div  onClick={() => navigate(`/article/${article.id}`)}>

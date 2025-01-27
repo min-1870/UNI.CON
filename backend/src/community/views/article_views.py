@@ -9,15 +9,15 @@ from community.utils import (
     add_embedding_to_faiss,
     get_set_temp_name_static_points,
     ArticleResponseSerializer,
+    cache_user_liked_articles,
+    cache_user_viewed_articles
 )
 from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
-    ARTICLES_LIKE_CACHE_KEY,
-    CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleLike, Course, ArticleCourse
+from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
@@ -223,6 +223,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request, article_instance, {"views_count": F("views_count") + 1}
         )
 
+        # Create relational data
+        ArticleView.objects.get_or_create(
+            user=user_instance, article=article_instance
+        )
+
+        # Set view status cache
+        cache_user_viewed_articles(user_instance, article_instance)
+
         comments_response_data = cache_paginated_comments(request, article_instance)
 
         comments_response_data["results"]["article"] = article_response_data
@@ -261,17 +269,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The article already liked by the user."},
                 status=status.HTTP_304_NOT_MODIFIED,
             )
-
-        # Set like cache
-        cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
-        user_liked_articles = cache.get(cache_key, None)
-        if user_liked_articles is None:
-            user_liked_articles = ArticleLike.objects.filter(
-                user=user_instance
-            ).values_list("article", flat=True)
-            user_liked_articles = {pk: True for pk in user_liked_articles}
-        user_liked_articles[article_instance.id] = True
-        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+        
+        # Set like status cache
+        cache_user_liked_articles(user_instance, article_instance, True)
 
         # Update the article attributes
         response_data = cache_serialized_article(
@@ -295,16 +295,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_304_NOT_MODIFIED,
             )
 
-        # Set like cache
-        cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
-        user_liked_articles = cache.get(cache_key, None)
-        if user_liked_articles is None:
-            user_liked_articles = ArticleLike.objects.filter(
-                user=user_instance
-            ).values_list("article", flat=True)
-            user_liked_articles = {pk: True for pk in user_liked_articles}
-        user_liked_articles.pop(article_instance.id, None)
-        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+        # Set like status cache
+        cache_user_liked_articles(user_instance, article_instance, False)
 
         # Update the article attributes
         response_data = cache_serialized_article(
