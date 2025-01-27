@@ -150,6 +150,55 @@ const Community = () => {
     }    
   };
 
+
+  const handleSave = async (article_id) => {
+    const article = articles.find((article) => article.id === article_id);
+    
+    try {
+      const url = article.save_status
+        ? `${API_URL}/community/article/${article_id}/unsave/`
+        : `${API_URL}/community/article/${article_id}/save/`;
+
+      await axios.post(url, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      setArticles((prevArticles) =>
+        prevArticles.map(article =>
+          article.id === article_id ? { ...article,
+              save_status: !article.save_status,
+          } : article 
+        )
+      );
+      
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await fetchNewAccessToken(navigate);
+        accessToken = localStorage.getItem('access');
+        const url = article.save_status
+          ? `${API_URL}/community/article/${article_id}/unsave/`
+          : `${API_URL}/community/article/${article_id}/save/`;
+
+        await axios.post(url, {}, {
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        setArticles((prevArticles) =>
+          prevArticles.map(article =>
+            article.id === article_id ? { ...article,
+              save_status: !article.save_status,
+            } : article 
+          )
+        );
+      }
+    }    
+  };
+
   return (
     <div id="community-container">
       <div id="community-left"></div>
@@ -271,6 +320,15 @@ const Community = () => {
                     >
                     <svg   className="comment-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2D3748"><path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
                     {article.comments_count}
+                  </button>
+                  <button 
+                    onClick={() => handleSave(article.id)}
+                    id="save"
+                    >
+                    {article.save_status?
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M713-600 600-713l56-57 57 57 141-142 57 57-198 198ZM200-120v-640q0-33 23.5-56.5T280-840h240v80H280v518l200-86 200 86v-278h80v400L480-240 200-120Zm80-640h240-240Z"/></svg>
+                    :<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>
+                    }
                   </button>
                 </div>
               </div>

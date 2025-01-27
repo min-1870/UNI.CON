@@ -84,6 +84,15 @@
     margin-right: 9px;
 }
 
+#save{
+    background-color: #e2e8f0;
+    color: #2D3748;
+    border-radius: 50px;
+    margin-right: 13px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
 
 #grayButton{
     display: flex; 
