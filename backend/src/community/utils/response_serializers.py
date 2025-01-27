@@ -6,6 +6,7 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
 
     like_status = serializers.BooleanField(read_only=True)
     view_status = serializers.BooleanField(read_only=True)
+    save_status = serializers.BooleanField(read_only=True)
     user_school = serializers.CharField(read_only=True)
     user_temp_name = serializers.CharField(read_only=True)
     user_static_points = serializers.IntegerField(read_only=True)
@@ -28,6 +29,7 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
             "unicon",
             # Not in Article Model
             "like_status",
+            "save_status",
             "view_status",
             "user_school",
             "user_static_points",

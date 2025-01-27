@@ -22,7 +22,7 @@ class Article_IsAuthenticated(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         view_name = getattr(view, "action")
         author_only_actions = ["destroy", "partial_update"]
-        same_school_only_actions = ["like", "unlike", "retrieve"]
+        same_school_only_actions = ["like", "unlike", "retrieve", "save", "unsave"]
 
         if view_name in author_only_actions:
             if obj.user == request.user:

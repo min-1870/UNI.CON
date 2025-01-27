@@ -10,14 +10,15 @@ from community.utils import (
     get_set_temp_name_static_points,
     ArticleResponseSerializer,
     cache_user_liked_articles,
-    cache_user_viewed_articles
+    cache_user_viewed_articles,
+    cache_user_saved_articles,
 )
 from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
 )
-from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView
+from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
@@ -253,6 +254,48 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request, article_instance, updated_fields
         )
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
+    def save(self, request, pk=None):
+
+        article_instance = self.get_object()
+        user_instance = request.user
+
+        # Create relational data
+        _, created = ArticleSave.objects.get_or_create(
+            user=user_instance, article=article_instance
+        )
+        if not created:
+            return Response(
+                {"detail": "The article already saved by the user."},
+                status=status.HTTP_304_NOT_MODIFIED,
+            )
+        
+        # Set save status cache
+        cache_user_saved_articles(user_instance, article_instance, True)
+
+        return Response({"detail":"The article has been saved."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
+    def unsave(self, request, pk=None):
+
+        article_instance = self.get_object()
+        user_instance = request.user
+
+        # Create relational data
+        _, deleted = ArticleSave.objects.get_or_create(
+            user=user_instance, article=article_instance
+        ).delete()
+        if not deleted:
+            return Response(
+                {"detail": "The article already unsaved by the user."},
+                status=status.HTTP_304_NOT_MODIFIED,
+            )
+        
+        # Set save status cache
+        cache_user_saved_articles(user_instance, article_instance, False)
+
+        return Response({"detail":"The article has been removed from saved articles."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
     def like(self, request, pk=None):
