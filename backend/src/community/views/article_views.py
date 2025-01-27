@@ -283,7 +283,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, deleted = ArticleSave.objects.get_or_create(
+        _, deleted = ArticleSave.objects.filter(
             user=user_instance, article=article_instance
         ).delete()
         if not deleted:

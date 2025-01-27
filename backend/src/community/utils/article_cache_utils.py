@@ -228,6 +228,9 @@ def cache_serialized_article(request, article_instance, updated_fields={}):
     # Attache the user specific attribute
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
+    
+    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
+    user_saved_articles = cache.get(cache_key, None)
 
     # If the cache miss fetch them
     if user_liked_articles is None:
@@ -239,6 +242,16 @@ def cache_serialized_article(request, article_instance, updated_fields={}):
 
     like_status = user_liked_articles.get(article_instance.id, False)
     serialized_annotated_article["like_status"] = like_status
+
+    if user_saved_articles is None:
+        user_saved_articles = ArticleSave.objects.filter(user=user_instance).values_list(
+            "article", flat=True
+        )
+        user_saved_articles = {pk: True for pk in user_saved_articles}
+        cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
+
+    save_status = user_saved_articles.get(article_instance.id, False)
+    serialized_annotated_article["save_status"] = save_status
 
     return serialized_annotated_article
 
