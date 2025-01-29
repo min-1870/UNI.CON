@@ -42,7 +42,7 @@ const Feed = () => {
 
   const fetchArticles = async () => {
     setLoading(true);
-
+    
     const request = async () => {
       const response = await axios.get(apiEndpoints[sortOption], {
         headers: {
@@ -59,11 +59,8 @@ const Feed = () => {
       await request()
     } catch (error) {
       try {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem("access");
-          await request();
-        }
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
       } catch (error) {
         logout(navigate);
       }
@@ -95,11 +92,8 @@ const Feed = () => {
       await request()
     } catch (error) {
       try {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem("access");
-          await request();
-        }
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
       } catch (error) {
         logout(navigate);
       }
@@ -140,11 +134,8 @@ const Feed = () => {
       await request()
     } catch (error) {
       try {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem("access");
-          await request();
-        }
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
       } catch (error) {
         logout(navigate);
       }
@@ -182,16 +173,14 @@ const Feed = () => {
       await request()
     } catch (error) {
       try {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem("access");
-          await request();
-        }
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
       } catch (error) {
         logout(navigate);
       }
     } finally {
     };
+    
   };
 
 

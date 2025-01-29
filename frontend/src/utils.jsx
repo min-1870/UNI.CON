@@ -25,8 +25,9 @@ const fetchNewAccessToken = async (navigate) => {
         logout(navigate);
     }
 
+    return response.data.access
     
-  };
+};
   
   
 const logout = async (navigate) => {
