@@ -17,10 +17,6 @@ const Navbar = () => {
     window.location.reload();
   }; 
 
-  const handleWrite = () => {    
-    navigate("/postarticle");
-  };
-
   const handleSearch = () => {
     navigate(`/searchresults?search_content=${search}`);
   }
@@ -53,7 +49,7 @@ const Navbar = () => {
 
 
           <button 
-            onClick={handleWrite}
+            onClick={() => navigate("/postarticle")}
             id="navbar-logout"
             >
             Write

@@ -19,11 +19,6 @@ const ArticleDetail = () => {
   const color = localStorage.getItem("color");
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
-  
-
-  const handleBack = () => {
-    navigate("/feed")    
-  };
 
 
   useEffect(() => {
@@ -757,7 +752,11 @@ const ArticleDetail = () => {
   return (
     <div id="article-detail-container">
       <div id="article-detail-left"></div>
-      <button onClick={handleBack} id="article-detail-back" style={{color:color}}>
+      <button 
+        onClick={() => navigate("/feed")} 
+        id="article-detail-back" 
+        style={{color:color}}
+      >
         {'<'}
       </button>
       <div id="article-detail">
