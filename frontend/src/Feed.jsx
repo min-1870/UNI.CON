@@ -9,14 +9,12 @@ import './constants.css';
 const Feed = () => {
   const [articles, setArticles] = useState([]);
   const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [page, setPage] = useState(1);
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
   let accessToken = localStorage.getItem('access');
   const color = localStorage.getItem('color');
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
-
 
 
   const apiEndpoints = {
@@ -26,18 +24,14 @@ const Feed = () => {
   };
 
 
-
   useEffect(() => {
     fetchArticles();
-  }, [page, sortOption]);
-
+  }, [sortOption]);
 
 
   const handleSortChange = (option) => {
     setSortOption(option);
-    setPage(1); 
   };
-
 
 
   const fetchArticles = async () => {
@@ -48,8 +42,7 @@ const Feed = () => {
         headers: {
           "Content-Type": "application/json",
           'Authorization': `Bearer ${accessToken}`,
-        },
-        params: { page },
+        }
       });
       setArticles(response.data.results.articles);
       setNextArticlePage(response.data.next);
@@ -69,7 +62,6 @@ const Feed = () => {
     };
   };
   
-
 
   const fetchNextArticlePage = async () => {
     const scrollPosition = window.scrollY;
@@ -103,7 +95,6 @@ const Feed = () => {
     };
 
   };  
-
 
 
   const handleLike = async (article_id) => {
@@ -144,7 +135,6 @@ const Feed = () => {
 
   };
 
-  
 
   const handleSave = async (article_id) => {
     const article = articles.find((article) => article.id === article_id);
@@ -182,7 +172,6 @@ const Feed = () => {
     };
     
   };
-
 
 
   return (

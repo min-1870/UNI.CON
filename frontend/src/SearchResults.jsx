@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import fetchNewAccessToken from "./utils";
+import {fetchNewAccessToken, logout} from "./utils";
 import { API_URL } from "./constants";
 import axios from "axios";
 import './Feed.css';
@@ -14,123 +14,122 @@ const SearchResults = () => {
   const color = localStorage.getItem('color');
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
-
   const queryParams = new URLSearchParams(location.search);
   const search_content = queryParams.get('search_content');
 
-  const fetchArticles = async () => {
-    setLoading(true);
-    
-    try {
-      const response = await axios.get(`${API_URL}/community/article/search?search_content=${search_content}`, {
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      console.log(response.data);
-      setArticles(response.data.results.articles);
-      setNextArticlePage(response.data.next)
-    } catch (error) {
-      await fetchNewAccessToken(navigate);
-      accessToken = localStorage.getItem('access');
-      const response = await axios.get(`${API_URL}/community/article/search?search_content=${search_content}`, {
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      console.log(response.data);
-      setArticles(response.data.results.articles);
-      setNextArticlePage(response.data.next)
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchArticles();
   }, [search_content]);
+
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    
+    const request = async () => {
+      const response = await axios.get(`${API_URL}/community/article/search?search_content=${search_content}`, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        }
+      });
+      setArticles(response.data.results.articles);
+      setNextArticlePage(response.data.next);
+    };
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+      setLoading(false);
+    };
+
+  };
   
+
   const fetchNextArticlePage = async () => {
     const scrollPosition = window.scrollY;
     setLoading(true);
-
-    try {
-      const response = await axios.get(
-        nextArticlePage, {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-      });
-
+    
+    const request = async () => {
+      const response = await axios.get(nextArticlePage,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        }
+      );
       setArticles((prev) => [...prev, ...response.data.results.articles]);
       setNextArticlePage(response.data.next);
+    };
+
+    try {
+      await request()
     } catch (error) {
-      console.error("Error loading more articles:", error);
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
     } finally {
       window.scrollTo(0, scrollPosition);
       setLoading(false);
-      
-
-    }
+    };
 
   };  
 
-  const handleLike = async (articleId) => {
-    const article = articles.find((a) => a.id === articleId);
-    if (article) {
-      try {
-        const url = article.like_status
-          ? `${API_URL}/community/article/${articleId}/unlike/`
-          : `${API_URL}/community/article/${articleId}/like/`;
 
-        await axios.post(url, {}, {
-          headers: {
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
+  const handleLike = async (article_id) => {
+    const article = articles.find((article) => article.id === article_id);
+    
+    const request = async () => {
+      const url = article.like_status
+        ? `${API_URL}/community/article/${article_id}/unlike/`
+        : `${API_URL}/community/article/${article_id}/like/`;
 
-        article.like_status = !article.like_status;
-        article.likes_count = article.like_status
-          ? article.likes_count + 1
-          : article.likes_count - 1;
-
-        setArticles([...articles]);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem('access');
-          const url = article.like_status
-            ? `${API_URL}/community/article/${articleId}/unlike/`
-            : `${API_URL}/community/article/${articleId}/like/`;
-  
-          await axios.post(url, {}, {
-            headers: {
-              "Content-Type": "application/json",
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          });
-  
-          article.like_status = !article.like_status;
-          article.likes_count = article.like_status
-            ? article.likes_count + 1
-            : article.likes_count - 1;
-  
-          setArticles([...articles]);
-        }else{
-          console.error("Error toggling like status:", error);
-        }
-      }
+      await axios.post(url, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      setArticles((prevArticles) =>
+        prevArticles.map(article =>
+          article.id === article_id ? { ...article,
+              like_status: !article.like_status,
+              likes_count: article.like_status ? article.likes_count - 1 : article.likes_count + 1,
+          } : article 
+        )
+      );
     }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
   };
 
+  
   const handleSave = async (article_id) => {
     const article = articles.find((article) => article.id === article_id);
     
-    try {
+    const request = async () => {
       const url = article.save_status
         ? `${API_URL}/community/article/${article_id}/unsave/`
         : `${API_URL}/community/article/${article_id}/save/`;
@@ -141,7 +140,6 @@ const SearchResults = () => {
           'Authorization': `Bearer ${accessToken}`,
         },
       });
-      
       setArticles((prevArticles) =>
         prevArticles.map(article =>
           article.id === article_id ? { ...article,
@@ -149,31 +147,22 @@ const SearchResults = () => {
           } : article 
         )
       );
-      
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const url = article.save_status
-          ? `${API_URL}/community/article/${article_id}/unsave/`
-          : `${API_URL}/community/article/${article_id}/save/`;
+    }
 
-        await axios.post(url, {}, {
-          headers: {
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-        setArticles((prevArticles) =>
-          prevArticles.map(article =>
-            article.id === article_id ? { ...article,
-              save_status: !article.save_status,
-            } : article 
-          )
-        );
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
       }
-    }    
+    } finally {
+    };
+    
   };
+
 
   return (
     <div id="community-container">

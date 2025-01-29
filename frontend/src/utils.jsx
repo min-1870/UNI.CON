@@ -6,7 +6,6 @@ const fetchNewAccessToken = async (navigate) => {
     
     const refreshToken = localStorage.getItem('refresh');
     const url = `${API_URL}/account/token/refresh`
-    console.log("Refresh token:", refreshToken);
 
     try {
         const response = await axios.post(
@@ -21,12 +20,10 @@ const fetchNewAccessToken = async (navigate) => {
             }
         );
         localStorage.setItem('access', response.data.access);
+        return response.data.access
     } catch (error) {
         logout(navigate);
     }
-
-    return response.data.access
-    
 };
   
   
@@ -36,5 +33,5 @@ const logout = async (navigate) => {
     window.location.reload();
 };
 
-
+export default fetchNewAccessToken;
 export { fetchNewAccessToken, logout };
