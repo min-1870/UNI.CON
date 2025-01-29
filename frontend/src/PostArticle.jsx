@@ -84,7 +84,6 @@ const PostArticle = () => {
           logout(navigate);
         }
       } finally {
-        setLoading(false);
       };
     }
 

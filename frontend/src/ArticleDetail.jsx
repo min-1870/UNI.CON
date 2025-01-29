@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import fetchNewAccessToken from "./utils";
+import {fetchNewAccessToken, logout} from "./utils";
 import { API_URL } from "./constants";
 import axios from "axios";
 import './ArticleDetail.css';
@@ -20,90 +20,389 @@ const ArticleDetail = () => {
   const user = localStorage.getItem('user');
   const navigate = useNavigate();
   
+
   const handleBack = () => {
     navigate("/feed")    
   };
+
 
   useEffect(() => {
     fetchArticleDetails();
   }, [articleId]);
 
+
   const fetchArticleDetails = async () => {
     setLoading(true);
-    try {
+    
+    const request = async () => {
       const response = await axios.get(`${API_URL}/community/article/${articleId}`, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
+          'Authorization': `Bearer ${accessToken}`,
+        }
       });
       const { article, comments } = response.data.results;
       setArticle(article);
       setComments(comments);
       setNextCommentPage(response.data.next);
-      
+    };
+
+    try {
+      await request()
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.get(`${API_URL}/community/article/${articleId}`, {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
-          },
-        });
-        const { article, comments } = response.data.results;
-        setArticle(article);
-        setComments(comments);
-        setNextCommentPage(response.data.next);
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
       }
     } finally {
       setLoading(false);
-    }
+    };
+
   };
+
+
+  const toggleArticleLike = async () => {
+    if (!article) return;
+
+    const request = async () => {
+      const url = article.like_status
+        ? `${API_URL}/community/article/${article.id}/unlike/`
+        : `${API_URL}/community/article/${article.id}/like/`;
+
+      await axios.post(url, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      setArticle((prevArticle) => ({
+          ...prevArticle,
+          like_status: !article.like_status,
+          likes_count: article.like_status ? article.likes_count - 1 : article.likes_count + 1,
+      }));
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+
+
+  const handleArticleDelete = async () => {
+    
+    const request = async () => {
+      const response = await axios.get(apiEndpoints[sortOption], {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        }
+      });
+      setArticle((prevArticle)=> ({
+        ...prevArticle,
+        title: "[DELETED ARTICLE]",
+        body: "[DELETED CONTENT]",
+        deleted: true
+      }));
+    };
+
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+
+
+  const handleArticleSave = async () => {
+
+    const request = async () => {
+      const url = article.save_status
+        ? `${API_URL}/community/article/${article.id}/unsave/`
+        : `${API_URL}/community/article/${article.id}/save/`;
+
+      await axios.post(url, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      setArticle((prevArticle) => ({
+        ...prevArticle,
+        save_status: !prevArticle.save_status,
+      }));
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+
+
+  const handleArticleEditSave = async () => {
+    const request = async () => {
+      await axios.patch(`${API_URL}/community/article/${articleId}/`, {
+        "title": article.title_edit_text_area,
+        "body": article.body_edit_text_area
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      setArticle((prevArticle)=> ({
+        ...prevArticle,
+        title_edit_text_area: '',
+        body_edit_text_area: '',
+        editing: false,
+        title: article.title_edit_text_area,
+        body: article.body_edit_text_area
+      }));
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+
+
+  const handleArticleEdit = async () => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      editing: true,
+      title_edit_text_area: article.title,
+      body_edit_text_area: article.body,
+    }));
+  };
+
+
+  const handleArticleEditCancel = async () => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      editing: false,
+      
+    }));
+  };
+
+
+  const handleArticleTitleTextarea = async (title) => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      title_edit_text_area: title
+    }));
+  };
+
+
+  const handleArticleBodyTextarea = async (body) => {
+    setArticle((prevArticle)=> ({
+      ...prevArticle,
+      body_edit_text_area: body
+    }));
+  };
+
+
+
+
+  const handleNewCommentSubmit = async () => {
+    if (!newComment.trim()) return;
+    setSubmittingComment(true);
+
+    const request = async () => {
+      const response = await axios.post(`${API_URL}/community/comment/`,
+        {
+          body: newComment,
+          article: articleId,
+        },
+        {
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${accessToken}`,
+          },
+      });
+      setComments((prevComments) => [
+        {
+          ...response.data,
+          body: response.data.body,
+          user_temp_name: response.data.user_temp_name,
+          user_static_points: response.data.user_static_points,
+          user_school: response.data.user_school,
+          like_status: response.data.like_status,
+        },
+          ...prevComments,
+      ]);
+      setNewComment(""); 
+    };
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+      setSubmittingComment(false);
+    };
+
+  };
+
 
   const fetchNextCommentPage = async () => {
     setLoadingMore(true);
-    try {
-      const response = await axios.get(
-        nextCommentPage, {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-      });
-      const filteredComments = response.data.results.comments.filter(
-        (comment) => !comments.some((localComment) => localComment.id === comment.id)
-      );
+    const request = async () => {
+      await axios.post(nextCommentPage, {}, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+      }});
       setComments((prev) => [...prev, ...filteredComments]);
       setNextCommentPage(response.data.next);
+    }
+
+    try {
+      await request()
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.get(
-          nextCommentPage, {
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${accessToken}`,
-              },
-        });
-        const filteredComments = response.data.results.comments.filter(
-          (comment) => !comments.some((localComment) => localComment.id === comment.id)
-        );
-        setComments((prev) => [...prev, ...filteredComments]);
-        setNextCommentPage(response.data.next);
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
       }
     } finally {
       setLoadingMore(false);
-    }
+    };
 
   };  
+
+
+  const handleReplyCommentSave = async (comment_id, value) => {
+
+    const request = async () => {
+      const response = await axios.post(`${API_URL}/community/comment/`, {
+        "body": value,
+        "article": article.id,
+        "parent_comment": comment_id
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+      }});
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: [
+                  {
+                    ...response.data, 
+                    body: response.data.body,
+                    user_temp_name: response.data.user_temp_name,
+                    user_static_points: response.data.user_static_points,
+                    user_school: response.data.user_school,
+                    like_status: response.data.like_status,
+                  },
+                  ...comment.nested_comments, 
+                ],
+                reply_text_area: ''
+            }
+            : comment
+        )); 
+    };
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+  
+
+  const handleReplyComment = async (comment_id) => {
+
+    const request = async () => {
+      const response = await axios.get(`${API_URL}/community/comment/${comment_id}/`,{
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+      }});
+      setComments((prevComments) =>
+        prevComments.map(comment =>
+          comment.id === comment_id ? { ...comment,
+              nested_comments: response.data.results.comments,
+              show_nested_comments: true,
+              next_comment_page: response.data.next,
+              replying: true,
+              reply_text_area: ''
+          } : comment 
+        )
+      );
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+    
+  };
+
   
   const fetchNextNestedCommentPage = async (comment_id) => {
-    setLoadingMore(true);
+    
     const comment = comments.find((comment) => comment.id === comment_id)
-    try {
+    setLoadingMore(true);
+    const request = async () => {
       const response = await axios.get(
         comment.next_comment_page, {
             headers: {
@@ -124,205 +423,206 @@ const ArticleDetail = () => {
           } : comment 
         )
       );
-      
+    };
 
+    try {
+      await request()
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.get(
-          comment.next_comment_page, {
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${accessToken}`,
-              },
-        });
-
-        const filteredComments = response.data.results.comments.filter(
-          (nested_comment) => !comment.nested_comments.some((localComment) => localComment.id === nested_comment.id)
-        );      
-        setComments((prevComments) =>
-          prevComments.map(comment =>
-            comment.id === comment_id ? { ...comment,
-                nested_comments: [...comment.nested_comments, ...filteredComments],
-                show_nested_comments: true,
-                next_comment_page: response.data.next
-            } : comment 
-          )
-        );
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
       }
     } finally {
       setLoadingMore(false);
-    }
+    };
+
   };
 
-  const handleNewCommentSubmit = async () => {
-    if (!newComment.trim()) return;
+  
+  const toggleCommentLike = async (comment_id, currentLikeStatus, nested_comment_id=false) => {
 
-    setSubmittingComment(true);
-    try {
-        const response = await axios.post(
-            `${API_URL}/community/comment/`,
-            {
-            body: newComment,
-            article: articleId,
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
+    const request = async () => {
+      const url = nested_comment_id
+      ?  currentLikeStatus 
+        ? `${API_URL}/community/comment/${nested_comment_id}/unlike/`
+        : `${API_URL}/community/comment/${nested_comment_id}/like/`
+      : currentLikeStatus
+        ? `${API_URL}/community/comment/${comment_id}/unlike/`
+        : `${API_URL}/community/comment/${comment_id}/like/`;
+
+      await axios.post(url, {},{
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+      }});
+      
+      if (nested_comment_id)  {
+        setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: comment.nested_comments.map((nested_comment) =>
+                  nested_comment.id === nested_comment_id
+                    ? {
+                        ...nested_comment,
+                        like_status: !nested_comment.like_status,
+                        likes_count: nested_comment.like_status ? nested_comment.likes_count - 1 : nested_comment.likes_count + 1,
+                      }
+                    : nested_comment
+                ),
             }
-        );
-        
-        setComments((prevComments) => [
-          {
-            ...response.data,
-            body: response.data.body,
-            user_temp_name: response.data.user_temp_name,
-            user_static_points: response.data.user_static_points,
-            user_school: response.data.user_school,
-            like_status: response.data.like_status,
-          },
-            ...prevComments,
-        ]);
-        
-        setNewComment(""); 
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-          const response = await axios.post(
-              `${API_URL}/community/comment/`,
-              {
-              body: newComment,
-              article: articleId,
-              },
-              {
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${accessToken}`,
-              },
+            : comment
+        )); 
+      }else{
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === comment_id
+              ? {
+                  ...comment,
+                  like_status: !comment.like_status,
+                  likes_count: comment.like_status ? comment.likes_count - 1 : comment.likes_count + 1,
               }
-          );
-          
-          setComments((prevComments) => [
-            {
-              ...response.data,
-              body: response.data.body,
-              user_temp_name: response.data.user_temp_name,
-              user_static_points: response.data.user_static_points,
-              user_school: response.data.user_school,
-              like_status: response.data.like_status,
-              },
-              ...prevComments,
-          ]);
-        
-          setNewComment(""); 
+              : comment
+        ));
+      }
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
       }
     } finally {
-      setSubmittingComment(false);
-    }
+    };
+    
   };
+
 
   const handleCommentDelete = async (comment_id, nested_comment_id=false) => {
-    const url = nested_comment_id
-    ? `${API_URL}/community/comment/${nested_comment_id}/`
-    : `${API_URL}/community/comment/${comment_id}/`;
-    try {
-        const response = await axios.delete(
-            url,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
+
+    const request = async () => {
+      const url = nested_comment_id
+      ? `${API_URL}/community/comment/${nested_comment_id}/`
+      : `${API_URL}/community/comment/${comment_id}/`;
+
+      await axios.delete(url,{
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+      }});
+      
+      if (nested_comment_id)  {
+        setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: comment.nested_comments.map((nested_comment) =>
+                  nested_comment.id === nested_comment_id
+                    ? {
+                        ...nested_comment,
+                        deleted: true,
+                        body: "[DELETED CONTENT]"
+                      }
+                    : nested_comment
+                ),
             }
+            : comment
+        )); 
+      }else{
+        setComments((prevComments) =>
+          prevComments.map(comment =>
+            comment.id === comment_id ? { ...comment,
+                deleted: true,
+                body: "[DELETED CONTENT]"
+            } : comment
+          )
         );
-        
-        if (response.status == 200){
-
-
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            deleted: response.data.deleted,
-                            body: response.data.body
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    deleted: response.data.deleted,
-                    body: response.data.body
-                } : comment
-              )
-            );
-          }
-
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.delete(
-            url,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        
-        if (response.status == 200){
-
-
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            deleted: response.data.deleted,
-                            body: response.data.body
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    deleted: response.data.deleted,
-                    body: response.data.body
-                } : comment
-              )
-            );
-          }
-
-        }
       }
     }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
   };
+
+
+  const handleEditCommentSave = async (comment_id, value, nested_comment_id=false) => {
+
+    const request = async () => {
+      const url = nested_comment_id 
+      ? `${API_URL}/community/comment/${nested_comment_id}/`
+      : `${API_URL}/community/comment/${comment_id}/`;
+
+      await axios.patch(url, {
+          "body": value
+        },{
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+      }});
+      if (nested_comment_id)  {
+        setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === comment_id
+            ? {
+                ...comment,
+                nested_comments: comment.nested_comments.map((nested_comment) =>
+                  nested_comment.id === nested_comment_id
+                    ? {
+                        ...nested_comment,
+                        editing: false,
+                        body: nested_comment.edit_text_area
+                      }
+                    : nested_comment
+                ),
+            }
+            : comment
+        )); 
+      }else{          
+        setComments((prevComments) =>
+          prevComments.map(comment =>
+            comment.id === comment_id ? { ...comment,
+                editing: false,
+                body: comment.edit_text_area
+            } : comment
+          )
+        );
+      }
+    };
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        logout(navigate);
+      }
+    } finally {
+    };
+
+  };
+
+
+
 
   const handleEditComment = async (comment_id, nested_comment_id=false) => {
     
@@ -424,175 +724,6 @@ const ArticleDetail = () => {
       ));
     }
   };
-  
-  const handleEditCommentSave = async (comment_id, value, nested_comment_id=false) => {
-    const url = nested_comment_id 
-    ? `${API_URL}/community/comment/${nested_comment_id}/`
-    : `${API_URL}/community/comment/${comment_id}/`;
-    
-    try {
-        const response = await axios.patch(
-            url,
-            {
-              "body": value
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-
-          
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            editing: false,
-                            body: response.data.body
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{          
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    editing: false,
-                    body: response.data.body
-                } : comment
-              )
-            );
-          }
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.patch(
-            url,
-            {
-              "body": value
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-
-          
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            editing: false,
-                            body: response.data.body
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{          
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    editing: false,
-                    body: response.data.body
-                } : comment
-              )
-            );
-          }
-        }
-      }
-    }
-  };
-  
-  const handleReplyComment = async (comment_id) => {
-    setComments((prevComments) =>
-      prevComments.map(comment =>
-        comment.id === comment_id
-          ? {
-              ...comment,
-              replying: true,
-              reply_text_area: ''
-          }
-          : comment
-    ));
-    const url = `${API_URL}/community/comment/${comment_id}/`
-    try {
-        const response = await axios.get(
-            url,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-          
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    nested_comments: response.data.results.comments,
-                    show_nested_comments: true,
-                    next_comment_page: response.data.next
-                } : comment 
-              )
-            );
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.get(
-            url,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-          
-            setComments((prevComments) =>
-              prevComments.map(comment =>
-                comment.id === comment_id ? { ...comment,
-                    nested_comments: response.data.results.comments,
-                    show_nested_comments: true,
-                    next_comment_page: response.data.next
-                } : comment 
-              )
-            );
-        }
-      }
-    }
-  };
 
   const handleReplyCommentTextArea = async (comment_id, value) => {
     setComments((prevComments) =>
@@ -618,418 +749,8 @@ const ArticleDetail = () => {
           : comment
     ));
   };
-  
-  const handleReplyCommentSave = async (comment_id, value) => {
-    const url = `${API_URL}/community/comment/`
-    
-    try {
-        const response = await axios.post(
-            url,
-            {
-              "body": value,
-              "article": articleId,
-              "parent_comment": comment_id
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 201){
-          
-          setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.id === comment_id
-              ? {
-                  ...comment,
-                  nested_comments: [
-                    {
-                      ...response.data, 
-                      body: response.data.body,
-                      user_temp_name: response.data.user_temp_name,
-                      user_static_points: response.data.user_static_points,
-                      user_school: response.data.user_school,
-                      like_status: response.data.like_status,
-                    },
-                    ...comment.nested_comments, 
-                  ],
-                  reply_text_area: ''
-              }
-              : comment
-          )); 
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.post(
-            url,
-            {
-              "body": value,
-              "article": articleId,
-              "parent_comment": comment_id
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 201){
-          
-          setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.id === comment_id
-              ? {
-                  ...comment,
-                  nested_comments: [
-                    {
-                      ...response.data, 
-                      body: response.data.body,
-                      user_temp_name: response.data.user_temp_name,
-                      user_static_points: response.data.user_static_points,
-                      user_school: response.data.user_school,
-                      like_status: response.data.like_status,
-                    },
-                    ...comment.nested_comments, 
-                  ],
-                  reply_text_area: ''
-              }
-              : comment
-          )); 
-        }
-      }
-    }
-  };
-  
-  const toggleArticleLike = async () => {
-    if (!article) return;
-
-    const endpoint = article.like_status
-      ? `${API_URL}/community/article/${article.id}/unlike/`
-      : `${API_URL}/community/article/${article.id}/like/`;
-    try {
-      const response = await axios.post(
-        endpoint,
-        {},
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
-          },
-        }
-      );
-      if (response.status == 200){
-        setArticle((prevArticle) => ({
-            ...prevArticle,
-            like_status: response.data.like_status,
-            likes_count: response.data.likes_count
-        }));
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.post(
-          endpoint,
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${accessToken}`,
-            },
-          }
-        );
-        if (response.status == 200){
-          setArticle((prevArticle) => ({
-              ...prevArticle,
-              like_status: response.data.like_status,
-              likes_count: response.data.likes_count
-          }));
-        }
-      }
-    }
-  };
-
-  const toggleCommentLike = async (comment_id, currentLikeStatus, nested_comment_id=false) => {
-    const url = nested_comment_id
-    ?  currentLikeStatus 
-      ? `${API_URL}/community/comment/${nested_comment_id}/unlike/`
-      : `${API_URL}/community/comment/${nested_comment_id}/like/`
-    : currentLikeStatus
-      ? `${API_URL}/community/comment/${comment_id}/unlike/`
-      : `${API_URL}/community/comment/${comment_id}/like/`;
-    try {
-        const response = await axios.post(
-            url,
-            {},
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        if (response.status == 200){
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            like_status: response.data.like_status,
-                            likes_count: response.data.likes_count
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{
-            setComments((prevComments) =>
-              prevComments.map((comment) =>
-                comment.id === comment_id
-                  ? {
-                      ...comment,
-                      like_status: response.data.like_status,
-                      likes_count: response.data.likes_count
-                  }
-                  : comment
-            ));
-          }
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.post(
-            url,
-            {},
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        if (response.status == 200){
-          if (nested_comment_id)  {
-            setComments((prevComments) =>
-            prevComments.map((comment) =>
-              comment.id === comment_id
-                ? {
-                    ...comment,
-                    nested_comments: comment.nested_comments.map((nested_comment) =>
-                      nested_comment.id === nested_comment_id
-                        ? {
-                            ...nested_comment,
-                            like_status: response.data.like_status,
-                            likes_count: response.data.likes_count
-                          }
-                        : nested_comment
-                    ),
-                }
-                : comment
-            )); 
-          }else{
-            setComments((prevComments) =>
-              prevComments.map((comment) =>
-                comment.id === comment_id
-                  ? {
-                      ...comment,
-                      like_status: response.data.like_status,
-                      likes_count: response.data.likes_count
-                  }
-                  : comment
-            ));
-          }
-        }
-      }
-    }
-  };
 
 
-  const handleArticleEdit = async () => {
-    setArticle((prevArticle)=> ({
-      ...prevArticle,
-      editing: true,
-      title_edit_text_area: article.title,
-      body_edit_text_area: article.body,
-    }));
-  };
-  const handleArticleEditCancel = async () => {
-    setArticle((prevArticle)=> ({
-      ...prevArticle,
-      editing: false,
-      
-    }));
-  };
-  const handleArticleEditSave = async () => {
-    try {
-        const response = await axios.patch(
-            `${API_URL}/community/article/${articleId}/`,
-            {
-              "title": article.title_edit_text_area,
-              "body": article.body_edit_text_area
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-          setArticle((prevArticle)=> ({
-            ...prevArticle,
-            title_edit_text_area: '',
-            body_edit_text_area: '',
-            editing: false,
-            body: response.data.body
-          }));
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.patch(
-            `${API_URL}/community/article/${articleId}/`,
-            {
-              "title": article.title_edit_text_area,
-              "body": article.body_edit_text_area
-            },
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            }
-            }
-        );
-        
-        if (response.status == 200){
-          setArticle((prevArticle)=> ({
-            ...prevArticle,
-            title_edit_text_area: '',
-            body_edit_text_area: '',
-            editing: false,
-            body: response.data.body
-          }));
-        }
-      }
-    }
-  };
-
-  const handleTitleTextarea = async (title) => {
-    setArticle((prevArticle)=> ({
-      ...prevArticle,
-      title_edit_text_area: title
-    }));
-  };
-
-  const handleBodyTextarea = async (body) => {
-    setArticle((prevArticle)=> ({
-      ...prevArticle,
-      body_edit_text_area: body
-    }));
-  };
-
-  const handleArticleDelete = async () => {
-    try {
-        const response = await axios.delete(
-            `${API_URL}/community/article/${articleId}/`,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        
-        if (response.status == 200){
-          setArticle((prevArticle)=> ({
-            ...prevArticle,
-            title: response.data.title,
-            body: response.data.body,
-            deleted: response.data.deleted
-          }));
-        }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const response = await axios.delete(
-            `${API_URL}/community/article/${articleId}/`,
-            {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            }
-        );
-        
-        if (response.status == 200){
-          setArticle((prevArticle)=> ({
-            ...prevArticle,
-            title: response.data.title,
-            body: response.data.body,
-            deleted: response.data.deleted
-          }));
-        }
-      }
-    }
-  };
-
-  const handleSave = async () => {
-    
-    try {
-      const url = article.save_status
-        ? `${API_URL}/community/article/${article.id}/unsave/`
-        : `${API_URL}/community/article/${article.id}/save/`;
-
-      await axios.post(url, {}, {
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      
-      setArticle((prevArticle) => ({
-        ...prevArticle,
-        save_status: !prevArticle.save_status,
-      }));
-      
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        await fetchNewAccessToken(navigate);
-        accessToken = localStorage.getItem('access');
-        const url = article.save_status
-          ? `${API_URL}/community/article/${article.id}/unsave/`
-          : `${API_URL}/community/article/${article.id}/save/`;
-
-        await axios.post(url, {}, {
-          headers: {
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-      
-        setArticle((prevArticle) => ({
-          ...prevArticle,
-          save_status: !prevArticle.save_status,
-        }));
-      }
-    }    
-  };
 
   if (loading) return <p>Loading article...</p>;
 
@@ -1049,7 +770,7 @@ const ArticleDetail = () => {
                   <textarea
                     value={article.title_edit_text_area}
                     id="edit-textarea"
-                    onChange={(e) => handleTitleTextarea(e.target.value)}
+                    onChange={(e) => handleArticleTitleTextarea(e.target.value)}
                     placeholder="Write your title here..."
                   />
               ):(
@@ -1083,7 +804,7 @@ const ArticleDetail = () => {
                   <textarea
                     value={article.body_edit_text_area}
                     id="edit-textarea"
-                    onChange={(e) => handleBodyTextarea(e.target.value)}
+                    onChange={(e) => handleArticleBodyTextarea(e.target.value)}
                     placeholder="Write your body here..."
                   />
               ):(
@@ -1124,7 +845,7 @@ const ArticleDetail = () => {
                     {article.comments_count}
                   </button>
                   <button 
-                    onClick={() => handleSave()}
+                    onClick={() => handleArticleSave()}
                     id="save"
                     >
                     {article.save_status?

@@ -157,7 +157,7 @@ const Feed = () => {
           } : article 
         )
       );
-    }
+    };
 
     try {
       await request()
