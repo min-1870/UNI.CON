@@ -38,7 +38,7 @@ const Navbar = () => {
       
         <div id="navbar">
                 
-        <div id="navbar-logo" onClick={() => {navigate(`/community/`);setSearch("");}}>
+        <div id="navbar-logo" onClick={() => {navigate(`/feed/`);setSearch("");}}>
           <div id="navbar-title">UNI.CON</div>
           <div id="navbar-initial" style={{color:color}}>{initial.toUpperCase()}</div>
         </div>

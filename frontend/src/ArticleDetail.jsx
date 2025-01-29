@@ -21,7 +21,7 @@ const ArticleDetail = () => {
   const navigate = useNavigate();
   
   const handleBack = () => {
-    navigate("/community")    
+    navigate("/feed")    
   };
 
   useEffect(() => {

@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from "./constants";
 import fetchNewAccessToken from "./utils";
 import axios from "axios";
-import './Community.css';
+import './Feed.css';
 import './constants.css';
 
-const Community = () => {
+const Feed = () => {
   const [articles, setArticles] = useState([]);
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [page, setPage] = useState(1);
@@ -353,4 +353,4 @@ const Community = () => {
   );
 };
 
-export default Community;
+export default Feed;

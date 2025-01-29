@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import fetchNewAccessToken from "./utils";
 import { API_URL } from "./constants";
 import axios from "axios";
-import './Community.css';
+import './Feed.css';
 import './constants.css';
 
 const SearchResults = () => {

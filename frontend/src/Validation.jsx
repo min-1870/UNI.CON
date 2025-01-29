@@ -32,7 +32,7 @@ const Validation = () => {
           }
       );
       localStorage.setItem('is_validated', true);
-      navigate("/community");
+      navigate("/feed");
     
     } catch (error) {
       if (error.response && error.response.status === 401) {

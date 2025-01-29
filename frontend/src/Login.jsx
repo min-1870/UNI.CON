@@ -65,7 +65,7 @@ const Login = () => {
         localStorage.setItem('initial', data.initial);
         localStorage.setItem('points', data.points);
         localStorage.setItem('is_validated', data.is_validated);
-        navigate("/community")
+        navigate("/feed")
       } else if (response.status === 401) {
         setError('Incorrect email or password.');
       } else {

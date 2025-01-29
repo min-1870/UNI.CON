@@ -174,7 +174,7 @@ const PostArticle = () => {
           )}
           
           <button
-            onClick={() => navigate('/community')}
+            onClick={() => navigate('/feed')}
             id="redButton"
           >
             Cancel
