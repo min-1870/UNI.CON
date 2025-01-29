@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import fetchNewAccessToken from "./utils";
+import {fetchNewAccessToken, logout} from "./utils";
 import React, { useState } from "react";
 import { API_URL } from "./constants";
 import axios from "axios";
@@ -21,6 +21,7 @@ const PostArticle = () => {
   const color = localStorage.getItem('color') || '#000';
   const navigate = useNavigate();
 
+
   const handleAddCrouseButton = async () => {
     if (courses.includes(course.toUpperCase().trim())){
       setError(true)
@@ -37,69 +38,56 @@ const PostArticle = () => {
     }
    };
 
+
    const handleRemoveCrouseButton = async (index) => {
     setCourses((prevCourses) =>
       prevCourses.filter((_, i) => i !== index)
     );
    };
   
+
   const handleUniconToggle = async () => {
     setUnicon(!unicon);
   };
+
 
   const handlePostArticleButton = async () => {
     if (title.length == 0 || body.length == 0){
     setError(true)
     setErrorMsg(`The title or body cannot be empty.`)
-    }else{
-      try {
-          const response = await axios.post(
-              `${API_URL}/community/article/`,
-              {
-              title: title,
-              body: body,
-              unicon: unicon,
-              course_code: unicon ? [] : courses
-              },
-              {
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${accessToken}`,
-              },
-              }
-          );
-          if (response.status == 201){
-            navigate(`/article/${response.data.id}`)
-          }
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          await fetchNewAccessToken(navigate);
-          accessToken = localStorage.getItem('access');
-          const response = await axios.post(
-              `${API_URL}/community/article/`,
-              {
-              title: title,
-              body: body,
-              unicon: unicon,
-              course_code: unicon ? [] : courses
-              },
-              {
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${accessToken}`,
-              },
-              }
-          );
-          if (response.status == 201){
-            navigate(`/article/${response.data.id}`)
-          }
 
-        }else{
-          setError(true)
-          setErrorMsg(error)
+    }else{
+    
+      const request = async () => {
+        const response = await axios.post(`${API_URL}/community/article/`,{
+            title: title,
+            body: body,
+            unicon: unicon,
+            course_code: unicon ? [] : courses
+          },{
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${accessToken}`,
+            }
+          }
+        );
+        navigate(`/article/${response.data.id}`)
+      };
+
+      try {
+        await request()
+      } catch (error) {
+        try {
+          accessToken = await fetchNewAccessToken(navigate);
+          await request();
+        } catch (error) {
+          logout(navigate);
         }
-      }
+      } finally {
+        setLoading(false);
+      };
     }
+
   };
 
 
