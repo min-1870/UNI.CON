@@ -22,12 +22,18 @@ const fetchNewAccessToken = async (navigate) => {
         );
         localStorage.setItem('access', response.data.access);
     } catch (error) {
-        localStorage.clear()
-        navigate("/")
-        window.location.reload();
+        logout(navigate);
     }
 
     
   };
+  
+  
+const logout = async (navigate) => {
+    localStorage.clear()
+    navigate("/")
+    window.location.reload();
+};
 
-export default fetchNewAccessToken;
+
+export { fetchNewAccessToken, logout };
