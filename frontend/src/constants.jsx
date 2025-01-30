@@ -1,4 +1,4 @@
-const DEBUG = true
+const DEBUG = false
 
 let domain = "https://unicon.min1870.com/api"
 if (DEBUG) {
