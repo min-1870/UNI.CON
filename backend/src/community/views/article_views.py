@@ -9,9 +9,10 @@ from community.utils import (
     add_embedding_to_faiss,
     get_set_temp_name_static_points,
     ArticleResponseSerializer,
-    cache_user_liked_articles,
-    cache_user_viewed_articles,
-    cache_user_saved_articles,
+    update_user_viewed_article_cache,
+    update_user_saved_article_cache,
+    update_user_liked_article_cache,
+    update_article_cache,
 )
 from community.constants import (
     DELETED_BODY,
@@ -201,12 +202,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update the article attributes
+        # Update the article instance & shared article attributes cache
         updated_fields = {"title": title, "body": body, "edited": True}
-        response_data = cache_serialized_article(
-            request, article_instance, updated_fields
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        update_article_cache(article_instance, updated_fields)
+
+        return Response({"detail":"The article has been updated by user."}, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         user_instance = request.user
@@ -219,21 +219,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance.embedding_vector = updated_preference_vector
         user_instance.save(update_fields=["embedding_vector"])
 
-        # Update the article attributes
-        article_response_data = cache_serialized_article(
-            request, article_instance, {"views_count": F("views_count") + 1}
-        )
-
         # Create relational data
         ArticleView.objects.get_or_create(
             user=user_instance, article=article_instance
         )
+        
+        # Update the article instance & shared article attributes cache
+        updated_fields = {"views_count": F("views_count") + 1}
+        update_article_cache(article_instance, updated_fields)
 
-        # Set view status cache
-        cache_user_viewed_articles(user_instance, article_instance)
+        # update the user specific cache
+        update_user_viewed_article_cache(request, article_instance)
 
+        # Fetch the article response data
+        article_response_data = cache_serialized_article(request, article_instance)
         comments_response_data = cache_paginated_comments(request, article_instance)
-
         comments_response_data["results"]["article"] = article_response_data
 
         return Response(comments_response_data)
@@ -247,13 +247,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The article is deleted."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Update the article attributes
+        
+        # Update the article instance & shared article attributes cache
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
-        response_data = cache_serialized_article(
-            request, article_instance, updated_fields
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        update_article_cache(article_instance, updated_fields)
+
+        return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
     def save(self, request, pk=None):
@@ -272,7 +271,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         # Set save status cache
-        cache_user_saved_articles(user_instance, article_instance, True)
+        update_user_saved_article_cache(request, article_instance, True)
 
         return Response({"detail":"The article has been saved."}, status=status.HTTP_200_OK)
 
@@ -293,7 +292,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         # Set save status cache
-        cache_user_saved_articles(user_instance, article_instance, False)
+        update_user_saved_article_cache(request, article_instance, False)
 
         return Response({"detail":"The article has been removed from saved articles."}, status=status.HTTP_200_OK)
 
@@ -313,14 +312,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_304_NOT_MODIFIED,
             )
         
-        # Set like status cache
-        cache_user_liked_articles(user_instance, article_instance, True)
+        # Update the article instance & shared article attributes cache
+        updated_fields = {"likes_count": F("likes_count") + 1}
+        update_article_cache(article_instance, updated_fields)
 
-        # Update the article attributes
-        response_data = cache_serialized_article(
-            request, article_instance, {"likes_count": F("likes_count") + 1}
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        # update the user specific cache
+        update_user_liked_article_cache(request, article_instance, True)
+
+        return Response({"detail":"The article has been liked by user."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
     def unlike(self, request, pk=None):
@@ -337,12 +336,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The article already unliked by the user."},
                 status=status.HTTP_304_NOT_MODIFIED,
             )
+        
+        # Update the article instance & shared article attributes cache
+        updated_fields = {"likes_count": F("likes_count") - 1}
+        update_article_cache(article_instance, updated_fields)
 
-        # Set like status cache
-        cache_user_liked_articles(user_instance, article_instance, False)
+        # update the user specific cache
+        update_user_liked_article_cache(request, article_instance, False)
 
-        # Update the article attributes
-        response_data = cache_serialized_article(
-            request, article_instance, {"likes_count": F("likes_count") - 1}
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)

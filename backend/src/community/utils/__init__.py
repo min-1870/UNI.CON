@@ -1,9 +1,10 @@
 from .article_cache_utils import (
     cache_serialized_article,
     cache_paginated_articles,
-    cache_user_liked_articles,
-    cache_user_viewed_articles,
-    cache_user_saved_articles,
+    update_article_cache,
+    update_user_viewed_article_cache,
+    update_user_saved_article_cache,
+    update_user_liked_article_cache,
 )
 from .database_utils import (
     update_article_engagement_score,

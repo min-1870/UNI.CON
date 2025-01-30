@@ -191,18 +191,10 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
     return serialized_annotated_articles
 
 
-def cache_serialized_article(request, article_instance, updated_fields={}):
-    cache_key = ARTICLE_CACHE_KEY(article_instance.id)
-
-    # Update attributes for updated fields
-    for field, value in updated_fields.items():
-        setattr(article_instance, field, value)
-    article_instance.save(update_fields=updated_fields.keys())
-    article_instance.refresh_from_db()
-    article_instance = update_article_engagement_score(article_instance)
-    cache.delete(cache_key)
+def cache_serialized_article(request, article_instance):
 
     # Cache the annotated article
+    cache_key = ARTICLE_CACHE_KEY(article_instance.id)
     serialized_annotated_article = cache.get(cache_key, None)
     user_instance = request.user
 
@@ -255,9 +247,44 @@ def cache_serialized_article(request, article_instance, updated_fields={}):
 
     return serialized_annotated_article
 
+def update_article_cache(article_instance, updated_fields={}):
 
-def cache_user_liked_articles(user_instance, article_instance, like_status):
+    # Update attributes for updated fields in the permanent database
+    for field, value in updated_fields.items():
+        setattr(article_instance, field, value)
+    article_instance.save(update_fields=updated_fields.keys())
+    article_instance.refresh_from_db()
+    article_instance = update_article_engagement_score(article_instance)
     
+    # Update the cache
+    cache_key = ARTICLE_CACHE_KEY(article_instance.id)
+    serialized_annotated_article = cache.get(cache_key, None)
+
+    if serialized_annotated_article:
+        for field in updated_fields.keys():
+            serialized_annotated_article[field] = getattr(article_instance, field)
+
+        cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
+
+    else:
+        # Annotate article instance
+        article_instance.user_school = article_instance.user.school.initial
+        articleUser_instance = ArticleUser.objects.get(
+            article=article_instance, user=article_instance.user
+        )
+        article_instance.user_temp_name = articleUser_instance.user_temp_name
+        article_instance.user_static_points = articleUser_instance.user_static_points
+        course_codes = ArticleCourse.objects.filter(article=article_instance).values_list(
+            "course__code", flat=True
+        )
+        article_instance.course_code = ", ".join(course_codes) if course_codes else ""
+
+        # Make an annotated_article to set the cache
+        serialized_annotated_article = ArticleResponseSerializer(article_instance).data
+        cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
+
+def update_user_liked_article_cache(request, article_instance, like_status):
+    user_instance = request.user
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
     if user_liked_articles is None:
@@ -268,8 +295,8 @@ def cache_user_liked_articles(user_instance, article_instance, like_status):
     user_liked_articles[article_instance.id] = like_status
     cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
 
-def cache_user_viewed_articles(user_instance, article_instance):
-    
+def update_user_viewed_article_cache(request, article_instance):
+    user_instance = request.user
     cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
     user_viewed_articles = cache.get(cache_key, None)
     if user_viewed_articles is None:
@@ -280,8 +307,8 @@ def cache_user_viewed_articles(user_instance, article_instance):
     user_viewed_articles[article_instance.id] = True
     cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
-def cache_user_saved_articles(user_instance, article_instance, save_status):
-    
+def update_user_saved_article_cache(request, article_instance, save_status):
+    user_instance = request.user
     cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
     if user_saved_articles is None:
