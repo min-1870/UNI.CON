@@ -1,7 +1,7 @@
 from community.utils import (
     cache_serialized_comment,
     cache_paginated_comments,
-    cache_serialized_article,
+    update_article_cache,
     add_cache_serialized_comment,
 )
 from community.permissions import Comment_IsAuthenticated
@@ -39,9 +39,9 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment_instance = serializer.instance
 
         # Update the article & comment's instance & cache
-        cache_serialized_article(
-            request, comment_instance.article, {"comments_count": F("comments_count") + 1}
-        )
+        updated_fields = {"comments_count": F("comments_count") + 1}
+        update_article_cache(comment_instance.article, updated_fields)
+        
         if comment_instance.parent_comment:
             cache_serialized_comment(
                 request,
