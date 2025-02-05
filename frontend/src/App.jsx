@@ -6,6 +6,7 @@ import Validation from './Validation';
 import Login from './Login';
 import Navbar from './Navbar';
 import Feed from './Feed';
+import MyPage from './MyPage';
 import ArticleDetail from './ArticleDetail';
 import PostArticle from './PostArticle';
 import SearchResults from './SearchResults';
@@ -21,6 +22,7 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/validation" element={<Validation />} />
               <Route path="/feed" element={<Feed />} />
+              <Route path="/mypage" element={<MyPage />} />
               <Route path="/postarticle" element={<PostArticle />} />
               <Route path="/searchresults" element={<SearchResults />} />
               <Route path="/article/:articleId" element={<ArticleDetail />} /> 

@@ -54,6 +54,13 @@ const Navbar = () => {
             >
             Write
           </button>
+
+          <button 
+            onClick={() => navigate("/mypage")}
+            id="navbar-logout"
+            >
+            My Page
+          </button>
           
           <button 
             onClick={handleLogout}
