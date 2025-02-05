@@ -19,7 +19,7 @@ from community.constants import (
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
 )
-from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView, ArticleSave
+from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView, ArticleSave, Comment
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
@@ -167,6 +167,50 @@ class ArticleViewSet(viewsets.ModelViewSet):
             ARTICLES_CACHE_KEY(
                 user_instance.school.id, resolve(request.path).view_name, search_content
             ),
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def posted_articles(self, request, *args, **kwargs):        
+        
+        response_data = cache_paginated_articles(
+            request,
+            self.get_queryset().filter(user=request.user),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def commented_articles(self, request, *args, **kwargs):            
+
+        response_data = cache_paginated_articles(
+            request,
+            self.get_queryset().filter(comment__user=request.user).distinct(),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def saved_articles(self, request, *args, **kwargs):            
+
+        response_data = cache_paginated_articles(
+            request,
+            self.get_queryset().filter(articlesave__user=request.user),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def liked_articles(self, request, *args, **kwargs):            
+        
+        response_data = cache_paginated_articles(
+            request,
+            self.get_queryset().filter(articlelike__user=request.user),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from community.constants import (
     ARTICLES_VIEW_CACHE_KEY,
     ARTICLES_SAVE_CACHE_KEY
 )
-from community.models import ArticleUser, ArticleCourse, ArticleLike, ArticleView, ArticleSave
+from community.models import ArticleUser, ArticleCourse, ArticleLike, ArticleView, ArticleSave, Comment
 from django.db.models import OuterRef, Subquery, F, Func, Value
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
@@ -292,8 +292,48 @@ def update_user_liked_article_cache(request, article_instance, like_status):
             user=user_instance
         ).values_list("article", flat=True)
         user_liked_articles = {pk: True for pk in user_liked_articles}
-    user_liked_articles[article_instance.id] = like_status
+    else:
+        user_liked_articles[article_instance.id] = like_status
     cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+    
+    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-liked-articles", request.user.id)
+    user_liked_articles_ids = cache.get(cache_key, None)
+    
+    if user_liked_articles_ids is None:
+        user_liked_articles_ids = list(ArticleLike.objects.filter(
+            user=user_instance
+        ).values_list("article", flat=True))
+    elif like_status:
+        user_liked_articles_ids.append(article_instance.id)
+    else:
+        user_liked_articles_ids.remove(article_instance.id)
+    cache.set(cache_key, user_liked_articles_ids, CACHE_TIMEOUT)
+
+def update_user_saved_article_cache(request, article_instance, save_status):
+
+    user_instance = request.user
+    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
+    user_saved_articles = cache.get(cache_key, None)
+    if user_saved_articles is None:
+        user_saved_articles = ArticleSave.objects.filter(
+            user=user_instance
+        ).values_list("article", flat=True)
+        user_saved_articles = {pk: True for pk in user_saved_articles}
+    else:
+        user_saved_articles[article_instance.id] = save_status
+    cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
+    
+    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-saved-articles", request.user.id)
+    user_saved_articles_ids = cache.get(cache_key, None)
+    if user_saved_articles_ids is None:
+        user_saved_articles_ids = list(ArticleSave.objects.filter(
+            user=user_instance
+        ).values_list("article", flat=True))
+    elif save_status:
+        user_saved_articles_ids.append(article_instance.id)
+    else:
+        user_saved_articles_ids.remove(article_instance.id)
+    cache.set(cache_key, user_saved_articles_ids, CACHE_TIMEOUT)
 
 def update_user_viewed_article_cache(request, article_instance):
     user_instance = request.user
@@ -304,17 +344,19 @@ def update_user_viewed_article_cache(request, article_instance):
             user=user_instance
         ).values_list("article", flat=True)
         user_viewed_articles = {pk: True for pk in user_viewed_articles}
-    user_viewed_articles[article_instance.id] = True
+    else:
+        user_viewed_articles[article_instance.id] = True
     cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
-def update_user_saved_article_cache(request, article_instance, save_status):
+def update_user_commented_article_cache(request, article_instance):
+
     user_instance = request.user
-    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
-    user_saved_articles = cache.get(cache_key, None)
-    if user_saved_articles is None:
-        user_saved_articles = ArticleSave.objects.filter(
+    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-commented-articles", request.user.id)
+    user_commented_articles_ids = cache.get(cache_key, None)
+    if user_commented_articles_ids is None:
+        user_commented_articles_ids = list(Comment.objects.filter(
             user=user_instance
-        ).values_list("article", flat=True)
-        user_saved_articles = {pk: True for pk in user_saved_articles}
-    user_saved_articles[article_instance.id] = save_status
-    cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
+        ).values_list("article", flat=True))
+    else:
+        user_commented_articles_ids.append(article_instance.id)
+    cache.set(cache_key, user_commented_articles_ids, CACHE_TIMEOUT)
