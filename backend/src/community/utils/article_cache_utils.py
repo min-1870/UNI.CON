@@ -155,7 +155,7 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
     cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
     if user_saved_articles is None:
-        user_saved_articles = ArticleLike.objects.filter(user=user_instance).values_list(
+        user_saved_articles = ArticleSave.objects.filter(user=user_instance).values_list(
             "article", flat=True
         )
         user_saved_articles = {pk: True for pk in user_saved_articles}
