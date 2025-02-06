@@ -31,7 +31,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Send OTP again whe the validation is false
         if not user_instance.is_validated:
-            send_otp()
+            send_otp(user_instance.validation_code, user_instance.email)
             return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
