@@ -40,6 +40,7 @@ const ArticleDetail = () => {
       setArticle(article);
       setComments(comments);
       setNextCommentPage(response.data.next);
+      flagMostLikedComment(comments);
     };
 
     try {
@@ -233,7 +234,19 @@ const ArticleDetail = () => {
 
 
 
+  const flagMostLikedComment = (comments) => {
+    let mostLikedComment = null;
+    comments.forEach(comment => {
+      if (!mostLikedComment || comment.likes > mostLikedComment.likes) {
+        mostLikedComment = comment;
+      }
+    });
 
+    if (mostLikedComment && mostLikedComment.likes > 10) {
+      mostLikedComment.isMostLiked = true;
+    }
+  };
+  
   const handleNewCommentSubmit = async () => {
     if (!newComment.trim()) return;
     setSubmittingComment(true);

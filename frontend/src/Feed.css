@@ -1,3 +1,11 @@
+#community-article,
+#community-article-viewed,
+#community-article-unicon,
+#community-article-unicon-viewed {
+  cursor: pointer;
+}
+
+
 #community-container {
   height: 100%;
   display: flex;   
