@@ -8,9 +8,13 @@ import './constants.css';
 
 const MyPage = () => {
   const [articles, setArticles] = useState([]);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [sortOption, setSortOption] = useState("posted");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   let accessToken = localStorage.getItem('access');
   const color = localStorage.getItem('color');
   const user = localStorage.getItem('user');
@@ -178,10 +182,76 @@ const MyPage = () => {
   };
 
 
+  const handleChangePassword = async () => {
+    
+    const request = async () => {
+      const url = `${API_URL}/account/user/newpassword/`;
+
+      await axios.post(url, {
+          current_password: currentPassword,
+          new_password: newPassword,
+        }, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${accessToken}`,
+        }
+      });
+      setError(true);
+      setErrorMsg("Password changed successfully.");
+    }
+
+    try {
+      await request()
+    } catch (error) {
+      try {
+        accessToken = await fetchNewAccessToken(navigate);
+        await request();
+      } catch (error) {
+        if (error.response.status == 400) {
+          setError(true);
+          setErrorMsg(error.response.data.detail);
+        }
+        else {
+          logout(navigate);
+        }
+      }
+    } finally {
+    };
+
+  };
+
+
+
   return (
     <div id="community-container">
       <div id="community-left"></div>
       <div id="community">
+        
+        <input
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          id="email"
+          type="password"
+          placeholder='Current Password'
+          className='login-email'
+        />
+        <input
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          id="email"
+          type="password"
+          placeholder='New Password'
+          className='login-email'
+        />
+        <button
+          id="grayButton"
+          onClick={() => handleChangePassword()}
+        >
+          Change
+        </button>
+        {error && (
+          <div id="error-msg">{errorMsg}</div>
+        )}
         <div id="community-sort-options">
           <button
             id={sortOption === "posted" ? "active" : ""}

@@ -84,6 +84,11 @@
     margin-right: 9px;
 }
 
+#error-msg{
+    color: #ff0000;
+    font-size: 1rem;
+}
+
 #save{
     background-color: #e2e8f0;
     color: #2D3748;
