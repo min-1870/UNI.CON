@@ -9,7 +9,7 @@ class User_IsAuthenticated(permissions.BasePermission):
     def has_permission(self, request, view):
 
         view_name = getattr(view, "action")
-        if view_name in ["validate", "create", "login"]:
+        if view_name in ["validate", "create", "login", "forgotpassword"]:
             return True
 
         # Block not validated user

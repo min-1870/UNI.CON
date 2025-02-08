@@ -6,14 +6,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from decouple import config
 
-def send_otp(otp, email):
+def send_email(subject, body, email):
 
     unicon_email = config("UNICON_EMAIL")
     unicon_password = config("UNICON_EMAIL_PASSWORD")
-
-    # Email details
-    subject = "Your OTP for UNI.CON is here!"
-    body = "Your OTP is " + str(otp) + ". Please do not share it with anyone."
 
     # Create email message
     msg = MIMEMultipart()

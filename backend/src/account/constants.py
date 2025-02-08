@@ -12,3 +12,7 @@ USER_RESPONSE_KEYS = {
     "access",
     "is_validated",
 }
+OTP_EMAIL_SUBJECT = "Your OTP for UNI.CON is here!"
+OTP_EMAIL_BODY = "This is your OTP for UNI.CON: "
+FORGOT_PASSWORD_EMAIL_SUBJECT = "Your new password for UNI.CON is here!"
+FORGOT_PASSWORD_EMAIL_BODY = "We have provided a temporary password for you. Please change it after login: "

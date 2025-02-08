@@ -3,10 +3,12 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status
 from .serializers import UserSerializer
 from rest_framework.decorators import action
-from .utils import send_otp, annotate_user
+from .utils import send_email, annotate_user
 from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth.hashers import make_password
 from .models import User
-
+from .constants import OTP_EMAIL_BODY, OTP_EMAIL_SUBJECT, FORGOT_PASSWORD_EMAIL_BODY, FORGOT_PASSWORD_EMAIL_SUBJECT
+from randomname import get_name
 
 class UserViewSet(viewsets.ModelViewSet):
 
@@ -31,7 +33,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Send OTP again whe the validation is false
         if not user_instance.is_validated:
-            send_otp(user_instance.validation_code, user_instance.email)
+            send_email(OTP_EMAIL_SUBJECT, OTP_EMAIL_BODY+user_instance.validation_code, user_instance.email)
             return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -69,6 +71,55 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(user_instance)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"])
+    def newpassword(self, request):
+        user_instance = request.user
+        
+        current_password, new_password =request.data["current_password"], request.data["new_password"]
+
+        # Validate the password
+        if not user_instance.check_password(current_password):
+            return Response(
+                {"detail": "The current password is incorrect."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate the new password
+        if new_password == current_password:
+            return Response(
+                {"detail": "The new password is the same as the old one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        new_password = make_password(new_password)
+
+        user_instance.password = new_password
+        user_instance.save(update_fields=["password"])
+
+        return Response({"detail":"The password has been updated."}, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["post"])
+    def forgotpassword(self, request):
+        user_instance = request.user
+        
+        email = request.data["email"]
+        user_instance = User.objects.filter(email=email).first()
+
+        # Validate the email
+        if user_instance is None:
+            return Response(
+                {"detail": "The email is not registered."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        temporary_password = get_name()
+        send_email(FORGOT_PASSWORD_EMAIL_SUBJECT, FORGOT_PASSWORD_EMAIL_BODY+temporary_password, request.data["email"])
+
+        user_instance.password = make_password(temporary_password)
+        user_instance.save(update_fields=["password"])
+
+        return Response({"detail":"The temporary password has been sent."}, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         return Response(
