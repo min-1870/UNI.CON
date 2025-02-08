@@ -93,7 +93,7 @@ const Login = () => {
               id="email"
               type="email"
               value={email}
-              placeholder='Your School Email (@XX.edu)'
+              placeholder='Your University Email (@XX.edu)'
               onChange={(e) => setEmail(e.target.value)}
               className='login-email'
             />
@@ -119,7 +119,10 @@ const Login = () => {
         <div id="login-sign-up-container">
           <div id="login-sign-up-description">Don't have an account?</div>
           <span id="login-sign-up-link" onClick={handleNavigateToRegister}>Sign Up</span>
-          <span id="login-sign-up-link" onClick={handleForgotPassword}>or Forgot Password?</span>
+        </div>
+        <div id="login-sign-up-container">
+          <div id="login-sign-up-description">or</div>
+          <span id="login-sign-up-link" onClick={handleForgotPassword}>Forgot Password?</span>
         </div>
         
         

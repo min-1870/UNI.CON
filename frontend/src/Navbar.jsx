@@ -4,6 +4,7 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState("main");
   const is_validated = JSON.parse(localStorage.getItem('is_validated')) || false;
   const initial = localStorage.getItem('initial') || '';
   const color = localStorage.getItem('color') || '#000';
@@ -27,6 +28,23 @@ const Navbar = () => {
     }
   };
 
+  const handleMain = () => {
+    navigate(`/feed`);
+    setPage("main");
+  }
+
+  const handleMyPage = () => {
+    navigate(`/mypage`);
+    setPage("mypage");
+  }
+
+  const handleWrite = () => {
+    navigate(`/postarticle`);
+    setPage("mypage");
+  }
+
+
+
   return (
     <>
     {(is_validated) && (
@@ -49,18 +67,27 @@ const Navbar = () => {
 
 
           <button 
-            onClick={() => navigate("/postarticle")}
+            onClick={() => handleWrite()}
             id="navbar-logout"
             >
             Write
           </button>
-
-          <button 
-            onClick={() => navigate("/mypage")}
-            id="navbar-logout"
-            >
-            My Page
-          </button>
+          {page == "mypage" && (
+            <button 
+              onClick={() => handleMain()}
+              id="navbar-logout"
+              >
+              Main
+            </button>
+          )}
+          {page == "main" && (
+            <button 
+              onClick={() => handleMyPage()}
+              id="navbar-logout"
+              >
+              My Page
+            </button>
+          )}
           
           <button 
             onClick={handleLogout}

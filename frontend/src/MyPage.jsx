@@ -196,8 +196,10 @@ const MyPage = () => {
           'Authorization': `Bearer ${accessToken}`,
         }
       });
-      setError(true);
-      setErrorMsg("Password changed successfully.");
+      setError("Password changed successfully.");
+      setErrorMsg();
+      setCurrentPassword("");
+      setNewPassword("");
     }
 
     try {
@@ -208,8 +210,7 @@ const MyPage = () => {
         await request();
       } catch (error) {
         if (error.response.status == 400) {
-          setError(true);
-          setErrorMsg(error.response.data.detail);
+          setError(error.response.data.detail);
         }
         else {
           logout(navigate);
@@ -250,7 +251,7 @@ const MyPage = () => {
           Change
         </button>
         {error && (
-          <div id="error-msg">{errorMsg}</div>
+          <div id="error-msg">{error}</div>
         )}
         <div id="community-sort-options">
           <button

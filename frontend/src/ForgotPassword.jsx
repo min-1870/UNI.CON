@@ -56,7 +56,7 @@ const ForgotPassword = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             id="validation-input"
-            placeholder="University Email (@XX.edu)"
+            placeholder="Your University Email (@XX.edu)"
           />
           
             {error && <div id="login-error">{error}</div>}
