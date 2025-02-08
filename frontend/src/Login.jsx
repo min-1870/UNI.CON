@@ -13,6 +13,9 @@ const Login = () => {
   const handleNavigateToRegister = () => {
     navigate("/register");
   };
+  const handleForgotPassword = () => {
+    navigate("/forgotpassword");
+  };
 
   const signInRandomUser = async () => {
     const demo_users = [
@@ -116,6 +119,7 @@ const Login = () => {
         <div id="login-sign-up-container">
           <div id="login-sign-up-description">Don't have an account?</div>
           <span id="login-sign-up-link" onClick={handleNavigateToRegister}>Sign Up</span>
+          <span id="login-sign-up-link" onClick={handleForgotPassword}>or Forgot Password?</span>
         </div>
         
         

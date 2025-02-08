@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './Register';
 import Validation from './Validation';
+import ForgotPassword from './ForgotPassword';
 import Login from './Login';
 import Navbar from './Navbar';
 import Feed from './Feed';
@@ -21,6 +22,7 @@ const App = () => {
               <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/validation" element={<Validation />} />
+              <Route path="/forgotpassword" element={<ForgotPassword />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/mypage" element={<MyPage />} />
               <Route path="/postarticle" element={<PostArticle />} />
