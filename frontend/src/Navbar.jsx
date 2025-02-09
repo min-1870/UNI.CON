@@ -35,8 +35,13 @@ const Navbar = () => {
         <div id="navbar">
                 
         <div id="navbar-logo" onClick={() => {navigate(`/feed/`);setSearch("");}}>
-          <div id="navbar-title">UNI.CON</div>
+        
+        <div id = "navbar-logo-container">
           <div id="navbar-initial" style={{color:color}}>{initial.toUpperCase()}</div>
+          {/* <img src="/poweredby copy.png" alt="logo" id="navbar-logo-img"/> */}
+         </div>
+          
+      
         </div>
         
         <input
@@ -47,8 +52,8 @@ const Navbar = () => {
               placeholder='Search anything here'
         />
 
-
-          <button 
+          <div id = "navbar-buttons"> 
+            <button 
             onClick={() => navigate("/postarticle")}
             id="navbar-logout"
             >
@@ -69,6 +74,8 @@ const Navbar = () => {
             Logout
           </button>
           <div id="navbar-points">{points}p</div>
+          </div> 
+          
         </div>
       
     </nav>

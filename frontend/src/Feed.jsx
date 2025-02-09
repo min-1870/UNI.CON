@@ -153,24 +153,30 @@ const Feed = () => {
                   onClick={() => navigate(`/article/${article.id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div id="title">{article.title}</div>
-                  <div id="community-article-info">
-                    <div id="community-article-name-meta">
+                  <div id="community-article-title">{article.title}
+                  <div id="community-article-name-meta">
                       <div id="name">
+                        ✍️ 
                         {user === article.user
-                          ? `${article.user_temp_name} (You)`
-                          : article.user_temp_name}
+                          ? ` ${article.user_temp_name} (You)`
+                          :  article.user_temp_name}
                       </div>
                       <div id={article.unicon ? "unicon-meta" : "meta"}>
                         <div>{article.user_static_points}p</div>‧
                         <div>{new Date(article.created_at).toLocaleString()}</div>‧
+                        👀
                         <div className="view-container">{article.views_count}</div>
                       </div>
                     </div>
+                  
+                  </div>
+                  <hr id="community-article-separator" />
+                  <div id="community-article-info">
+              
                   </div>
 
                   {/* Display article content preview */}
-                  <div id="article-preview">
+                  <div id="community-article-preview">
                     {article.body.length > 200
                       ? `${article.body.substring(0, 200)}...`
                       : article.body}
