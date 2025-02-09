@@ -12,6 +12,8 @@ const Feed = () => {
   const [sortOption, setSortOption] = useState("recent");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+
   let accessToken = localStorage.getItem("access");
   const color = localStorage.getItem("color");
   const user = localStorage.getItem("user");
@@ -33,24 +35,27 @@ const Feed = () => {
 
   const fetchArticles = async () => {
     setLoading(true);
+    setError(null);
 
-    const request = async () => {
+    try {
+      console.log("Fetching articles from:", apiEndpoints[sortOption]);
+
       const response = await axios.get(apiEndpoints[sortOption], {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
       });
+
+      console.log("Fetched Articles:", response.data.results.articles);
       setArticles(response.data.results.articles);
       setNextArticlePage(response.data.next);
-    };
-
-    try {
-      await request();
     } catch (error) {
+      console.error("Error fetching articles:", error);
+      setError("Failed to load articles. Please try again.");
       try {
         accessToken = await fetchNewAccessToken(navigate);
-        await request();
+        await fetchArticles();
       } catch (error) {
         logout(navigate);
       }
@@ -61,26 +66,26 @@ const Feed = () => {
 
   const fetchNextArticlePage = async () => {
     if (!nextArticlePage || loadingMore) return;
-
     setLoadingMore(true);
 
-    const request = async () => {
+    try {
+      console.log("Fetching more articles from:", nextArticlePage);
+
       const response = await axios.get(nextArticlePage, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
       });
+
+      console.log("New Articles Loaded:", response.data.results.articles);
       setArticles((prev) => [...prev, ...response.data.results.articles]);
       setNextArticlePage(response.data.next);
-    };
-
-    try {
-      await request();
     } catch (error) {
+      console.error("Error fetching more articles:", error);
       try {
         accessToken = await fetchNewAccessToken(navigate);
-        await request();
+        await fetchNextArticlePage();
       } catch (error) {
         logout(navigate);
       }
@@ -89,12 +94,12 @@ const Feed = () => {
     }
   };
 
-  // Scroll event handler (debounced)
   const handleScroll = useCallback(() => {
     if (loadingMore) return;
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
 
     if (scrollTop + clientHeight >= scrollHeight - 10) {
+      console.log("Triggering fetchNextArticlePage...");
       fetchNextArticlePage();
     }
   }, [loadingMore, nextArticlePage]);
@@ -124,6 +129,8 @@ const Feed = () => {
           ))}
         </div>
 
+        {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+
         {loading && articles.length === 0 ? (
           <p>Loading articles...</p>
         ) : (
@@ -141,7 +148,11 @@ const Feed = () => {
                 }
                 key={article.id}
               >
-                <div onClick={() => navigate(`/article/${article.id}`)}>
+                <div
+                  className="community-article-clickable"
+                  onClick={() => navigate(`/article/${article.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div id="title">{article.title}</div>
                   <div id="community-article-info">
                     <div id="community-article-name-meta">
@@ -157,6 +168,34 @@ const Feed = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Display article content preview */}
+                  <div id="article-preview">
+                    {article.body.length > 200
+                      ? `${article.body.substring(0, 200)}...`
+                      : article.body}
+                  </div>
+                </div>
+
+                {/* Like, Comment, Save Buttons */}
+                <div id="community-article-buttons">
+                  <button onClick={() => handleLike(article.id)} id={article.like_status ? "like" : "unlike"}>
+                    👍 {article.likes_count}
+                  </button>
+
+                  <button onClick={() => navigate(`/article/${article.id}`)} id="comment">
+                    💬 {article.comments_count}
+                  </button>
+
+                  <button 
+                    onClick={() => handleSave(article.id)}
+                    id="save"
+                    >
+                    {article.save_status?
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M713-600 600-713l56-57 57 57 141-142 57 57-198 198ZM200-120v-640q0-33 23.5-56.5T280-840h240v80H280v518l200-86 200 86v-278h80v400L480-240 200-120Zm80-640h240-240Z"/></svg>
+                    :<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#2d3748"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>
+                    }
+                  </button>
                 </div>
               </div>
             ))}
@@ -165,16 +204,17 @@ const Feed = () => {
 
         {loadingMore && <p>Loading more articles...</p>}
 
-        {/* Display "Whoah! You've reached the end" when there's no next page */}
         {!nextArticlePage && !loadingMore && articles.length > 0 && (
-          <div style={{
-            textAlign: "center",
-            fontSize: "18px",
-            fontWeight: "bold",
-            color: color,
-            marginTop: "20px",
-            paddingBottom: "50px"
-          }}>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "18px",
+              fontWeight: "bold",
+              color: color,
+              marginTop: "20px",
+              paddingBottom: "50px",
+            }}
+          >
             🏁 Whoah! You've reached the end of the feed 🎉
           </div>
         )}
