@@ -4,15 +4,9 @@ from randomname import get_name
 
 
 def update_article_engagement_score(article_instance):
-    article_instance.engagement_score = (
-        (F("views_count") * 1) + (F("likes_count") * 2) + (F("comments_count") * 3)
+    Article.objects.filter(id=article_instance.id).update(
+        engagement_score=(F("views_count") * 1) + (F("likes_count") * 2) + (F("comments_count") * 3)
     )
-
-    article_instance.save(update_fields=["engagement_score"])
-    article_instance.refresh_from_db()
-
-    return article_instance
-
 
 def get_current_user_points(user_id):
 

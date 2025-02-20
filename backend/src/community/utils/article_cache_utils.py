@@ -7,7 +7,7 @@ from community.constants import (
     ARTICLES_VIEW_CACHE_KEY,
     ARTICLES_SAVE_CACHE_KEY
 )
-from community.models import ArticleUser, ArticleCourse, ArticleLike, ArticleView, ArticleSave, Comment
+from community.models import Article, ArticleUser, ArticleCourse, ArticleLike, ArticleView, ArticleSave, Comment
 from django.db.models import OuterRef, Subquery, F, Func, Value
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
@@ -15,6 +15,7 @@ from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from account.models import User
 from django.urls import resolve
+from django.db import transaction
 
 
 def cache_paginated_articles(request, queryset, cache_key=None):
@@ -247,14 +248,16 @@ def cache_serialized_article(request, article_instance):
 
     return serialized_annotated_article
 
-def update_article_cache(article_instance, updated_fields={}):
+def update_article_cache(article_instance, updated_fields=None):
+    if updated_fields is None:
+        updated_fields = {}
 
-    # Update attributes for updated fields in the permanent database
-    for field, value in updated_fields.items():
-        setattr(article_instance, field, value)
-    article_instance.save(update_fields=updated_fields.keys())
-    article_instance.refresh_from_db()
-    article_instance = update_article_engagement_score(article_instance)
+    # Start an atomic transaction for database updates
+    with transaction.atomic():
+        # Update attributes for updated fields in the permanent database
+        Article.objects.filter(pk=article_instance.id).update(**updated_fields)
+        update_article_engagement_score(article_instance)
+        article_instance.refresh_from_db()
     
     # Update the cache
     cache_key = ARTICLE_CACHE_KEY(article_instance.id)
@@ -297,17 +300,7 @@ def update_user_liked_article_cache(request, article_instance, like_status):
     cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
     
     cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-liked-articles", request.user.id)
-    user_liked_articles_ids = cache.get(cache_key, None)
-    
-    if user_liked_articles_ids is None:
-        user_liked_articles_ids = list(ArticleLike.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True))
-    elif like_status:
-        user_liked_articles_ids.append(article_instance.id)
-    else:
-        user_liked_articles_ids.remove(article_instance.id)
-    cache.set(cache_key, user_liked_articles_ids, CACHE_TIMEOUT)
+    cache.set(cache_key, list(user_liked_articles.keys()), CACHE_TIMEOUT)
 
 def update_user_saved_article_cache(request, article_instance, save_status):
 
@@ -324,16 +317,7 @@ def update_user_saved_article_cache(request, article_instance, save_status):
     cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
     
     cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-saved-articles", request.user.id)
-    user_saved_articles_ids = cache.get(cache_key, None)
-    if user_saved_articles_ids is None:
-        user_saved_articles_ids = list(ArticleSave.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True))
-    elif save_status:
-        user_saved_articles_ids.append(article_instance.id)
-    else:
-        user_saved_articles_ids.remove(article_instance.id)
-    cache.set(cache_key, user_saved_articles_ids, CACHE_TIMEOUT)
+    cache.set(cache_key, list(user_saved_articles.keys()), CACHE_TIMEOUT)
 
 def update_user_viewed_article_cache(request, article_instance):
     user_instance = request.user

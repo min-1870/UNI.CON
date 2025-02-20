@@ -18,6 +18,7 @@ from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
     ARTICLES_CACHE_KEY,
+    CACHE_TIMEOUT,
 )
 from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView, ArticleSave, Comment
 from community.permissions import Article_IsAuthenticated
@@ -81,7 +82,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article_ids = cache.get(cache_key)
         if article_ids:
             article_ids.insert(0, article_instance.id)
-            cache.set(cache_key, article_ids)
+            cache.set(cache_key, article_ids, CACHE_TIMEOUT)
 
         # Add extra properties for the response
         user_temp_name, user_static_points = get_set_temp_name_static_points(
@@ -101,6 +102,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         response_data = cache_paginated_articles(
             request,
             self.get_queryset(),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -111,6 +113,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         response_data = cache_paginated_articles(
             request,
             self.get_queryset().order_by("-engagement_score"),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -260,8 +263,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         updated_preference_vector = update_preference_vector(
             user_instance.embedding_vector, article_instance.embedding_vector
         )
-        user_instance.embedding_vector = updated_preference_vector
-        user_instance.save(update_fields=["embedding_vector"])
+        Article.objects.filter(pk=article_instance.id).update(embedding_vector=updated_preference_vector)
 
         # Create relational data
         ArticleView.objects.get_or_create(
