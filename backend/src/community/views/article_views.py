@@ -102,7 +102,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         response_data = cache_paginated_articles(
             request,
             self.get_queryset(),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -113,7 +113,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         response_data = cache_paginated_articles(
             request,
             self.get_queryset().order_by("-engagement_score"),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
