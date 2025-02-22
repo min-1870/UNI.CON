@@ -1,9 +1,10 @@
 from community.utils import (
-    cache_serialized_comment,
     cache_paginated_comments,
     update_article_cache,
-    add_cache_serialized_comment,
-    update_user_commented_article_cache
+    update_user_commented_article_cache,
+    add_comment_cache,
+    update_comment_cache,
+    update_user_liked_comments_cache
 )
 from community.permissions import Comment_IsAuthenticated
 from community.serializers import CommentSerializer
@@ -45,13 +46,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         update_user_commented_article_cache(request, comment_instance.article)
         
         if comment_instance.parent_comment:
-            cache_serialized_comment(
-                request,
-                comment_instance.parent_comment,
-                {"comments_count": F("comments_count") + 1},
-            )
-
-        response_data = add_cache_serialized_comment(comment_instance, user_instance)
+            update_comment_cache(comment_instance.parent_comment, updated_fields)
+        response_data = add_comment_cache(comment_instance, user_instance)
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
@@ -88,11 +84,9 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"body": body, "edited": True}
-        serialized_comment = cache_serialized_comment(
-            request, comment_instance, updated_fields
-        )
+        update_comment_cache(comment_instance, updated_fields)
 
-        return Response(serialized_comment, status=status.HTTP_200_OK)
+        return Response({"detail":"The comment has been updated by user."}, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         comment_instance = self.get_object()
@@ -105,11 +99,9 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"body": DELETED_BODY, "deleted": True}
-        serialized_comment = cache_serialized_comment(
-            request, comment_instance, updated_fields
-        )
+        update_comment_cache(comment_instance, updated_fields)
 
-        return Response(serialized_comment, status=status.HTTP_200_OK)
+        return Response({"detail":"The comment has been deleted by user."}, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
 
@@ -138,11 +130,10 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"likes_count": F("likes_count") + 1}
-        serialized_comment = cache_serialized_comment(
-            request, comment_instance, updated_fields
-        )
+        update_comment_cache(comment_instance, updated_fields)
+        update_user_liked_comments_cache(comment_instance, user_instance, True)
 
-        return Response(serialized_comment, status=status.HTTP_200_OK)
+        return Response({"detail":"The comment has been liked by user."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
     def unlike(self, request, pk=None):
@@ -160,8 +151,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"likes_count": F("likes_count") - 1}
-        serialized_comment = cache_serialized_comment(
-            request, comment_instance, updated_fields
-        )
+        update_comment_cache(comment_instance, updated_fields)
+        update_user_liked_comments_cache(comment_instance, user_instance, False)
 
-        return Response(serialized_comment, status=status.HTTP_200_OK)
+        return Response({"detail":"The comment has been unliked by user."}, status=status.HTTP_200_OK)

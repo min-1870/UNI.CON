@@ -10,7 +10,7 @@ from .response_serializers import CommentResponseSerializer
 from django.db.models import OuterRef, Subquery, Q
 from django.core.cache import cache
 from account.models import User
-from django.urls import resolve
+from django.db import transaction
 
 
 def cache_paginated_comments(
@@ -102,8 +102,9 @@ def cache_paginated_comments(
             "comment", flat=True
         )
         user_liked_comments = {pk: True for pk in user_liked_comments}
+        
         cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
-
+    
     # Attach user specific data
     for comment in serialized_comments:
         comment["like_status"] = user_liked_comments.get(comment["id"], False)
@@ -121,70 +122,32 @@ def cache_paginated_comments(
         "results": {"comments": serialized_comments},
     }
 
-
-def cache_serialized_comment(request, comment_instance, updated_fields={}):
-
-    # Apply update to the attributes
-    for field, value in updated_fields.items():
-        setattr(comment_instance, field, value)
-
-    comment_instance.save(update_fields=updated_fields.keys())
-    comment_instance.refresh_from_db()
+def update_comment_cache(comment_instance, updated_fields=None):
+    if updated_fields is None:
+        updated_fields = {}
+    
+    # Start an atomic transaction for database updates
+    with transaction.atomic():
+        Comment.objects.filter(id=comment_instance.id).update(**updated_fields)
+        comment_instance.refresh_from_db()
 
     # Cache the comment
     cache_key = COMMENTS_CACHE_KEY(
         comment_instance.article.id,
         comment_instance.parent_comment.id if comment_instance.parent_comment else "",
     )
-    comments_cache = cache.get(cache_key, None)
+    serialized_annotated_comments = cache.get(cache_key, None)
 
-    if comments_cache:
+    if serialized_annotated_comments:
 
         # Update and set the cache
-        serialized_comment = comments_cache["comments"][comment_instance.id]
+        serialized_comment = serialized_annotated_comments["comments"][comment_instance.id]
         for field in updated_fields.keys():
-
             serialized_comment[field] = getattr(comment_instance, field)
-        cache.set(cache_key, comments_cache)
-
-    else:
-
-        # Attach additional attributes
-        comment_instance.user_school = comment_instance.user.school.initial
-        articleUser_instance = ArticleUser.objects.get(
-            article=comment_instance.article, user=comment_instance.user
-        )
-        comment_instance.user_temp_name = articleUser_instance.user_temp_name
-        comment_instance.user_static_points = articleUser_instance.user_static_points
-        serialized_comment = CommentResponseSerializer(comment_instance).data
-
-    # Attach user specific data
-    user_instance = request.user
-    cache_key = COMMENTS_LIKE_CACHE_KEY(user_instance.id)
-    user_liked_comments = cache.get(cache_key, None)
-    view_name = resolve(request.path).view_name
-
-    # Skip the fetching if the function called from like or unlike
-    if view_name in ["comment-like", "comment-unlike"]:
-        like_status = view_name == "comment-like"
-        if user_liked_comments:
-            user_liked_comments[comment_instance.id] = like_status
-            cache.set(cache_key, user_liked_comments)
-
-    else:
-        if user_liked_comments:
-            like_status = user_liked_comments.get(comment_instance.id, False)
-
-        else:
-            like_status = CommentLike.objects.filter(
-                comment=comment_instance, user=user_instance
-            ).exists()
-    serialized_comment["like_status"] = like_status
-
-    return serialized_comment
+        cache.set(cache_key, serialized_annotated_comments)
 
 
-def add_cache_serialized_comment(comment_instance, user_instance):
+def add_comment_cache(comment_instance, user_instance):
     # Attach additional attributes
     user_temp_name, user_static_points = get_set_temp_name_static_points(
         comment_instance.article, user_instance
@@ -212,3 +175,15 @@ def add_cache_serialized_comment(comment_instance, user_instance):
     serialized_comment["like_status"] = False
 
     return serialized_comment
+
+
+def update_user_liked_comments_cache(comment_instance, user_instance, like_status):
+    
+    # Cache user like status in bulk
+    cache_key = COMMENTS_LIKE_CACHE_KEY(user_instance.id)
+    user_liked_comments = cache.get(cache_key, None)
+    
+    if user_liked_comments:
+        user_liked_comments[comment_instance.id] = like_status
+        cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
+    

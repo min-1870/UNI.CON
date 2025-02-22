@@ -23,7 +23,8 @@ from .embedding_utils import (
 from .response_serializers import ArticleResponseSerializer, CommentResponseSerializer
 
 from .comment_cache_utils import (
-    cache_serialized_comment,
     cache_paginated_comments,
-    add_cache_serialized_comment,
+    add_comment_cache,
+    update_comment_cache,
+    update_user_liked_comments_cache
 )

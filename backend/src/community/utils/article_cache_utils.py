@@ -269,23 +269,6 @@ def update_article_cache(article_instance, updated_fields=None):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
-    else:
-        # Annotate article instance
-        article_instance.user_school = article_instance.user.school.initial
-        articleUser_instance = ArticleUser.objects.get(
-            article=article_instance, user=article_instance.user
-        )
-        article_instance.user_temp_name = articleUser_instance.user_temp_name
-        article_instance.user_static_points = articleUser_instance.user_static_points
-        course_codes = ArticleCourse.objects.filter(article=article_instance).values_list(
-            "course__code", flat=True
-        )
-        article_instance.course_code = ", ".join(course_codes) if course_codes else ""
-
-        # Make an annotated_article to set the cache
-        serialized_annotated_article = ArticleResponseSerializer(article_instance).data
-        cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
-
 def update_user_liked_article_cache(request, article_instance, like_status):
     user_instance = request.user
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
