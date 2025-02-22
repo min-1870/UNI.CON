@@ -95,9 +95,9 @@ const Auth = () => {
   return (
     <div className="auth-container">
       {/* Persistent Background Video */}
-      <video autoPlay muted loop className="background-video">
+      {/* <video autoPlay muted loop className="background-video">
         <source src="/BACKGROUND.mp4" type="video/mp4" />
-      </video>
+      </video> */}
       <div className="video-overlay"></div>
 
       {/* Content */}
