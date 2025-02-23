@@ -44,10 +44,13 @@ class CommentViewSet(viewsets.ModelViewSet):
         updated_fields = {"comments_count": F("comments_count") + 1}
         update_article_cache(comment_instance.article, updated_fields)
         update_user_commented_article_cache(request, comment_instance.article)
-        
+
+        # Update the parent comment's instance & cache
         if comment_instance.parent_comment:
             update_comment_cache(comment_instance.parent_comment, updated_fields)
         response_data = add_comment_cache(comment_instance, user_instance)
+
+        
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):

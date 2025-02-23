@@ -1,6 +1,9 @@
 from account.models import User, School
 from django.db import models
-
+import enum
+from django.contrib.postgres.fields import EnumField
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class Article(models.Model):
     title = models.CharField(max_length=100, default="unknown", null=False)
@@ -79,3 +82,4 @@ class Comment(models.Model):
 class CommentLike(models.Model):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+

@@ -146,14 +146,13 @@ const Auth = () => {
           <button className="auth-button" type="submit" disabled={loading}>
             {loading ? (isLogin ? "Signing In..." : "Signing Up...") : isLogin ? "Sign In" : "Sign Up"}
           </button>
+          {/* Debug Mode: Sign in as a random user */}
+          {isLogin && (
+            <button className="auth-button" onClick={signInRandomUser} disabled={loading}>
+              DEBUG MODE: Sign in as a random user
+            </button>
+          )}
         </form>
-
-        {/* Debug Mode: Sign in as a random user */}
-        {isLogin && (
-          <button className="debug-button" onClick={signInRandomUser} disabled={loading}>
-            DEBUG MODE: Sign in as a random user
-          </button>
-        )}
 
         {/* Switch between Login and Register */}
         <div className="auth-switch">

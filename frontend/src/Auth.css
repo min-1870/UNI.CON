@@ -91,7 +91,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(214, 210, 254, 0.37); /* Adjust the opacity for brightness */
+    background-color: #f9fafc; /* Adjust the opacity for brightness */
+    background: rgb(84,115,0);
+    background: linear-gradient(90deg, rgba(84,115,0,1) 0%, rgba(183,246,9,1) 27%, rgba(190,255,10,1) 34%, rgba(185,249,10,1) 40%, rgba(84,115,0,1) 100%);
     z-index: -1; /* Place it between the video and content */
   }
   
@@ -103,22 +105,24 @@
     padding: 50px;
     display: flex;
     flex-direction: column;
-    background-color:rgba(214, 210, 254, 0.7);
+    background-color:#FFF;
     backdrop-filter: blur(5px);
-    border: 1px solid rgba(250, 248, 248, 0.05);
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.9);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.3);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
     margin-right: 400px;
     align-items: flex-start;
+    border-radius: 50px;
   }
   
   /* Title and description styles */
   .auth-title {
-    font-family: "Ubuntu", serif;
-    font-weight: 700;
+    font-family: "Poppins", sans-serif;
+    font-weight: 550;
     font-style: normal;
     margin-bottom: 15px;
     font-size: 3rem;
-    color: #ffffff;
+    color: #000000;
     text-align: center;
   }
   
@@ -138,7 +142,7 @@
   }
   
   .auth-form label {
-    color: #ffffff;
+    color: #000000;
     font-size: 1rem;
     margin-bottom: 5px;
   }
@@ -173,17 +177,17 @@
     min-height: 45px;
     border: none;
     border-radius: 30px;
-    background: #71768f;
-    color: #fff;
+    background: #BEFF0A;
+    color: #000000;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: bold;
     margin-bottom: 20px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
   }
-  
+
   .auth-button:hover {
-    background: #5b6287;
+    background: #ccf55a;
   }
   
   /* Switch between login/register */
@@ -197,7 +201,6 @@
   }
   
   .auth-switch span {
-    color: #2684FF;
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
