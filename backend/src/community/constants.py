@@ -6,6 +6,12 @@ INDEX_FILE_NAME = "index.idx"
 PAGINATOR_SIZE = 10
 
 
+NOTIFICATION_GROUP = (
+    (0, "Comment"),
+    (1, "Like"),
+)
+
+
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )

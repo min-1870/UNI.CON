@@ -1,6 +1,7 @@
-from community.models import Article, Comment, ArticleUser
+from community.models import Article, Comment, ArticleUser, Notification
 from django.db.models import F, Sum
 from randomname import get_name
+from django.contrib.contenttypes.models import ContentType
 
 
 def update_article_engagement_score(article_instance):
@@ -62,3 +63,13 @@ def get_set_temp_name_static_points(article_instance, user_instance):
         user_static_points = article_user_instance.user_static_points
 
     return (user_temp_name, user_static_points)
+
+def add_notification(notification_type, user_instance, model_class, object_id):
+
+    Notification.objects.create(
+        group=notification_type,
+        user=user_instance, 
+        content_type=ContentType.objects.get_for_model(model_class),
+        object_id=object_id,
+        read=False
+    )

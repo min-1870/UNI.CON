@@ -11,7 +11,10 @@ services:
     env_file:
       - .env
     networks:
-      - app-network
+      - app-network    
+    depends_on:
+      - postgres
+      - redis
 
   postgres:
     image: postgres:latest

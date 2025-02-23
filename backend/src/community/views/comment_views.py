@@ -4,11 +4,12 @@ from community.utils import (
     update_user_commented_article_cache,
     add_comment_cache,
     update_comment_cache,
-    update_user_liked_comments_cache
+    update_user_liked_comments_cache,
+    add_notification
 )
 from community.permissions import Comment_IsAuthenticated
 from community.serializers import CommentSerializer
-from community.models import Comment, CommentLike
+from community.models import Article, Comment, CommentLike
 from community.constants import DELETED_BODY
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -48,6 +49,20 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Update the parent comment's instance & cache
         if comment_instance.parent_comment:
             update_comment_cache(comment_instance.parent_comment, updated_fields)
+            if comment_instance.parent_comment.user != user_instance:
+                add_notification(
+                    0,
+                    comment_instance.parent_comment.user,
+                    Comment,
+                    comment_instance.id
+                )
+        else:
+            add_notification(
+                0,
+                comment_instance.article.user,
+                Article,
+                comment_instance.id
+            )
         response_data = add_comment_cache(comment_instance, user_instance)
 
         
