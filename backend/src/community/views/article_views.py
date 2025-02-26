@@ -13,6 +13,7 @@ from community.utils import (
     update_user_saved_article_cache,
     update_user_liked_article_cache,
     update_article_cache,
+    add_notification
 )
 from community.constants import (
     DELETED_BODY,
@@ -361,6 +362,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update the article instance & shared article attributes cache
         updated_fields = {"likes_count": F("likes_count") + 1}
         update_article_cache(article_instance, updated_fields)
+
+        # Add notification
+        if article_instance.user != user_instance:
+            add_notification(
+                0,
+                article_instance.user,
+                Article,
+                article_instance.id
+            )
 
         # update the user specific cache
         update_user_liked_article_cache(request, article_instance, True)
