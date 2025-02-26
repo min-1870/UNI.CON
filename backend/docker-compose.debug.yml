@@ -1,7 +1,9 @@
 services:
 
   drf:
-    build: .
+    build: 
+      context: . 
+      dockerfile: Dockerfile.debug
     container_name: unicon_drf_backend_container
     volumes:
       - .:/app

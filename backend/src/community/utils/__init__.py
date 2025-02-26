@@ -11,7 +11,6 @@ from .database_utils import (
     update_article_engagement_score,
     get_current_user_points,
     get_set_temp_name_static_points,
-    add_notification
 )
 from .embedding_utils import (
     get_embedding,
@@ -28,4 +27,9 @@ from .comment_cache_utils import (
     add_comment_cache,
     update_comment_cache,
     update_user_liked_comments_cache
+)
+
+from .notification_helpers import (
+    paginated_notifications,
+    add_notification
 )

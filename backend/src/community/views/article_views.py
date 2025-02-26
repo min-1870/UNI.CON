@@ -13,7 +13,8 @@ from community.utils import (
     update_user_saved_article_cache,
     update_user_liked_article_cache,
     update_article_cache,
-    add_notification
+    add_notification,
+    paginated_notifications
 )
 from community.constants import (
     DELETED_BODY,
@@ -401,3 +402,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
         update_user_liked_article_cache(request, article_instance, False)
 
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def notifications(self, request, *args, **kwargs):            
+        
+        response_data = paginated_notifications(
+            request
+        )
+        print(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
