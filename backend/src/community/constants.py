@@ -4,13 +4,20 @@ EMBEDDING_VECTOR_MODEL = "text-embedding-3-small"
 ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
 INDEX_FILE_NAME = "index.idx"
 PAGINATOR_SIZE = 10
+NOTIFICATION_EMAIL_SUBJECT = "You have a new notification from UNI.CON"
+NOTIFICATION_EMAIL_BODY = (
+    lambda type_name, content, group: f"You have a new {group} on {type_name}: {content}"
+)
 
 
 NOTIFICATION_GROUP = (
     (0, "Comment"),
     (1, "Like"),
 )
-
+NOTIFICATION_GROUP_KV = {
+    0: "Comment",
+    1: "Like",
+}
 
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"

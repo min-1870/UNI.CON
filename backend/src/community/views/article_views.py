@@ -370,17 +370,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
         updated_fields = {"likes_count": F("likes_count") + 1}
         update_article(article_instance, updated_fields)
 
+        # update the user specific cache
+        update_user_liked_article_cache(request, article_instance, True)
+
         # Add notification
         if article_instance.user != user_instance:
             add_notification(
-                0,
+                1,
                 article_instance.user,
                 Article,
                 article_instance.id
             )
-
-        # update the user specific cache
-        update_user_liked_article_cache(request, article_instance, True)
 
         return Response({"detail":"The article has been liked by user."}, status=status.HTTP_200_OK)
 

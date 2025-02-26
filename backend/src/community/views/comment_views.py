@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from django.db.models import F, Q
+from django.db import transaction
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -138,9 +139,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, created = CommentLike.objects.get_or_create(
-            user=user_instance, comment=comment_instance
-        )
+        with transaction.atomic():
+            _, created = CommentLike.objects.get_or_create(
+                user=user_instance, comment=comment_instance
+            )
         if not created:
             return Response(
                 {"detail": "The comment already liked by the user."},
@@ -151,6 +153,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         update_comment(comment_instance, updated_fields)
         update_user_liked_comments_cache(comment_instance, user_instance, True)
 
+        # Add notification
+        if comment_instance.user != user_instance:
+            add_notification(
+                1,
+                comment_instance.user,
+                Comment,
+                comment_instance.id
+            )
+
         return Response({"detail":"The comment has been liked by user."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
@@ -159,9 +170,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, deleted = CommentLike.objects.filter(
-            user=user_instance, comment=comment_instance
-        ).delete()
+        with transaction.atomic():
+            _, deleted = CommentLike.objects.filter(
+                user=user_instance, comment=comment_instance
+            ).delete()
         if not deleted:
             return Response(
                 {"detail": "The comment already unliked by the user."},

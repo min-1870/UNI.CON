@@ -1,7 +1,10 @@
 from community.constants import (
     CACHE_TIMEOUT,
     PAGINATOR_SIZE,
-    NOTIFICATIONS_CACHE_KEY
+    NOTIFICATIONS_CACHE_KEY,
+    NOTIFICATION_EMAIL_BODY,
+    NOTIFICATION_EMAIL_SUBJECT,
+    NOTIFICATION_GROUP_KV
 )
 
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
@@ -9,10 +12,13 @@ from .response_serializers import NotificationResponseSerializer
 from community.models import  Notification, Article, Comment
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Coalesce
-# from account.utils import send_email
 from django.core.cache import cache
 from django.db import transaction
 from django.db import models
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from decouple import config
+import smtplib
 
 def get_paginated_notifications(request):
     try:
@@ -114,15 +120,44 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             read=False
         )
     
+    notification.content = getattr(
+        notification.source,
+        "title", 
+        getattr(
+                notification.source, "body", None
+        )
+    )
+    notification.type_name = notification.content_type.model
     serialized_notification = NotificationResponseSerializer(
             notification
     ).data
 
-    # send_email(
-    #     subject="You have a new notification",
-    #     body="You have a new notification",
-    #     email=user_instance.email
-    # )
+    unicon_email = config("UNICON_EMAIL")
+    unicon_password = config("UNICON_EMAIL_PASSWORD")
+
+    # Create email message
+    msg = MIMEMultipart()
+    msg["From"] = unicon_email
+    msg["To"] = user_instance.email
+    msg["Subject"] = NOTIFICATION_EMAIL_SUBJECT
+    email_body = NOTIFICATION_EMAIL_BODY(
+        serialized_notification["type_name"],
+        serialized_notification["content"],
+        NOTIFICATION_GROUP_KV[serialized_notification["group"]]
+    )
+    print(email_body)
+    msg.attach(MIMEText(email_body, "plain"))
+
+    try:
+        # Connect to Gmail SMTP server
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(unicon_email, unicon_password)
+        server.sendmail(unicon_email, user_instance.email, msg.as_string())
+        server.quit()
+        
+    except Exception as e:
+        print("Error:", e)
 
     # Cache notifications
     cache_key = NOTIFICATIONS_CACHE_KEY(
