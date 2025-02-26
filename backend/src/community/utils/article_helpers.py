@@ -18,7 +18,7 @@ from django.urls import resolve
 from django.db import transaction
 
 
-def cache_paginated_articles(request, queryset, cache_key=None):
+def get_paginated_articles(request, queryset, cache_key=None):
     if cache_key is None:
         view_name = resolve(request.path).view_name
         school = request.user.school.id
@@ -49,7 +49,7 @@ def cache_paginated_articles(request, queryset, cache_key=None):
     end_index = min(articles_count, start_index + PAGINATOR_SIZE + new_articles_count)
     page_article_ids = all_article_ids[start_index:end_index]
 
-    serialized_annotated_articles = cache_serialized_articles(
+    serialized_annotated_articles = get_serialized_articles(
         request.user, page_article_ids, queryset
     )
 
@@ -70,7 +70,7 @@ def cache_paginated_articles(request, queryset, cache_key=None):
     }
 
 
-def cache_serialized_articles(user_instance, article_ids, queryset):
+def get_serialized_articles(user_instance, article_ids, queryset):
     # Bulk cache the articles in the page
     missing_ids = []
     serialized_annotated_articles = []
@@ -192,7 +192,7 @@ def cache_serialized_articles(user_instance, article_ids, queryset):
     return serialized_annotated_articles
 
 
-def cache_serialized_article(request, article_instance):
+def get_serialized_article(request, article_instance):
 
     # Cache the annotated article
     cache_key = ARTICLE_CACHE_KEY(article_instance.id)
@@ -248,7 +248,7 @@ def cache_serialized_article(request, article_instance):
 
     return serialized_annotated_article
 
-def update_article_cache(article_instance, updated_fields=None):
+def update_article(article_instance, updated_fields=None):
     if updated_fields is None:
         updated_fields = {}
 

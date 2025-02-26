@@ -1,7 +1,7 @@
 from community.models import Article, Comment
 from community.utils import get_embedding
 from rest_framework import serializers
-
+from django.db import transaction
 
 class ArticleSerializer(serializers.ModelSerializer):
     course_code = serializers.JSONField(required=False)
@@ -70,7 +70,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         )
 
         # Save the new article
-        article_instance = Article.objects.create(**validated_data)
+        with transaction.atomic():
+            article_instance = Article.objects.create(**validated_data)
 
         return article_instance
 
@@ -136,6 +137,7 @@ class CommentSerializer(serializers.ModelSerializer):
             validated_data["parent_comment"] = parent_comment_instance
 
         # Save the new comment
-        comment_instance = Comment.objects.create(**validated_data)
+        with transaction.atomic():
+            comment_instance = Comment.objects.create(**validated_data)
 
         return comment_instance

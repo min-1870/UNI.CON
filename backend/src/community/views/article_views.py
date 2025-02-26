@@ -1,20 +1,20 @@
 from community.utils import (
-    cache_serialized_article,
-    cache_paginated_articles,
-    cache_paginated_comments,
-    get_faiss_index,
-    search_similar_embeddings,
-    get_embedding,
-    update_preference_vector,
-    add_embedding_to_faiss,
-    get_set_temp_name_static_points,
     ArticleResponseSerializer,
+    get_set_temp_name_static_points,
     update_user_viewed_article_cache,
     update_user_saved_article_cache,
     update_user_liked_article_cache,
-    update_article_cache,
+    search_similar_embeddings,
+    update_preference_vector,
+    add_embedding_to_faiss,
+    get_faiss_index,
+    get_embedding,
+    get_paginated_articles,
+    get_serialized_article,
+    update_article,
+    get_paginated_comments,
+    get_paginated_notifications,
     add_notification,
-    paginated_notifications
 )
 from community.constants import (
     DELETED_BODY,
@@ -31,6 +31,7 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from django.core.cache import cache
 from django.urls import resolve
+from django.db import transaction
 
 
 class ArticleViewSet(viewsets.ModelViewSet):
@@ -67,13 +68,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Link the foreign key for each course code if necessary
         course_code = request.data.get("course_code")
         if len(course_code) != 0:
-            for code in course_code:
-                course_instance, _ = Course.objects.get_or_create(
-                    code=code.upper().strip(), school=user_instance.school
-                )
-                ArticleCourse.objects.create(
-                    article=article_instance, course=course_instance
-                )
+            with transaction.atomic():
+                for code in course_code:
+                    course_instance, _ = Course.objects.get_or_create(
+                        code=code.upper().strip(), school=user_instance.school
+                    )
+                    ArticleCourse.objects.create(
+                        article=article_instance, course=course_instance
+                    )
 
             article_instance.course_code = [code.upper().strip() for code in course_code]
         else:
@@ -101,7 +103,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
 
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset(),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
@@ -112,7 +114,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def hot(self, request):
 
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset().order_by("-engagement_score"),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
@@ -133,7 +135,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
 
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             queryset,
             ARTICLES_CACHE_KEY(
@@ -166,7 +168,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
 
         user_instance = request.user
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             queryset,
             ARTICLES_CACHE_KEY(
@@ -179,7 +181,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def posted_articles(self, request, *args, **kwargs):        
         
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset().filter(user=request.user),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
@@ -190,7 +192,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def commented_articles(self, request, *args, **kwargs):            
 
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset().filter(comment__user=request.user).distinct(),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
@@ -201,7 +203,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def saved_articles(self, request, *args, **kwargs):            
 
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset().filter(articlesave__user=request.user),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
@@ -212,7 +214,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def liked_articles(self, request, *args, **kwargs):            
         
-        response_data = cache_paginated_articles(
+        response_data = get_paginated_articles(
             request,
             self.get_queryset().filter(articlelike__user=request.user),
             ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
@@ -253,7 +255,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         # Update the article instance & shared article attributes cache
         updated_fields = {"title": title, "body": body, "edited": True}
-        update_article_cache(article_instance, updated_fields)
+        update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been updated by user."}, status=status.HTTP_200_OK)
 
@@ -268,20 +270,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
         Article.objects.filter(pk=article_instance.id).update(embedding_vector=updated_preference_vector)
 
         # Create relational data
-        ArticleView.objects.get_or_create(
-            user=user_instance, article=article_instance
-        )
+        with transaction.atomic():
+            ArticleView.objects.get_or_create(
+                user=user_instance, article=article_instance
+            )
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"views_count": F("views_count") + 1}
-        update_article_cache(article_instance, updated_fields)
+        update_article(article_instance, updated_fields)
 
         # update the user specific cache
         update_user_viewed_article_cache(request, article_instance)
 
         # Fetch the article response data
-        article_response_data = cache_serialized_article(request, article_instance)
-        comments_response_data = cache_paginated_comments(request, article_instance)
+        article_response_data = get_serialized_article(request, article_instance)
+        comments_response_data = get_paginated_comments(request, article_instance)
         comments_response_data["results"]["article"] = article_response_data
 
         return Response(comments_response_data)
@@ -298,7 +301,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
-        update_article_cache(article_instance, updated_fields)
+        update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)
 
@@ -309,9 +312,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, created = ArticleSave.objects.get_or_create(
-            user=user_instance, article=article_instance
-        )
+        with transaction.atomic():
+            _, created = ArticleSave.objects.get_or_create(
+                user=user_instance, article=article_instance
+            )
         if not created:
             return Response(
                 {"detail": "The article already saved by the user."},
@@ -330,9 +334,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, deleted = ArticleSave.objects.filter(
-            user=user_instance, article=article_instance
-        ).delete()
+        with transaction.atomic():
+            _, deleted = ArticleSave.objects.filter(
+                user=user_instance, article=article_instance
+            ).delete()
         if not deleted:
             return Response(
                 {"detail": "The article already unsaved by the user."},
@@ -351,9 +356,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, created = ArticleLike.objects.get_or_create(
-            user=user_instance, article=article_instance
-        )
+        with transaction.atomic():
+            _, created = ArticleLike.objects.get_or_create(
+                user=user_instance, article=article_instance
+            )
         if not created:
             return Response(
                 {"detail": "The article already liked by the user."},
@@ -362,7 +368,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"likes_count": F("likes_count") + 1}
-        update_article_cache(article_instance, updated_fields)
+        update_article(article_instance, updated_fields)
 
         # Add notification
         if article_instance.user != user_instance:
@@ -385,9 +391,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
 
         # Create relational data
-        _, deleted = ArticleLike.objects.filter(
-            user=user_instance, article=article_instance
-        ).delete()
+        with transaction.atomic():
+            _, deleted = ArticleLike.objects.filter(
+                user=user_instance, article=article_instance
+            ).delete()
         if not deleted:
             return Response(
                 {"detail": "The article already unliked by the user."},
@@ -396,7 +403,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"likes_count": F("likes_count") - 1}
-        update_article_cache(article_instance, updated_fields)
+        update_article(article_instance, updated_fields)
 
         # update the user specific cache
         update_user_liked_article_cache(request, article_instance, False)
@@ -406,8 +413,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def notifications(self, request, *args, **kwargs):            
         
-        response_data = paginated_notifications(
+        response_data = get_paginated_notifications(
             request
         )
-        print(response_data)
+        
         return Response(response_data, status=status.HTTP_200_OK)

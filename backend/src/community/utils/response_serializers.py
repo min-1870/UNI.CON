@@ -68,8 +68,8 @@ class CommentResponseSerializer(serializers.ModelSerializer):
 
 class NotificationResponseSerializer(serializers.ModelSerializer):
 
-    content = serializers.SerializerMethodField()  
-    content_type = serializers.SerializerMethodField()
+    content = serializers.CharField(read_only=True) 
+    type_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = Notification
@@ -78,20 +78,10 @@ class NotificationResponseSerializer(serializers.ModelSerializer):
             "id",
             "group",
             "user",
-            "content_type",
             "object_id",
             "read",
             "created_at",
             # Not in Notification Model
             "content",
+            "type_name"
         ]
-
-
-        """Manually serialize the related object from GenericForeignKey"""
-    def get_content(self, obj):
-        if obj.source:
-            return getattr(obj.source, "title", getattr(obj.source, "body", None))
-        return None
-    
-    def get_content_type(self, obj):
-        return obj.content_type.model

@@ -1,6 +1,7 @@
 from community.models import Article, Comment, ArticleUser
 from django.db.models import F, Sum
 from randomname import get_name
+from django.db import transaction
 
 
 def update_article_engagement_score(article_instance):
@@ -48,12 +49,14 @@ def get_set_temp_name_static_points(article_instance, user_instance):
     ).exists():
         user_temp_name = get_name()
         user_static_points = get_current_user_points(user_instance.id)
-        ArticleUser.objects.create(
-            user=user_instance,
-            article=article_instance,
-            user_temp_name=user_temp_name,
-            user_static_points=user_static_points,
-        )
+        
+        with transaction.atomic():
+            ArticleUser.objects.create(
+                user=user_instance,
+                article=article_instance,
+                user_temp_name=user_temp_name,
+                user_static_points=user_static_points,
+            )
     else:
         article_user_instance = ArticleUser.objects.get(
             user=user_instance, article=article_instance

@@ -1,9 +1,9 @@
 from community.utils import (
-    cache_paginated_comments,
-    update_article_cache,
+    get_paginated_comments,
+    update_article,
     update_user_commented_article_cache,
-    add_comment_cache,
-    update_comment_cache,
+    add_comment,
+    update_comment,
     update_user_liked_comments_cache,
     add_notification
 )
@@ -43,12 +43,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         # Update the article & comment's instance & cache
         updated_fields = {"comments_count": F("comments_count") + 1}
-        update_article_cache(comment_instance.article, updated_fields)
+        update_article(comment_instance.article, updated_fields)
         update_user_commented_article_cache(request, comment_instance.article)
 
         # Update the parent comment's instance & cache
         if comment_instance.parent_comment:
-            update_comment_cache(comment_instance.parent_comment, updated_fields)
+            update_comment(comment_instance.parent_comment, updated_fields)
             if comment_instance.parent_comment.user != user_instance:
                 add_notification(
                     0,
@@ -63,7 +63,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 Article,
                 comment_instance.id
             )
-        response_data = add_comment_cache(comment_instance, user_instance)
+        response_data = add_comment(comment_instance, user_instance)
 
         
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -102,7 +102,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"body": body, "edited": True}
-        update_comment_cache(comment_instance, updated_fields)
+        update_comment(comment_instance, updated_fields)
 
         return Response({"detail":"The comment has been updated by user."}, status=status.HTTP_200_OK)
 
@@ -117,7 +117,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"body": DELETED_BODY, "deleted": True}
-        update_comment_cache(comment_instance, updated_fields)
+        update_comment(comment_instance, updated_fields)
 
         return Response({"detail":"The comment has been deleted by user."}, status=status.HTTP_200_OK)
 
@@ -126,7 +126,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment_instance = self.get_object()
 
         article_instance = comment_instance.article
-        paginated_comments = cache_paginated_comments(
+        paginated_comments = get_paginated_comments(
             request, article_instance, comment_instance
         )
 
@@ -148,7 +148,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"likes_count": F("likes_count") + 1}
-        update_comment_cache(comment_instance, updated_fields)
+        update_comment(comment_instance, updated_fields)
         update_user_liked_comments_cache(comment_instance, user_instance, True)
 
         return Response({"detail":"The comment has been liked by user."}, status=status.HTTP_200_OK)
@@ -169,7 +169,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         updated_fields = {"likes_count": F("likes_count") - 1}
-        update_comment_cache(comment_instance, updated_fields)
+        update_comment(comment_instance, updated_fields)
         update_user_liked_comments_cache(comment_instance, user_instance, False)
 
         return Response({"detail":"The comment has been unliked by user."}, status=status.HTTP_200_OK)

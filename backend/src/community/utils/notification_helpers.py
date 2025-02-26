@@ -4,15 +4,17 @@ from community.constants import (
     NOTIFICATIONS_CACHE_KEY
 )
 
-from community.models import  Notification
+from django.db.models import OuterRef, Subquery, Case, When, Value, F
 from .response_serializers import NotificationResponseSerializer
+from community.models import  Notification, Article, Comment
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.functions import Coalesce
+# from account.utils import send_email
 from django.core.cache import cache
-from account.utils import send_email
+from django.db import transaction
+from django.db import models
 
-
-
-def paginated_notifications(request):
+def get_paginated_notifications(request):
     try:
         requested_page = int(request.query_params.get("page", 1))
     except Exception:
@@ -48,10 +50,29 @@ def paginated_notifications(request):
         start_index = len(notifications_cache["notifications"])
         end_index = requested_page * PAGINATOR_SIZE
         notification_queryset = (
-            Notification.objects.filter(user=user_instance)
-            .order_by("-created_at")[start_index:end_index]
+            Notification.objects.filter(user=user_instance).annotate(
+                content=Coalesce(
+                    Case(
+                        # If content_type is "article", get the title from Article
+                        When(
+                            content_type__model="article",
+                            then=Subquery(Article.objects.filter(id=OuterRef("object_id")).values("title")[:1])
+                        ),
+                        # If content_type is "comment", get the body from Comment
+                        When(
+                            content_type__model="comment",
+                            then=Subquery(Comment.objects.filter(id=OuterRef("object_id")).values("body")[:1])
+                        ),
+                        default=Value("Unknown"),  # Default value if no match
+                        output_field=models.CharField(),
+                    ),
+                    Value("Unknown") 
+                ),
+                type_name=F("content_type__model")
+            ).order_by("-created_at")[start_index:end_index]
         )
-        Notification.objects.filter(id__in=[n.id for n in notification_queryset]).update(read=True)
+        with transaction.atomic():
+            Notification.objects.filter(id__in=[n.id for n in notification_queryset]).update(read=True)
 
         # Serialize and set the cache
         new_serialized_notifications = NotificationResponseSerializer(
@@ -84,23 +105,24 @@ def paginated_notifications(request):
 
 def add_notification(notification_type, user_instance, model_class, object_id):
 
-    notification = Notification.objects.create(
-        group=notification_type,
-        user=user_instance, 
-        content_type=ContentType.objects.get_for_model(model_class),
-        object_id=object_id,
-        read=False
-    )
+    with transaction.atomic():
+        notification = Notification.objects.create(
+            group=notification_type,
+            user=user_instance, 
+            content_type=ContentType.objects.get_for_model(model_class),
+            object_id=object_id,
+            read=False
+        )
     
     serialized_notification = NotificationResponseSerializer(
             notification
     ).data
 
-    send_email(
-        subject="You have a new notification",
-        body="You have a new notification",
-        email=user_instance.email
-    )
+    # send_email(
+    #     subject="You have a new notification",
+    #     body="You have a new notification",
+    #     email=user_instance.email
+    # )
 
     # Cache notifications
     cache_key = NOTIFICATIONS_CACHE_KEY(

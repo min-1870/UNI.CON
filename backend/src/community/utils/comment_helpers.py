@@ -12,8 +12,7 @@ from django.core.cache import cache
 from account.models import User
 from django.db import transaction
 
-
-def cache_paginated_comments(
+def get_paginated_comments(
     request, article_instance, parent_comment_instance=None
 ):
     try:
@@ -122,7 +121,7 @@ def cache_paginated_comments(
         "results": {"comments": serialized_comments},
     }
 
-def update_comment_cache(comment_instance, updated_fields=None):
+def update_comment(comment_instance, updated_fields=None):
     if updated_fields is None:
         updated_fields = {}
     
@@ -147,7 +146,7 @@ def update_comment_cache(comment_instance, updated_fields=None):
         cache.set(cache_key, serialized_annotated_comments)
 
 
-def add_comment_cache(comment_instance, user_instance):
+def add_comment(comment_instance, user_instance):
     # Attach additional attributes
     user_temp_name, user_static_points = get_set_temp_name_static_points(
         comment_instance.article, user_instance
