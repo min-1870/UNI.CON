@@ -8,7 +8,7 @@ from community.models import  Notification
 from .response_serializers import NotificationResponseSerializer
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-
+from account.utils import send_email
 
 
 
@@ -91,7 +91,16 @@ def add_notification(notification_type, user_instance, model_class, object_id):
         object_id=object_id,
         read=False
     )
+    
+    serialized_notification = NotificationResponseSerializer(
+            notification
+    ).data
 
+    send_email(
+        subject="You have a new notification",
+        body="You have a new notification",
+        email=user_instance.email
+    )
 
     # Cache notifications
     cache_key = NOTIFICATIONS_CACHE_KEY(
@@ -102,10 +111,7 @@ def add_notification(notification_type, user_instance, model_class, object_id):
     # Initiate the cache if the cache is missing
     if notifications_cache:
         notifications_cache["total_notifications"] += 1
-        serialized_notification = NotificationResponseSerializer(
-            notification
-        ).data
-
+        
         # Insert the notification at the beginning of cache
         notifications = {serialized_notification["id"]: serialized_notification}
         notifications.update(notifications_cache["notifications"])
