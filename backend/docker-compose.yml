@@ -29,6 +29,15 @@ services:
     networks:
       - app-network
 
+  celery:
+    build: .
+    container_name: unicon_celery_container
+    command: ["sh", "-c", "cd src && celery -A src worker --loglevel=info"]
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
   postgres:
     image: postgres:latest
     container_name: unicon_postgres_container

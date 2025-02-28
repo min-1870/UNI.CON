@@ -42,6 +42,11 @@ else:
     CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are sent over HTTPS
     SESSION_COOKIE_SECURE = True  # Ensure session cookies are sent over HTTPS
 
+# CELERY Settings
+CELERY_BROKER_URL = "redis://redis:6379/1"  # Change DB index if needed
+CELERY_RESULT_BACKEND = "redis://redis:6379/1"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 
 # Application definition
 
@@ -60,7 +65,7 @@ SIMPLE_JWT = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis:6379',
+        'LOCATION': 'redis://redis:6379/0',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }

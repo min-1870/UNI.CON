@@ -6,7 +6,7 @@ from community.constants import (
     NOTIFICATION_EMAIL_SUBJECT,
     NOTIFICATION_GROUP_KV
 )
-
+from community.task import send_email
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
 from .response_serializers import NotificationResponseSerializer
 from community.models import  Notification, Article, Comment
@@ -132,32 +132,7 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             notification
     ).data
 
-    unicon_email = config("UNICON_EMAIL")
-    unicon_password = config("UNICON_EMAIL_PASSWORD")
-
-    # Create email message
-    msg = MIMEMultipart()
-    msg["From"] = unicon_email
-    msg["To"] = user_instance.email
-    msg["Subject"] = NOTIFICATION_EMAIL_SUBJECT
-    email_body = NOTIFICATION_EMAIL_BODY(
-        serialized_notification["type_name"],
-        serialized_notification["content"],
-        NOTIFICATION_GROUP_KV[serialized_notification["group"]]
-    )
-    print(email_body)
-    msg.attach(MIMEText(email_body, "plain"))
-
-    try:
-        # Connect to Gmail SMTP server
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(unicon_email, unicon_password)
-        server.sendmail(unicon_email, user_instance.email, msg.as_string())
-        server.quit()
-        
-    except Exception as e:
-        print("Error:", e)
+    send_email.delay(serialized_notification, user_instance.email)
 
     # Cache notifications
     cache_key = NOTIFICATIONS_CACHE_KEY(
