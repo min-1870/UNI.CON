@@ -89,4 +89,5 @@ class Notification(models.Model):
     object_id = models.PositiveIntegerField()
     source = GenericForeignKey('content_type', 'object_id')
     read = models.BooleanField(default=False)
+    email = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

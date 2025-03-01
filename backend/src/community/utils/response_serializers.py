@@ -80,6 +80,7 @@ class NotificationResponseSerializer(serializers.ModelSerializer):
             "user",
             "object_id",
             "read",
+            "email",
             "created_at",
             # Not in Notification Model
             "content",

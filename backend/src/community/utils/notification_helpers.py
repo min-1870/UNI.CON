@@ -15,10 +15,6 @@ from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.db import transaction
 from django.db import models
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from decouple import config
-import smtplib
 
 def get_paginated_notifications(request):
     try:
@@ -38,14 +34,17 @@ def get_paginated_notifications(request):
         total_notifications = (
             Notification.objects.filter(user=user_instance).count()
         )
+        unaware_notifications = Notification.objects.filter(user=user_instance, read=False, email=False).count()
         notifications_cache = {
             "total_notifications": total_notifications,
+            "unaware_notifications": unaware_notifications,
             "notifications": {}
         }
         cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
 
     if notifications_cache["total_notifications"] == 0:
         return {
+            "unaware_notifications": 0,
             "count": 0,
             "next": None,
             "results": {"notifications": []},
@@ -132,20 +131,82 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             notification
     ).data
 
-    send_email.delay(serialized_notification, user_instance.email)
+    EMAIL_NOTIFICATIONS_THRESHOLD = 3
 
     # Cache notifications
     cache_key = NOTIFICATIONS_CACHE_KEY(
         user_instance.id
     )
-    notifications_cache = cache.get(cache_key)
+    serialized_notifications = cache.get(cache_key)
 
-    # Initiate the cache if the cache is missing
-    if notifications_cache:
-        notifications_cache["total_notifications"] += 1
-        
-        # Insert the notification at the beginning of cache
-        notifications = {serialized_notification["id"]: serialized_notification}
-        notifications.update(notifications_cache["notifications"])
-        notifications_cache["notifications"] = notifications
-        cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
+    if serialized_notifications is None:
+        total_notifications = (
+            Notification.objects.filter(user=user_instance).count()
+        )
+        unaware_notifications = Notification.objects.filter(user=user_instance, read=False, email=False).count()
+        serialized_notifications = {
+            "total_notifications": total_notifications,
+            "unaware_notifications": unaware_notifications,
+            "notifications": {}
+        }
+
+    notifications = {serialized_notification["id"]: serialized_notification}
+    notifications.update(serialized_notifications["notifications"])
+    serialized_notifications["notifications"] = notifications
+    print('a', notifications)
+    serialized_notifications["total_notifications"] += 1
+    serialized_notifications["unaware_notifications"] += 1
+
+    if serialized_notifications["unaware_notifications"] >= EMAIL_NOTIFICATIONS_THRESHOLD:
+        number_of_notifications_in_cache = len(serialized_notifications["notifications"])
+        if number_of_notifications_in_cache < serialized_notifications["unaware_notifications"]:
+            start_index = number_of_notifications_in_cache
+            end_index = serialized_notifications["unaware_notifications"]
+            notification_queryset = (
+                Notification.objects.filter(user=user_instance).annotate(
+                    content=Coalesce(
+                        Case(
+                            When(
+                                content_type__model="article",
+                                then=Subquery(Article.objects.filter(id=OuterRef("object_id")).values("title")[:1])
+                            ),
+                            When(
+                                content_type__model="comment",
+                                then=Subquery(Comment.objects.filter(id=OuterRef("object_id")).values("body")[:1])
+                            ),
+                            default=Value("Unknown"),
+                            output_field=models.CharField(),
+                        ),
+                        Value("Unknown")
+                    ),
+                    type_name=F("content_type__model")
+                ).order_by("-created_at")[start_index:end_index]
+            )
+            
+            new_serialized_notifications = NotificationResponseSerializer(
+                notification_queryset, many=True
+            ).data
+            new_serialized_notifications = {
+                notification["id"]: notification for notification in new_serialized_notifications
+            }
+            serialized_notifications["notifications"].update(new_serialized_notifications)
+
+        notification_ids_to_email = list(serialized_notifications["notifications"])[:serialized_notifications["unaware_notifications"]]
+
+        email_body = str(notification_ids_to_email)
+        send_email.delay(
+            email_body,
+            user_instance.email
+        )
+
+
+        with transaction.atomic():
+            Notification.objects.filter(id__in=notification_ids_to_email).update(email=True)
+
+        for nid in notification_ids_to_email:
+            serialized_notifications["notifications"][nid]["email"] = True        
+
+        serialized_notifications["unaware_notifications"] = 0    
+    
+    cache.set(cache_key, serialized_notifications, CACHE_TIMEOUT)
+    

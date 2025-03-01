@@ -10,7 +10,7 @@ from decouple import config
 import smtplib
 
 @shared_task
-def send_email(serialized_notification, email):
+def send_email(contents, email):
 
     unicon_email = config("UNICON_EMAIL")
     unicon_password = config("UNICON_EMAIL_PASSWORD")
@@ -20,11 +20,7 @@ def send_email(serialized_notification, email):
     msg["From"] = unicon_email
     msg["To"] = "200134kms@gmail.com"
     msg["Subject"] = NOTIFICATION_EMAIL_SUBJECT
-    email_body = NOTIFICATION_EMAIL_BODY(
-        serialized_notification["type_name"],
-        serialized_notification["content"],
-        NOTIFICATION_GROUP_KV[serialized_notification["group"]]
-    )
+    email_body = str(contents)
     
     msg.attach(MIMEText(email_body, "plain"))
 
