@@ -85,7 +85,7 @@ def get_paginated_notifications(request):
             notification_queryset, many=True
         ).data
         new_serialized_notifications = {
-            notification["id"]: notification for notification in new_serialized_notifications
+            notification["id"]: {**notification, "read": True} for notification in new_serialized_notifications
         }
         notifications_cache["notifications"].update(new_serialized_notifications)
         cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
