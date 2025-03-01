@@ -411,10 +411,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
-    def notifications(self, request, *args, **kwargs):            
+    def new_notifications(self, request, *args, **kwargs):            
         
         response_data = get_paginated_notifications(
-            request
+            request,
+            True
+        )
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def old_notifications(self, request, *args, **kwargs):            
+        
+        response_data = get_paginated_notifications(
+            request,
+            False
         )
         
         return Response(response_data, status=status.HTTP_200_OK)

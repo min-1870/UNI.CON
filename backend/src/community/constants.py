@@ -19,29 +19,31 @@ NOTIFICATION_GROUP_KV = {
     1: "Like",
 }
 
+EMAIL_NOTIFICATIONS_THRESHOLD = 5
+
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )
 ARTICLES_CACHE_KEY = (
-    lambda school_id, view_name, identifier="": f"{school_id}_{view_name}_{identifier}"
+    lambda school_id, view_name, identifier="": f"SCHOOL_{school_id}_VIEW_{view_name}_IDF_{identifier}"
 )
 ARTICLES_LIKE_CACHE_KEY = (
-    lambda user_id: f"{user_id}_LIKED_ARTICLES"
+    lambda user_id: f"USER_{user_id}_LIKED-ARTICLES"
 )
 ARTICLES_VIEW_CACHE_KEY = (
-    lambda user_id: f"{user_id}_VIEWED_ARTICLES"
+    lambda user_id: f"USER_{user_id}_VIEWED-ARTICLES"
 )
 ARTICLES_SAVE_CACHE_KEY = (
-    lambda user_id: f"{user_id}_SAVED_ARTICLES"
+    lambda user_id: f"USER_{user_id}_SAVED-ARTICLES"
 )
 COMMENTS_CACHE_KEY = (
     lambda article_id, comment_id="": f"ARTICLE_{article_id}_COMMENT_{comment_id}"
 )
 COMMENTS_LIKE_CACHE_KEY = (
-    lambda user_id: f"{user_id}_LIKED_COMMENTS"
+    lambda user_id: f"USER_{user_id}_LIKED-COMMENTS"
 )
 NOTIFICATIONS_CACHE_KEY = (
-    lambda user_id: f"{user_id}_NOTIFICATIONS"
+    lambda user_id: f"USER_{user_id}_NOTIFICATIONS"
 )
 
 
