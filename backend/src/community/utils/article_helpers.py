@@ -19,6 +19,7 @@ from django.db import transaction
 
 
 def get_paginated_articles(request, queryset, cache_key=None):
+    # Construct the cache key if it is not provided
     if cache_key is None:
         view_name = resolve(request.path).view_name
         school = request.user.school.id
@@ -249,6 +250,7 @@ def get_serialized_article(request, article_instance):
     return serialized_annotated_article
 
 def update_article(article_instance, updated_fields=None):
+
     if updated_fields is None:
         updated_fields = {}
 
@@ -270,15 +272,19 @@ def update_article(article_instance, updated_fields=None):
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
 def update_user_liked_article_cache(request, article_instance, like_status):
+
     user_instance = request.user
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
+
     if user_liked_articles is None:
+        # Fetch all the liked articles for the user
         user_liked_articles = ArticleLike.objects.filter(
             user=user_instance
         ).values_list("article", flat=True)
         user_liked_articles = {pk: True for pk in user_liked_articles}
     else:
+        # Update the cache
         user_liked_articles[article_instance.id] = like_status
     cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
     
@@ -290,12 +296,15 @@ def update_user_saved_article_cache(request, article_instance, save_status):
     user_instance = request.user
     cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
+
     if user_saved_articles is None:
+        # Fetch all the saved articles for the user
         user_saved_articles = ArticleSave.objects.filter(
             user=user_instance
         ).values_list("article", flat=True)
         user_saved_articles = {pk: True for pk in user_saved_articles}
     else:
+        # Update the cache
         user_saved_articles[article_instance.id] = save_status
     cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
     
@@ -303,15 +312,19 @@ def update_user_saved_article_cache(request, article_instance, save_status):
     cache.set(cache_key, list(user_saved_articles.keys()), CACHE_TIMEOUT)
 
 def update_user_viewed_article_cache(request, article_instance):
+
     user_instance = request.user
     cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
     user_viewed_articles = cache.get(cache_key, None)
+
     if user_viewed_articles is None:
+        # Fetch all the viewed articles for the user
         user_viewed_articles = ArticleView.objects.filter(
             user=user_instance
         ).values_list("article", flat=True)
         user_viewed_articles = {pk: True for pk in user_viewed_articles}
     else:
+        # Update the cache
         user_viewed_articles[article_instance.id] = True
     cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
@@ -320,10 +333,13 @@ def update_user_commented_article_cache(request, article_instance):
     user_instance = request.user
     cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-commented-articles", request.user.id)
     user_commented_articles_ids = cache.get(cache_key, None)
+
     if user_commented_articles_ids is None:
+        # Fetch all the commented articles for the user
         user_commented_articles_ids = list(Comment.objects.filter(
             user=user_instance
         ).values_list("article", flat=True))
     else:
+        # Update the cache
         user_commented_articles_ids.append(article_instance.id)
     cache.set(cache_key, user_commented_articles_ids, CACHE_TIMEOUT)

@@ -15,6 +15,7 @@ from django.db import transaction
 def get_paginated_comments(
     request, article_instance, parent_comment_instance=None
 ):
+
     try:
         requested_page = int(request.query_params.get("page", 1))
     except Exception:
