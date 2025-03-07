@@ -351,16 +351,16 @@ const MyPage = () => {
                 </div>
                 <hr id="line"></hr>
                 <div id="body" >{article.body}</div>
-                {article.course_code.length != 0 && (
+                {article.tag.length != 0 && (
                   <div id="courses">
-                    {article.course_code.split(",").map((course, index) => (
+                    {article.tag.split(",").map((tag, index) => (
                       
                       <button
                           id="emptyGrayButton"
                           key={index}
                           disabled={true}
                         >
-                          {course}
+                          {tag}
                       </button>
 
                     ))}

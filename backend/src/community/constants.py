@@ -69,13 +69,13 @@ MOCK_ARTICLE = {
     "title": "Nice title",
     "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "unicon": True,
-    "course_code": [],
+    "tag": [],
 }
 MOCK_ARTICLE_WITH_COURSES = {
     "title": "Nice title",
     "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "unicon": False,
-    "course_code": ["comp1231", "Comp1320"],
+    "tag": ["comp1231", "Comp1320"],
 }
 MOCK_ARTICLE_RESPONSE_KEYS = {
     "id",
@@ -93,7 +93,7 @@ MOCK_ARTICLE_RESPONSE_KEYS = {
     "user_static_points",
     "user_school",
     "like_status",
-    "course_code",
+    "tag",
 }
 
 MOCK_COMMENT = {

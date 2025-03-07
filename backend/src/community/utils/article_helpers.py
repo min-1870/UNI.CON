@@ -7,7 +7,7 @@ from community.constants import (
     ARTICLES_VIEW_CACHE_KEY,
     ARTICLES_SAVE_CACHE_KEY
 )
-from community.models import Article, ArticleUser, ArticleCourse, ArticleLike, ArticleView, ArticleSave, Comment
+from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleView, ArticleSave, Comment
 from django.db.models import OuterRef, Subquery, F, Func, Value
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
@@ -105,16 +105,16 @@ def get_serialized_articles(user_instance, article_ids, queryset):
                 article=OuterRef("pk"), user=OuterRef("user")
             ).values("user_static_points")[:1]
         ),
-        course_code=Coalesce(
+        tag=Coalesce(
             Subquery(
-                ArticleCourse.objects.filter(article=OuterRef("pk"))
-                .values("course__code")
+                ArticleTag.objects.filter(article=OuterRef("pk"))
+                .values("tag__name")
                 .annotate(
-                    course_codes=Func(
-                        F("course__code"), Value(","), function="STRING_AGG"
+                    tags=Func(
+                        F("tag__name"), Value(","), function="STRING_AGG"
                     )
                 )
-                .values("course_codes")[:1],
+                .values("tags")[:1],
             ),
             Value(""),
         ),
@@ -209,10 +209,10 @@ def get_serialized_article(request, article_instance):
         )
         article_instance.user_temp_name = articleUser_instance.user_temp_name
         article_instance.user_static_points = articleUser_instance.user_static_points
-        course_codes = ArticleCourse.objects.filter(article=article_instance).values_list(
-            "course__code", flat=True
+        tag = ArticleTag.objects.filter(article=article_instance).values_list(
+            "tag__name", flat=True
         )
-        article_instance.course_code = ", ".join(course_codes) if course_codes else ""
+        article_instance.tag = ", ".join(tag) if tag else ""
 
         # Make an annotated_article to set the cache
         serialized_annotated_article = ArticleResponseSerializer(article_instance).data

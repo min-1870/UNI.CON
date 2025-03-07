@@ -63,7 +63,7 @@ const PostArticle = () => {
             title: title,
             body: body,
             unicon: unicon,
-            course_code: unicon ? [] : courses
+            tag: courses
           },{
             headers: {
               "Content-Type": "application/json",
@@ -129,13 +129,13 @@ const PostArticle = () => {
                 onChange={(e) => setCourse(e.target.value)}
                 id="post-article-add-course-input"
                 placeholder='add courses here..'
-                disabled={unicon?true:false}
+                // disabled={unicon?true:false}
           />
           <button
               onClick={() => handleAddCrouseButton()}
               id="grayButton"
               className="add"
-              disabled={unicon?true:false}
+              // disabled={unicon?true:false}
             >
               Add
           </button>
@@ -145,7 +145,7 @@ const PostArticle = () => {
                 onClick={() => handleRemoveCrouseButton(index)}
                 id="emptyGrayButton"
                 key={index}
-                disabled={unicon?true:false}
+                // disabled={unicon?true:false}
               >
                 {course}
             </button>

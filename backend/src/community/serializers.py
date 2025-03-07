@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.db import transaction
 
 class ArticleSerializer(serializers.ModelSerializer):
-    course_code = serializers.JSONField(required=False)
+    tag = serializers.JSONField(required=False)
     search_content = serializers.CharField(required=False)
 
     class Meta:
@@ -15,7 +15,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "body",
             "unicon",
             # Not in Article Model
-            "course_code",
+            "tag",
             "search_content",
         ]
 
@@ -32,7 +32,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "title": {"required": True},
             "body": {"required": True},
             "unicon": {"required": True},
-            "course_code": {"required": True},
+            "tag": {"required": True},
         }
 
     def validate(self, data):
@@ -47,13 +47,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         if not body:
             raise serializers.ValidationError("The body cannot be empty.")
 
-        # Validate the course code is not included for the unicon article
-
-        if data["unicon"] and len(data["course_code"]) != 0:
-            raise serializers.ValidationError(
-                "The article with the course code does not support unicon option."
-            )
-
         return data
 
     def create(self, validated_data):
@@ -62,7 +55,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         user_instance = self.context["request"].user
         validated_data["user"] = user_instance
 
-        del validated_data["course_code"]
+        del validated_data["tag"]
 
         # Calculate and save the embedding vector
         validated_data["embedding_vector"] = get_embedding(

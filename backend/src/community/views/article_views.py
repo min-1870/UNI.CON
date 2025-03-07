@@ -22,7 +22,7 @@ from community.constants import (
     ARTICLES_CACHE_KEY,
     CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleLike, Course, ArticleCourse, ArticleView, ArticleSave, Comment
+from community.models import Article, ArticleLike, Tag, ArticleTag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from django.db.models import Case, When, F, Q
@@ -65,21 +65,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article_instance.id,
         )
 
-        # Link the foreign key for each course code if necessary
-        course_code = request.data.get("course_code")
-        if len(course_code) != 0:
+        # Link the foreign key for each tag if necessary
+        tag = request.data.get("tag")
+        if len(tag) != 0:
             with transaction.atomic():
-                for code in course_code:
-                    course_instance, _ = Course.objects.get_or_create(
-                        code=code.upper().strip(), school=user_instance.school
+                for code in tag:
+                    tag_instance, _ = Tag.objects.get_or_create(
+                        name=code.upper().strip()
                     )
-                    ArticleCourse.objects.create(
-                        article=article_instance, course=course_instance
+                    ArticleTag.objects.create(
+                        article=article_instance, tag=tag_instance
                     )
 
-            article_instance.course_code = [code.upper().strip() for code in course_code]
+            article_instance.tag = [code.upper().strip() for code in tag]
         else:
-            article_instance.course_code = []
+            article_instance.tag = []
 
         # Add article id to the cache
         cache_key = ARTICLES_CACHE_KEY(user_instance.school.id, "article-list")

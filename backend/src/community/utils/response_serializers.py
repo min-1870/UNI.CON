@@ -10,7 +10,7 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
     user_school = serializers.CharField(read_only=True)
     user_temp_name = serializers.CharField(read_only=True)
     user_static_points = serializers.IntegerField(read_only=True)
-    course_code = serializers.JSONField(required=False)
+    tag = serializers.JSONField(required=False)
 
     class Meta:
         model = Article
@@ -34,7 +34,7 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
             "user_school",
             "user_static_points",
             "user_temp_name",
-            "course_code",
+            "tag",
         ]
 
 

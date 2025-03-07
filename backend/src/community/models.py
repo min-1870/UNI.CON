@@ -40,14 +40,13 @@ class ArticleLike(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 
 
-class Course(models.Model):
-    code = models.CharField(max_length=100, default="unknown", null=False)
-    school = models.ForeignKey(School, on_delete=models.CASCADE, null=False)
+class Tag(models.Model):
+    name = models.CharField(max_length=100, default="unknown", null=False)
 
 
-class ArticleCourse(models.Model):
+class ArticleTag(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=False)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, null=False)
 
 
 class ArticleView(models.Model):
