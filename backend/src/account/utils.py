@@ -1,10 +1,12 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 from community.utils import get_current_user_points
-from .models import School
-import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from decouple import config
+from .models import School
+import requests
+import smtplib
+import jwt
 
 def send_email(subject, body, email):
 
@@ -30,6 +32,23 @@ def send_email(subject, body, email):
         print("Error:", e)
 
 
+def exchange_google_code_for_data(redirect_uri, code):
+    data = {
+        "code": code,
+        "client_id": config("GOOGLE_CLIENT_ID"),
+        "client_secret": config("GOOGLE_CLIENT_SECRET"),
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+    }
+            
+    response = requests.post(config("GOOGLE_TOKEN_URI"), data=data)
+    token_data = response.json()
+            
+    if "id_token" in token_data:
+        decoded_token = jwt.decode(token_data.get("id_token"), options={"verify_signature": False}) 
+        return decoded_token
+    else:
+        return None
 
 def get_school_id_from_email(email):
     schools = School.objects.values_list("id", "email_identifier")
@@ -39,10 +58,18 @@ def get_school_id_from_email(email):
     return False
 
 
-def annotate_user(user_instance):
-    user_instance.initial = user_instance.school.initial
-    user_instance.color = user_instance.school.color
-    user_instance.points = get_current_user_points(user_instance.id)
-    user_instance.refresh = RefreshToken.for_user(user_instance)
-    user_instance.access = RefreshToken.for_user(user_instance).access_token
-    return user_instance
+def annotate_user(user_instance, params=None):
+    initial = user_instance.school.initial
+    color = user_instance.school.color
+    points = get_current_user_points(user_instance.id)
+    refresh = RefreshToken.for_user(user_instance)
+    access = RefreshToken.for_user(user_instance).access_token
+    if params:
+        return f"?user={user_instance.id}&initial={initial}&color={color}&points={points}&refresh={refresh}&access={access}"
+    else:
+        user_instance.initial = initial
+        user_instance.color = color
+        user_instance.points = points
+        user_instance.refresh = refresh
+        user_instance.access = access
+        return user_instance

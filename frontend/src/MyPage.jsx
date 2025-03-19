@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "./constants";
-import {fetchNewAccessToken, logout} from "./utils";
+import {fetchNewAccessToken, logout, GoogleConnectButton} from "./utils";
 import axios from "axios";
 import './Feed.css';
 import './constants.css';
@@ -227,6 +227,8 @@ const MyPage = () => {
     <div id="community-container">
       <div id="community-left"></div>
       <div id="community">
+
+        {GoogleConnectButton()}
         
         <input
           value={currentPassword}

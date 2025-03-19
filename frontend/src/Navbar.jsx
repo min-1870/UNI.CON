@@ -5,7 +5,7 @@ import './Navbar.css';
 const Navbar = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState("main");
-  const is_validated = JSON.parse(localStorage.getItem('is_validated')) || false;
+  const is_validated = localStorage.getItem('is_validated') == "True";
   const initial = localStorage.getItem('initial') || '';
   const color = localStorage.getItem('color') || '#000';
   const points = localStorage.getItem('points');

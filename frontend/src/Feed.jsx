@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { API_URL } from "./constants";
 import { fetchNewAccessToken, logout } from "./utils";
 import axios from "axios";
@@ -7,6 +7,8 @@ import './Feed.css';
 import './constants.css';
 
 const Feed = () => {
+  
+  const location = useLocation();
   const [articles, setArticles] = useState([]);
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [sortOption, setSortOption] = useState("recent");
@@ -14,11 +16,24 @@ const Feed = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
+  // let accessToken = localStorage.getItem("access");
+  // const color = localStorage.getItem("color");
+  // const user = localStorage.getItem("user");
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  
+  if (params.get('id')) {
+    params.forEach((value, key) => {
+      const decodedValue = decodeURIComponent(value);
+      localStorage.setItem(key, decodedValue);
+      console.log(key, decodedValue);
+    });
+  }
+
   let accessToken = localStorage.getItem("access");
   const color = localStorage.getItem("color");
-  const user = localStorage.getItem("user");
-  const navigate = useNavigate();
-
+  const user = localStorage.getItem("id");
+  
   const apiEndpoints = {
     recent: `${API_URL}/community/article`,
     hot: `${API_URL}/community/article/hot`,

@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { API_URL } from "./constants";
 import "./Auth.css";
 
+import {GoogleLoginButton} from "./utils";
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true); // Toggle between login and register
   const [email, setEmail] = useState("");
@@ -148,9 +150,13 @@ const Auth = () => {
           </button>
           {/* Debug Mode: Sign in as a random user */}
           {isLogin && (
+            
+            <>
             <button className="auth-button" onClick={signInRandomUser} disabled={loading}>
               DEBUG MODE: Sign in as a random user
             </button>
+            {GoogleLoginButton()}
+            </>
           )}
         </form>
 
