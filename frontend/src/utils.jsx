@@ -33,9 +33,41 @@ const logout = async (navigate) => {
     navigate("/")
     window.location.reload();
 };
+  
+const fetchAPI = async (url, {token = true, method = "GET", body = {}} = {}) => {
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { "Authorization": `Bearer ${localStorage.getItem("access")}` })
+  };
+
+  const request = async () => {
+    try {
+      const response = await axios({
+        method,
+        url,
+        headers,
+        ...(method !== "GET" && { data: body }) // Only add body for non-GET requests
+      });
+      return response.data;
+    } catch (error) {
+      throw error; // Throw to be caught in the outer try-catch
+    }
+  };
+  try {
+    return await request();
+  } catch (error) {
+    try {
+      accessToken = await fetchNewAccessToken(navigate);
+      return await request();
+    } catch (error) {
+      return false
+    }
+  };
+};
 
 
-const GOOGLE_CLIENT_ID = 'PLACEHOLDER';
+const GOOGLE_CLIENT_ID = '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com';
 const REDIRECT_URI = 'http://localhost:8000/api/account/user/googlelink/';
 
 const GoogleLoginButton = () => {
@@ -86,4 +118,4 @@ const GoogleConnectButton = () => {
 
 
 export default fetchNewAccessToken;
-export { fetchNewAccessToken, logout ,GoogleConnectButton, GoogleLoginButton };
+export { fetchNewAccessToken, logout ,GoogleConnectButton, GoogleLoginButton, fetchAPI };

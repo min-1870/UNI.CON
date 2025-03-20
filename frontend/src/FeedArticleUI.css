@@ -1,0 +1,58 @@
+#feed-article-default,
+#feed-article-viewed,
+#feed-article-unicon,
+#feed-article-unicon-viewed {
+  cursor: pointer;
+}
+
+
+#feed-article-default {
+  background-color: #fff;
+  padding: 25px 15px 25px 15px;
+  border-radius: 15px;
+  box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+  color: #2D3748;
+} 
+#feed-article-viewed {
+    background-color: #f3f3f3;
+    padding: 25px 15px 25px 15px;
+    border-radius:7px;
+    box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 0px 29px -15px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    color: #2D3748;
+} 
+
+
+#feed-article-title {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  font-size: 1.5rem;
+  padding-bottom: 10px;
+  border-radius: 15px;
+  width: 100%;
+}
+#feed-article-info{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+#feed-article-line{
+    border: 1px solid #E2E8F0;
+    margin-bottom: 25px;
+}
+#feed-article-body{
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 25px;
+}
+#feed-article-buttons{
+    height : 40px;
+    display: flex;
+    gap: 14px;
+  }
