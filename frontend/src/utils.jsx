@@ -67,7 +67,7 @@ const fetchAPI = async (url, {token = true, method = "GET", body = {}} = {}) => 
 };
 
 
-const GOOGLE_CLIENT_ID = '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '';
 const REDIRECT_URI = 'http://localhost:8000/api/account/user/googlelink/';
 
 const GoogleLoginButton = () => {
