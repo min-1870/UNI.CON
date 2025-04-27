@@ -7,9 +7,9 @@ import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
 
-export default function HomePage() {
+export default function ProfilePage() {
 
-  const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
+  const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -18,9 +18,10 @@ export default function HomePage() {
   const fetchedArticlePage = useRef(null);
 
   const apiEndpoints = {
-    all: `${API_URL}/community/article`,
-    hot: `${API_URL}/community/article/hot`,
-    recommend: `${API_URL}/community/article/preference`,
+    posted: `${API_URL}/community/article/posted_articles`,
+    saved: `${API_URL}/community/article/saved_articles`,
+    commented: `${API_URL}/community/article/commented_articles`,
+    liked: `${API_URL}/community/article/liked_articles`,
   };
 
   useEffect(() => {
@@ -78,22 +79,28 @@ export default function HomePage() {
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>
         <ThemedButton
-          type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('all')}
+          type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('posted')}
         >
-          All
+          Posted
         </ThemedButton>
         <ThemedButton
-          type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('hot')}
+          type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('saved')}
         >
-          Hot
+          Saved
         </ThemedButton>
         <ThemedButton
-          type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('recommend')}
+          type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('commented')}
         >
-          Recommend
+          Commented
+        </ThemedButton>
+        <ThemedButton
+          type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('liked')}
+        >
+          Liked
         </ThemedButton>
       </ThemedView>
     </>

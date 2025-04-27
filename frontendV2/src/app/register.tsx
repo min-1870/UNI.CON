@@ -6,8 +6,8 @@ import { ThemedView } from '@/components/ThemedView';
 
 import {API_URL} from "@/constants/Domains";
 import {fetchAPI, setData} from "@/components/Utils";
-import { SolidButton } from '@/components/ThemedButtons';
-import { AuthTextInput } from '@/components/ThemedInputs';
+import { ThemedButton } from '@/components/ThemedButton';
+import { ThemedInput } from '@/components/ThemedInput';
 import React, { useState } from "react";
 
 
@@ -63,14 +63,14 @@ export default function RegisterPage() {
       
       <ThemedView style={styles.textInputContainer}>
         <ThemedText type="default">University Email</ThemedText>
-        <AuthTextInput
+        <ThemedInput
           onChangeText={setEmail}
           value={email}
           placeholder="example@university.edu.au"
           keyboardType='email-address'
         />
         <ThemedText type="default">Password</ThemedText>
-        <AuthTextInput
+        <ThemedInput
           onChangeText={setPassword}
           value={password}
           placeholder="Your Password"
@@ -78,7 +78,7 @@ export default function RegisterPage() {
           secureTextEntry={true}
         />
         <ThemedText type="default">Password Confirmation</ThemedText>
-        <AuthTextInput
+        <ThemedInput
           onChangeText={setConfirmationPassword}
           value={confirmationPassword}
           placeholder="Your Password"
@@ -88,14 +88,14 @@ export default function RegisterPage() {
       </ThemedView>
       
       <ThemedView style={styles.buttonContainer}>
-        {error && <ThemedText type="error">{error}</ThemedText>}
-        <SolidButton 
+        {error || <ThemedText type="error">{error}</ThemedText>}
+        <ThemedButton 
           onPress={handleSubmit} 
           disabled={loading}
-
+          type={'auth'}
         >
           {loading ? 'Signing Up..' : 'Sign Up'}
-        </SolidButton>
+        </ThemedButton>
         <ThemedText type="default">
           Do you have an account? <Link href="/">Log In</Link>
         </ThemedText>

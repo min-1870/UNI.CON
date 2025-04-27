@@ -73,6 +73,7 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
               headers,
               ...(method !== "GET" && { data: body }), // Only add body for non-GET requests
           });
+          // console.log(response.data)
           return { error: false, data: response.data };
       } catch (error) {
           throw error; // Throw to be caught in the outer try-catch

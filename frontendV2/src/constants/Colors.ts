@@ -3,6 +3,8 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
+const brand_color = '#57EC6B'
+
 const custom_colors = {
     text: '#11181C',
     background: '#f8f9f7',
@@ -13,16 +15,26 @@ const custom_colors = {
 
     errorText: '#e6566c',
 
-    solidButtonBackground: '#57EC6B',
-    solidButtonText: '#ffffff',
+    ThemedButtonBackground: brand_color,
+    ThemedButtonBorder: '#d3d6d9',
+    ThemedButtonText: '#000000',
 
     authTextInputBackground: '#f2f2f2',
     authTextInputPlaceholder: '#9b9797',
     authTextInputText: '#000000',
 
-    feedArticleBackground: '#ffffff',
-    feedArticleTitle: '#000000',
-    feedArticleContent: '#687076',
+    articleBackground: '#ffffff',
+    articleName: '#000000',
+    articleTime: '#a2a9b2',
+    articleTitle: '#000000',
+    articleBody: '#000000',
+    articleButton: '#858b98',
+
+    commentBackground: '#ffffff',
+    commentName: '#000000',
+    commentTime: '#a2a9b2',
+    commentBody: '#000000',
+    commentButton: '#858b98',
   };
   
 export const Colors = {

@@ -6,8 +6,8 @@ import { ThemedView } from '@/components/ThemedView';
 
 import {API_URL} from "@/constants/Domains";
 import {fetchAPI, setData} from "@/components/Utils";
-import { SolidButton } from '@/components/ThemedButtons';
-import { AuthTextInput } from '@/components/ThemedInputs';
+import { ThemedButton } from '@/components/ThemedButton';
+import { ThemedInput } from '@/components/ThemedInput';
 import React, { useState } from "react";
 
 
@@ -55,14 +55,14 @@ export default function LoginPage() {
       
       <ThemedView style={styles.textInputContainer}>
         <ThemedText type="default">University Email</ThemedText>
-        <AuthTextInput
+        <ThemedInput
           onChangeText={setEmail}
           value={email}
           placeholder="example@university.edu.au"
           keyboardType='email-address'
         />
         <ThemedText type="default">Password</ThemedText>
-        <AuthTextInput
+        <ThemedInput
           onChangeText={setPassword}
           value={password}
           placeholder="Your Password"
@@ -73,12 +73,13 @@ export default function LoginPage() {
       
       <ThemedView style={styles.buttonContainer}>
         {error || <ThemedText type="error">{error}</ThemedText>}
-        <SolidButton 
+        <ThemedButton 
           onPress={handleSubmit} 
           disabled={loading}
+          type={'auth'}
         >
           {loading ? 'Logging in..' : 'Login'}
-        </SolidButton>
+        </ThemedButton>
         <ThemedText type="default">
           Don't have an account yet? <Link href="/register">Sign Up</Link>
         </ThemedText>

@@ -6,8 +6,8 @@ import { ThemedView } from '@/components/ThemedView';
 
 import {API_URL} from "@/constants/Domains";
 import {fetchAPI, getData, setData} from "@/components/Utils";
-import { SolidButton } from '@/components/ThemedButtons';
-import { AuthTextInput } from '@/components/ThemedInputs';
+import { ThemedButton } from '@/components/ThemedButton';
+import { AuthTextInput } from '@/components/ThemedInput';
 import React, { useState, useEffect } from "react";
 
 
@@ -73,12 +73,13 @@ export default function ValidationPage() {
       
       <ThemedView style={styles.buttonContainer}>
         {error || <ThemedText type="error">{error}</ThemedText>}
-        <SolidButton 
+        <ThemedButton 
           onPress={handleSubmit} 
           disabled={loading}
+          type={'auth'}
         >
           {loading ? 'Submitting..' : 'Submit'}
-        </SolidButton>
+        </ThemedButton>
         <ThemedText type="default">
           I didn't received an email
         </ThemedText>
