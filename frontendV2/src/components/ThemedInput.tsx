@@ -38,6 +38,16 @@ function ThemedInput({
         color: textColor, 
         width: '100%',
       },
+      search: {
+        padding: 12,
+        paddingHorizontal: 20,
+        backgroundColor: backgroundColor,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: textColor, 
+        width: '100%',
+      },
     })
 
   return (

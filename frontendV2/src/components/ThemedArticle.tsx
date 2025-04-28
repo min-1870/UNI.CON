@@ -6,6 +6,7 @@ import {API_URL} from "@/constants/Domains";
 import moment from 'moment';
 import { router } from 'expo-router';
 
+
 type ThemedArticleProps = {
   lightColor?: string;
   darkColor?: string;
@@ -19,6 +20,7 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
   const bodyColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleBody');
   const nameColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleName');
   const timeColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleTime');
+  const pointsColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articlePoints');
   const buttonColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleButton');
   
   const [article, setArticleState] = useState(article_data);
@@ -59,29 +61,34 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
     container: {
       flex: 1,
       backgroundColor,
-      padding: 30,
+      borderRadius: 30,
+      padding: 30, //TODO: fix clipped shadow
+      shadowColor: 'rgba(0, 0, 0, 1)',
+      shadowOffset: { width: 10, height: 10 },
+      
+      shadowRadius: 20,
+      shadowOpacity: 0.1,
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
     },
     infoContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    nameUniconUniContainer: {
-      flexDirection: 'row',      
+      alignItems: 'center',
       gap: 5,
-    },
-    name: {
-      color: nameColor,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    unicon: {
-      color: nameColor,
-      fontWeight: '400',
-      fontSize: 15,
+      marginBottom: 20,
     },
     uni: {
       color: nameColor,
+      fontWeight: '400',
+      fontSize: 15,
+    },
+    name: {
+      color: nameColor,
+      fontWeight: '600',
+      fontSize: 20,
+    },
+    points: {
+      color: pointsColor,
       fontWeight: '400',
       fontSize: 15,
     },
@@ -93,14 +100,14 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
     title: {
       color: titleColor,
       fontWeight: '600',
-      fontSize: 21,
+      fontSize: 23,
       marginBottom: 10,
     },
     body: {
       color: bodyColor,
       fontWeight: '400',
       fontSize: 17,
-      marginBottom: 10,
+      marginBottom: 20,
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -118,25 +125,22 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
     <View style={[styles.container]}>
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
-          <View style={[styles.nameUniconUniContainer]}>
-            <Text style={[styles.name]}>
-              {article.user_temp_name}
-            </Text>
             {article.unicon || (
-              <>
-                <Text style={[styles.unicon]}>
-                  UNICON
-                </Text>
-                <Text style={[styles.uni]}>
-                  {article.user_school.toUpperCase()}
-                </Text>
-              </>
+              <Text style={[styles.uni]}>
+                {article.user_school.toUpperCase()}
+              </Text>
             )}
-          </View>
+          <Text style={[styles.name]}>
+            {article.user_temp_name}
+          </Text>
+          <Text style={[styles.points]}>
+            {article.user_static_points}
+          </Text>
           <Text style={[styles.time]}>
             {moment(article.created_at).fromNow()}
           </Text>
         </View>
+
         <Text style={[styles.title]}>{article.title}</Text>
         <Text style={[styles.body]}>{article.body}</Text>
       </Pressable>

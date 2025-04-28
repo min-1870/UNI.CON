@@ -23,9 +23,10 @@ const custom_colors = {
     authTextInputPlaceholder: '#9b9797',
     authTextInputText: '#000000',
 
-    articleBackground: '#ffffff',
+    articleBackground: '#f7f7f7',
     articleName: '#000000',
     articleTime: '#a2a9b2',
+    articlePoints: brand_color,
     articleTitle: '#000000',
     articleBody: '#000000',
     articleButton: '#858b98',
