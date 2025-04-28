@@ -73,37 +73,78 @@ export default function ArticlePage() {
       setError(response?.data?.detail || "An error occurred");
     }
   }; 
-   
-  const handleReplyComment = async () => {
-    // console.log('handleReplyComment is triggered', focusedComment)
-    const response = await fetchAPI(
-      `${API_URL}/community/comment/`, {
-      method: 'POST',
-      token: true,
-      body: {
-        article: articleId,
-        parent_comment: focusedComment,
-        body: newComment,
+
+  const likeComment = async (commentId: string, parent_commentId: string | null) => {
+    let url = '';
+    if (parent_commentId) {
+      url = comments.find((comment) => comment.id === parent_commentId)?.nested_comments.find((nestedComment: { id: string; }) => nestedComment.id === commentId)?.like_status
+        ? `${API_URL}/community/comment/${commentId}/unlike/`  
+        : `${API_URL}/community/comment/${commentId}/like/`;
+    }
+    else {
+      url = comments.find((comment) => comment.id === commentId)?.like_status
+        ? `${API_URL}/community/comment/${commentId}/unlike/`
+        : `${API_URL}/community/comment/${commentId}/like/`;
+    };
+    const response = await fetchAPI(url, { method: 'POST', token: true });
+    if (!response.error) {
+      if (parent_commentId) {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(parent_commentId)
+              ? { ...comment,
+                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
+                    String(nestedComment.id) === String(commentId)
+                      ? { ...nestedComment,
+                          like_status: !nestedComment.like_status,
+                          likes_count: nestedComment.likes_count + (nestedComment.like_status ? -1 : 1),
+                        }
+                      : nestedComment
+                  ),
+                }
+              : comment
+          )
+        );
       }
-    });
+      else{
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment,
+                  like_status: !comment.like_status,
+                  likes_count: comment.likes_count + (comment.like_status ? -1 : 1),
+                }
+              : comment
+          )
+        );
+      }
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+      console.log(response);
+    }
+  };
+
+  const fetchNestedComments = async (commentId: string) => {
+    const url = `${API_URL}/community/comment/${commentId}`;
+    const response = await fetchAPI(url, { method: 'GET', token: true });
     if (!response.error) {
       setComments((prevComments) =>
         prevComments.map((comment) =>
-          String(comment.id) === String(focusedComment)
+          String(comment.id) === String(commentId)
             ? { ...comment,
-                newComment: response.data
+                nested_comments: response.data.results.comments,
+                showReplies: true,
               }
             : comment
         )
       );
-      setNewComment('');
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
   };
-  /*
+
+   
   const handleReplyComment = async () => {
-    // console.log('handleReplyComment is triggered', focusedComment)
     const response = await fetchAPI(
       `${API_URL}/community/comment/`, {
       method: 'POST',
@@ -115,58 +156,22 @@ export default function ArticlePage() {
       }
     });
     if (!response.error) {
-      // let newComment = {
-      //   id: response.data.id,
-      //   body: response.data.body,
-      //   user_temp_name: response.data.user_temp_name,
-      //   user_static_points: response.data.user_static_points,
-      //   user_school: response.data.user_school,
-      //   like_status: response.data.like_status,
-      // }
-      // console.log('Received the response without the error');
-    
-            setComments((prevComments) =>
-              prevComments.map((comment) =>
-                String(comment.id) === String(focusedComment)
-                  ? { ...comment,
-                      nested_comments: [newComment],
-                      comments_count: 1,
-                      showReplies: true
-                    }
-                  : comment
-              )
-            );
-      // if (!('nested_comments' in (comments.find(comment => String(comment.id) === String(focusedComment)) ?? {}))) {
-      //   setComments((prevComments) =>
-      //     prevComments.map((comment) =>
-      //       String(comment.id) === String(focusedComment)
-      //         ? { ...comment,
-      //             nested_comments: [newComment],
-      //             comments_count: 1,
-      //             showReplies: true
-      //           }
-      //         : comment
-      //     )
-      //   );
-      // }else{
-      //   setComments((prevComments) =>
-      //     prevComments.map((comment) =>
-      //       String(comment.id) === String(focusedComment)
-      //         ? {
-      //             ...comment,
-      //             nested_comments: [newComment, ...(comment.nested_comments || [])],
-      //             comments_count: comment.comments_count + 1,
-      //             showReplies: true
-      //         }
-      //         : comment
-      //     )); 
-      // }
+
+       setComments((prevComments) => 
+        prevComments.map((comment) =>
+          String(comment.id) === String(focusedComment)
+            ? { ...comment, showReplies: false, nested_comments: [] }
+            : comment
+        )
+      );
+      if (focusedComment !== null) {
+        fetchNestedComments(focusedComment.toString());
+      }
       setNewComment('');
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
   };
-  */
 
   return (
     <>
@@ -183,7 +188,8 @@ export default function ArticlePage() {
               <ThemedComment
                 comment_data={item}
                 handleReply={setFocusedComment}
-                // fetchComments={fetchNestedComments}
+                handleLike={likeComment}
+                handleNestedComment={fetchNestedComments}
               />
               )}
               contentContainerStyle={styles.feedContainer}
