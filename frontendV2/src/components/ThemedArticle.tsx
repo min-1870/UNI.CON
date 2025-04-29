@@ -62,14 +62,16 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
       flex: 1,
       backgroundColor,
       borderRadius: 30,
-      padding: 30, //TODO: fix clipped shadow
+      padding: 30, 
       shadowColor: 'rgba(0, 0, 0, 1)',
-      shadowOffset: { width: 10, height: 10 },
+      shadowOffset: { width: 0, height: 3 },
       
-      shadowRadius: 20,
-      shadowOpacity: 0.1,
+      shadowRadius: 13,
+      shadowOpacity: 0.08,
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
+
+      marginBottom: type=='detail' ? 20 : 0,
     },
     infoContainer: {
       flexDirection: 'row',
@@ -101,13 +103,14 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
       color: titleColor,
       fontWeight: '600',
       fontSize: 23,
-      marginBottom: 10,
+      marginBottom: 5,
     },
     body: {
       color: bodyColor,
       fontWeight: '400',
       fontSize: 17,
       marginBottom: 20,
+      textAlign: 'justify' 
     },
     buttonContainer: {
       flexDirection: 'row',

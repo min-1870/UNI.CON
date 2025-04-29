@@ -127,8 +127,6 @@ export default function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    overflow: 'visible',
   },
   titleContainer: {
     marginTop: 20,
@@ -141,8 +139,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   feedContainer: {
-    
     alignItems: 'stretch',
+    marginHorizontal: 20,
     gap: 20,
   },
 });

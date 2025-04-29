@@ -18,36 +18,41 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
   const timeColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentTime');
   const bodyColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentBody');
   const buttonColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentButton');
+  const pointsColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articlePoints');
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor,
-      padding: 20,
+      // backgroundColor,
+      gap: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 40,
     },
     nested_container: {
       flex: 1,
-      backgroundColor,
-      padding: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 40,
       marginLeft: 40,
-      marginTop: 20
+      marginTop: 20,
+      gap: 10,
     },
     infoContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    nameUniContainer: {
-      flexDirection: 'row',      
+      alignItems: 'center',
       gap: 5,
     },
-    name: {
+    uni: {
       color: nameColor,
       fontWeight: '400',
       fontSize: 15,
     },
-    uni: {
+    name: {
       color: nameColor,
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    points: {
+      color: pointsColor,
       fontWeight: '400',
       fontSize: 15,
     },
@@ -60,12 +65,16 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
       color: bodyColor,
       fontWeight: '400',
       fontSize: 17,
-      marginBottom: 10,
     },
     buttonContainer: {
       flexDirection: 'row',
-      justifyContent: 'flex-start',
+      justifyContent: 'space-between',
       gap: 10,
+    },
+    viewRepliesButtonContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'center',
     },
     button: {
       color: buttonColor,
@@ -77,35 +86,55 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
   const renderHeader = () => (
     <View style={comment_data.parent_comment ? styles.nested_container : styles.container}>
       <View style={styles.infoContainer}>
-        <View style={styles.nameUniContainer}>
-          <Text style={styles.uni}> {comment_data.user_temp_name}</Text>
-          <Text style={styles.uni}> {comment_data.user_school.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.time} >{moment(comment_data.created_at).fromNow()}</Text>
+          {comment_data.unicon || (
+            <Text style={[styles.uni]}>
+              {comment_data.user_school.toUpperCase()}
+            </Text>
+          )}
+        <Text style={[styles.name]}>
+          {comment_data.user_temp_name}
+        </Text>
+        <Text style={[styles.points]}>
+          {comment_data.user_static_points}
+        </Text>
+        <Text style={[styles.time]}>
+          {moment(comment_data.created_at).fromNow()}
+        </Text>
       </View>
       <Text style={styles.body}> {comment_data.body}</Text>
-      <View style={styles.buttonContainer}>        
+      <View style={styles.buttonContainer}>
+
+        
+        {comment_data.parent_comment ? null : (
+            <>
+              <Pressable onPress={() => handleReply && handleReply(comment_data.id)} >
+                <Text style={[styles.button]} >
+                  Reply
+                </Text>
+              </Pressable>
+            </>
+        )}
+
         <Pressable onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
           <Text style={[styles.button]}>
             {comment_data.like_status ? 'Liked' : 'Like'} {comment_data.likes_count}
           </Text>
         </Pressable> 
+
+      </View>
+      <View style={styles.viewRepliesButtonContainer}>
         {comment_data.parent_comment ? null : (
-          <>
-            <Pressable onPress={() => handleReply && handleReply(comment_data.id)} >
-              <Text style={[styles.button]} >
-                Reply
-              </Text>
-            </Pressable>
-            {comment_data.comments_count == 0 ? null : (
-              <Pressable onPress={() => handleNestedComment(comment_data.id)} > 
-                <Text style={[styles.button]}>
-                  View {comment_data.comments_count} Replies
-                </Text>
-              </Pressable>
-            )}
-          </>
-        )}  
+            <>
+              {comment_data.comments_count == 0 ? null : (
+                <Pressable onPress={() => handleNestedComment(comment_data.id)} > 
+                  <Text style={[styles.button]}>
+                    {comment_data.showReplies ? 'Hide Replies..' : `Show ${comment_data.comments_count} Replies`}
+                    
+                  </Text>
+                </Pressable>
+              )}
+            </>
+          )}  
       </View>
     </View>
 

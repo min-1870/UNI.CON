@@ -4,6 +4,7 @@
  */
 
 const brand_color = '#57EC6B'
+const card_color =  '#f7f7f7'
 
 const custom_colors = {
     text: '#11181C',
@@ -23,13 +24,16 @@ const custom_colors = {
     authTextInputPlaceholder: '#9b9797',
     authTextInputText: '#000000',
 
-    articleBackground: '#f7f7f7',
+    articleBackground: card_color,
     articleName: '#000000',
     articleTime: '#a2a9b2',
     articlePoints: brand_color,
     articleTitle: '#000000',
     articleBody: '#000000',
     articleButton: '#858b98',
+
+    postBackground: card_color,
+    postPlaceHolder: '#a8a4a4',
 
     commentBackground: '#ffffff',
     commentName: '#000000',

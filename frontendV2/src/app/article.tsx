@@ -38,7 +38,7 @@ export default function ArticlePage() {
     if (!response.error) {
       setArticle(response.data?.results?.article || null);
       setComments(response.data?.results?.comments || []);
-      setHeaderContent(<ThemedArticle article_data={response.data?.results?.article} />);
+      setHeaderContent(<ThemedArticle type={'detail'} article_data={response.data?.results?.article} />);
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
@@ -125,25 +125,37 @@ export default function ArticlePage() {
   };
 
   const fetchNestedComments = async (commentId: string) => {
-    const url = `${API_URL}/community/comment/${commentId}`;
-    const response = await fetchAPI(url, { method: 'GET', token: true });
-    if (!response.error) {
+    let comment = comments.find((comment) => comment.id === commentId)
+    if (comment?.showReplies) {
+      console.log("Hide replies")
       setComments((prevComments) =>
         prevComments.map((comment) =>
-          String(comment.id) === String(commentId)
-            ? { ...comment,
-                nested_comments: response.data.results.comments,
-                showReplies: true,
-              }
+          comment.id === commentId
+            ? { ...comment, showReplies: false, nested_comments: [] }
             : comment
         )
       );
-    } else {
-      setError(response?.data?.detail || "An error occurred");
+      return;
+    }else{
+      const url = `${API_URL}/community/comment/${commentId}`;
+      const response = await fetchAPI(url, { method: 'GET', token: true });
+      if (!response.error) {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment,
+                  nested_comments: response.data.results.comments,
+                  showReplies: true,
+                }
+              : comment
+          )
+        );
+      } else {
+        setError(response?.data?.detail || "An error occurred");
+      }
     }
   };
 
-   
   const handleReplyComment = async () => {
     const response = await fetchAPI(
       `${API_URL}/community/comment/`, {
@@ -200,21 +212,24 @@ export default function ArticlePage() {
             </>
         )}
       </ThemedView>
-      <ThemedView 
-        lightColor={'#ffffff'}
-        darkColor={'#ffffff'}
-        style={styles.focusedCommentContainer}
-        >
-        <ThemedText>
-          You are replying to {focusedComment}
-        </ThemedText>
-        <ThemedButton
-          type={'feedChecked'}
-          onPress={() => setFocusedComment(null)}
-        >
-          X
-        </ThemedButton>
-      </ThemedView>
+      {focusedComment && (
+        <ThemedView 
+          lightColor={'#ffffff'}
+          darkColor={'#ffffff'}
+          style={styles.focusedCommentContainer}
+          >
+          <ThemedText>
+            You are replying to {
+              comments.find((comment) => Number(comment.id) === focusedComment)?.body}
+          </ThemedText>
+          <ThemedButton
+            type={'feedChecked'}
+            onPress={() => setFocusedComment(null)}
+          >
+            X
+          </ThemedButton>
+        </ThemedView>
+      )}
       <ThemedView 
         lightColor={'#ffffff'}
         darkColor={'#ffffff'}
@@ -240,25 +255,14 @@ export default function ArticlePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 10,
-  },
-  titleContainer: {
-    marginTop: 20,
-    gap: 20,
-    marginBottom: 40,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 20,
   },
   feedContainer: {
     alignItems: 'stretch',
-    gap: 20,
   },
   focusedCommentContainer: {
-    height: 30,
+    height: 40,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 40,
     paddingVertical:10,
     gap: 15,
@@ -266,8 +270,8 @@ const styles = StyleSheet.create({
   commentBarContainer: {
     height: 70,
     flexDirection: 'row',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
     paddingVertical:10,
-    gap: 15,
+    gap: 20,
   }
 });
