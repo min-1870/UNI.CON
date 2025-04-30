@@ -1,13 +1,11 @@
 import { StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
 import {API_URL} from "@/constants/Domains";
 import {fetchAPI, getData, setData} from "@/components/Utils";
-import { ThemedButton } from '@/components/ThemedButton';
-import { AuthTextInput } from '@/components/ThemedInput';
+import ThemedButton from '@/components/ThemedButton';
+import AuthTextInput from '@/components/ThemedInput';
 import React, { useState, useEffect } from "react";
 
 

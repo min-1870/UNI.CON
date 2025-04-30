@@ -3,27 +3,22 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import moment from 'moment';
 
 type CommentProps = {
-  lightColor?: string;
-  darkColor?: string;
   comment_data: any;
   handleReply?: any;
   handleLike?: any;
   handleNestedComment?: any;
 };
 
-function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handleNestedComment, handleLike}: CommentProps) {
+export default function ThemedComment({ comment_data, handleReply, handleNestedComment, handleLike}: CommentProps) {
 
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentBackground');
-  const nameColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentName');
-  const timeColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentTime');
-  const bodyColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentBody');
-  const buttonColor = useThemeColor({ light: lightColor, dark: darkColor }, 'commentButton');
-  const pointsColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articlePoints');
+  const default_text_color = useThemeColor({}, 'default_text_color');
+  const time_color = useThemeColor({}, 'default_placeholder_color');
+  const points_color = useThemeColor({}, 'default_brand_color');
+  const button_color = useThemeColor({}, 'default_placeholder_color');
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      // backgroundColor,
       gap: 10,
       paddingVertical: 10,
       paddingHorizontal: 40,
@@ -36,48 +31,48 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
       marginTop: 20,
       gap: 10,
     },
-    infoContainer: {
+    info_container: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
     },
     uni: {
-      color: nameColor,
+      color: default_text_color,
       fontWeight: '400',
       fontSize: 15,
     },
     name: {
-      color: nameColor,
+      color: default_text_color,
       fontWeight: '600',
       fontSize: 18,
     },
     points: {
-      color: pointsColor,
+      color: points_color,
       fontWeight: '400',
       fontSize: 15,
     },
     time: {
-      color: timeColor,
+      color: time_color,
       fontWeight: '400',
       fontSize: 15,
     },
     body: {
-      color: bodyColor,
+      color: default_text_color,
       fontWeight: '400',
       fontSize: 17,
     },
-    buttonContainer: {
+    button_container: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: 10,
     },
-    viewRepliesButtonContainer: {
+    view_replies_button_container: {
       display: 'flex',
       flexDirection: 'row',
       justifyContent: 'center',
     },
     button: {
-      color: buttonColor,
+      color: button_color,
       fontSize: 15,
     }
   });
@@ -85,7 +80,7 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
   
   const renderHeader = () => (
     <View style={comment_data.parent_comment ? styles.nested_container : styles.container}>
-      <View style={styles.infoContainer}>
+      <View style={styles.info_container}>
           {comment_data.unicon || (
             <Text style={[styles.uni]}>
               {comment_data.user_school.toUpperCase()}
@@ -102,7 +97,7 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
         </Text>
       </View>
       <Text style={styles.body}> {comment_data.body}</Text>
-      <View style={styles.buttonContainer}>
+      <View style={styles.button_container}>
 
         
         {comment_data.parent_comment ? null : (
@@ -122,7 +117,7 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
         </Pressable> 
 
       </View>
-      <View style={styles.viewRepliesButtonContainer}>
+      <View style={styles.view_replies_button_container}>
         {comment_data.parent_comment ? null : (
             <>
               {comment_data.comments_count == 0 ? null : (
@@ -150,4 +145,3 @@ function ThemedComment({ lightColor, darkColor, comment_data, handleReply, handl
     />
   );
 };
-export { ThemedComment };

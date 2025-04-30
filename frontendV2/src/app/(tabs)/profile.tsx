@@ -1,8 +1,8 @@
 import { StyleSheet, FlatList } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedArticle } from '@/components/ThemedArticle';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import ThemedButton from '@/components/ThemedButton';
+import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
@@ -73,7 +73,7 @@ export default function ProfilePage() {
 
   const renderHeader = () => (
     <>
-      <ThemedView style={styles.titleContainer}>
+      <ThemedView style={styles.titleContainer}> TODO fix the header to match the design
         <ThemedText type={'title'}>UNI.CON</ThemedText>
         <ThemedText type={'title'}>{school.toUpperCase()}</ThemedText>
       </ThemedView>

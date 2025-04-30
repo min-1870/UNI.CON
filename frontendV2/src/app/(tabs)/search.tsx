@@ -1,14 +1,14 @@
 import { StyleSheet, FlatList } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedArticle } from '@/components/ThemedArticle';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import ThemedButton from '@/components/ThemedButton';
+import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
-import { ThemedInput } from '@/components/ThemedInput';
+import ThemedInput from '@/components/ThemedInput';
 
-export default function Search() {
+export default function SearchPage() {
 
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
@@ -87,7 +87,7 @@ export default function Search() {
           placeholder="search anything..."
           keyboardType='default'
           onSubmitEditing={fetchArticles}
-        />
+        />TODO fix the styles to match the design
       </ThemedView>
       {loading ? (
         <ThemedText>Loading...</ThemedText>

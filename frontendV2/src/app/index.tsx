@@ -1,13 +1,11 @@
 import { StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
 import {API_URL} from "@/constants/Domains";
 import {fetchAPI, setData} from "@/components/Utils";
-import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedInput } from '@/components/ThemedInput';
+import ThemedButton from '@/components/ThemedButton';
+import ThemedInput from '@/components/ThemedInput';
 import React, { useState } from "react";
 
 
@@ -53,15 +51,15 @@ export default function LoginPage() {
       {/* <Link href="/(tabs)" style={{ color: 'blue' }}>SIGN IN</Link>
       <Link href="/register" style={{ color: 'blue' }}>GO TO SIGN UP PAGE</Link> */}
       
-      <ThemedView style={styles.textInputContainer}>
-        <ThemedText type="default">University Email</ThemedText>
+      <ThemedView style={styles.textInputContainer}> TODO Fix the input field to match the design
+        <ThemedText type="defaultSemiBold">University Email</ThemedText>
         <ThemedInput
           onChangeText={setEmail}
           value={email}
           placeholder="example@university.edu.au"
           keyboardType='email-address'
         />
-        <ThemedText type="default">Password</ThemedText>
+        <ThemedText type="defaultSemiBold">Password</ThemedText>
         <ThemedInput
           onChangeText={setPassword}
           value={password}
@@ -71,7 +69,7 @@ export default function LoginPage() {
         />
       </ThemedView>
       
-      <ThemedView style={styles.buttonContainer}>
+      <ThemedView style={styles.buttonContainer}>TODO Fix the button to match the design
         {error || <ThemedText type="error">{error}</ThemedText>}
         <ThemedButton 
           onPress={handleSubmit} 

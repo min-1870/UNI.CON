@@ -3,42 +3,38 @@ import { Pressable, Text, StyleSheet, type ButtonProps } from 'react-native';
 import { ReactNode } from 'react';
 
 type ThemedButtonProps = Omit<ButtonProps, 'title'> & {
-  lightColor?: string;
-  darkColor?: string;
   type?: 'auth' | 'feedChecked' | 'feedUnchecked';
   children: ReactNode;
 };
 
-function ThemedButton({
-  lightColor,
-  darkColor,
+export default function ThemedButton({
   children,
   disabled = false,
   type ='auth',
   ...rest
 }: ThemedButtonProps) {
-    const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'ThemedButtonBackground');
-    const textColor = useThemeColor({ light: lightColor, dark: darkColor }, 'ThemedButtonText');
-    const borderColor = useThemeColor({ light: lightColor, dark: darkColor }, 'ThemedButtonBorder');
+    const background_color = useThemeColor({}, 'default_brand_color');
+    const textColor = useThemeColor({}, 'default_text_color');
+    const borderColor = useThemeColor({}, 'default_placeholder_color');
 
   const styles = StyleSheet.create({
-    auth: {
+    auth: { //TODO fix the styles to match the design
       padding: 12,
       borderRadius: 7,
       width: '100%',
-      backgroundColor: backgroundColor,
+      backgroundColor: background_color,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    feedChecked: {
+    feed_checked: {
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 50,
-      backgroundColor: backgroundColor,
+      backgroundColor: background_color,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    feedUnchecked: {
+    feed_unchecked: {
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 50,
@@ -52,8 +48,8 @@ function ThemedButton({
     <Pressable
       style={({ pressed }) => [
         type === 'auth' ? styles.auth : undefined,
-        type === 'feedChecked' ? styles.feedChecked : undefined,
-        type === 'feedUnchecked' ? styles.feedUnchecked : undefined,
+        type === 'feedChecked' ? styles.feed_checked : undefined,
+        type === 'feedUnchecked' ? styles.feed_unchecked : undefined,
         { 
           opacity: (pressed || disabled) ? 0.5 : 1,
         }
@@ -64,4 +60,3 @@ function ThemedButton({
     </Pressable>
   );
 }
-export { ThemedButton };

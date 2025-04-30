@@ -3,23 +3,19 @@ import { Pressable, TextInput, StyleSheet, type TextInputProps } from 'react-nat
 import { ReactNode } from 'react';
 
 type ThemedInputProps = TextInputProps & {
-  lightColor?: string;
-  darkColor?: string;
   type?: 'auth' | 'comment' | 'search';
 };
 
-function ThemedInput({
-  lightColor,
-  darkColor,
+export default function ThemedInput({
   type='auth',
   ...rest
 }: ThemedInputProps) {
-    const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'authTextInputBackground');
-    const placeholderColor = useThemeColor({ light: lightColor, dark: darkColor }, 'authTextInputPlaceholder');
-    const textColor = useThemeColor({ light: lightColor, dark: darkColor }, 'authTextInputText');
+    const backgroundColor = useThemeColor({}, 'default_input_background_color');
+    const placeholderColor = useThemeColor({}, 'default_placeholder_color');
+    const textColor = useThemeColor({}, 'default_text_color');
 
     const styles = StyleSheet.create({
-      auth: {
+      auth: { //TODO fix the styles to match the design
         padding: 12,
         backgroundColor: backgroundColor,
         borderRadius: 7,
@@ -38,7 +34,7 @@ function ThemedInput({
         color: textColor, 
         width: '100%',
       },
-      search: {
+      search: { //TODO fix the styles to match the design
         padding: 12,
         paddingHorizontal: 20,
         backgroundColor: backgroundColor,
@@ -61,5 +57,3 @@ function ThemedInput({
     />
   );
 }
-
-export { ThemedInput };

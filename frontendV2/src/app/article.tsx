@@ -1,17 +1,16 @@
 import { StyleSheet, FlatList } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedArticle } from '@/components/ThemedArticle';
-import { ThemedComment } from '@/components/ThemedComment';
-import { ThemedInput } from '@/components/ThemedInput';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import ThemedButton from '@/components/ThemedButton';
+import ThemedArticle from '@/components/ThemedArticle';
+import ThemedComment from '@/components/ThemedComment';
+import ThemedInput from '@/components/ThemedInput';
 import React, { useState, useEffect } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
 import { useRoute, RouteProp } from '@react-navigation/native';
 
 export default function ArticlePage() {
-  // const articleId = 504; // Replace with dynamic route params if needed
   const route = useRoute<RouteProp<{ params: { id: string } }>>();
   const articleId = route.params?.id;
 
@@ -214,8 +213,6 @@ export default function ArticlePage() {
       </ThemedView>
       {focusedComment && (
         <ThemedView 
-          lightColor={'#ffffff'}
-          darkColor={'#ffffff'}
           style={styles.focusedCommentContainer}
           >
           <ThemedText>
@@ -231,8 +228,6 @@ export default function ArticlePage() {
         </ThemedView>
       )}
       <ThemedView 
-        lightColor={'#ffffff'}
-        darkColor={'#ffffff'}
         style={styles.commentBarContainer}
         >
         <ThemedInput

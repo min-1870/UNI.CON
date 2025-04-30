@@ -8,20 +8,16 @@ import { router } from 'expo-router';
 
 
 type ThemedArticleProps = {
-  lightColor?: string;
-  darkColor?: string;
   article_data: any;
   type?: string;
 };
 
-function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: ThemedArticleProps) {
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleBackground');
-  const titleColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleTitle');
-  const bodyColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleBody');
-  const nameColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleName');
-  const timeColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleTime');
-  const pointsColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articlePoints');
-  const buttonColor = useThemeColor({ light: lightColor, dark: darkColor }, 'articleButton');
+export default function ThemedArticle({ article_data, type='default' }: ThemedArticleProps) {
+  const background_color = useThemeColor({}, 'default_card_background_color');
+  const default_text_color = useThemeColor({}, 'default_text_color');
+  const time_color = useThemeColor({}, 'default_placeholder_color');
+  const points_color = useThemeColor({}, 'default_brand_color');
+  const button_color = useThemeColor({}, 'default_placeholder_color');
   
   const [article, setArticleState] = useState(article_data);
 
@@ -60,7 +56,7 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor,
+      color: background_color,
       borderRadius: 30,
       padding: 30, 
       shadowColor: 'rgba(0, 0, 0, 1)',
@@ -80,33 +76,33 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
       marginBottom: 20,
     },
     uni: {
-      color: nameColor,
+      color: default_text_color,
       fontWeight: '400',
       fontSize: 15,
     },
     name: {
-      color: nameColor,
+      color: default_text_color,
       fontWeight: '600',
       fontSize: 20,
     },
     points: {
-      color: pointsColor,
+      color: points_color,
       fontWeight: '400',
       fontSize: 15,
     },
     time: {
-      color: timeColor,
+      color: time_color,
       fontWeight: '400',
       fontSize: 15,
     },
     title: {
-      color: titleColor,
+      color: default_text_color,
       fontWeight: '600',
       fontSize: 23,
       marginBottom: 5,
     },
     body: {
-      color: bodyColor,
+      color: default_text_color,
       fontWeight: '400',
       fontSize: 17,
       marginBottom: 20,
@@ -118,7 +114,7 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
       gap: 10,
     },
     button: {
-      color: buttonColor,
+      color: button_color,
       fontSize: 15,
     },
   });
@@ -167,4 +163,3 @@ function ThemedArticle({ lightColor, darkColor, article_data, type='default' }: 
     </View>
   );
 };
-export { ThemedArticle };
