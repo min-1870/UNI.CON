@@ -6,6 +6,7 @@ import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
+import { router } from 'expo-router';
 
 export default function ProfilePage() {
 
@@ -71,11 +72,70 @@ export default function ProfilePage() {
     
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    titleContainer: {
+      gap: 20,
+    },
+    credibilityScoreContainer: {
+      gap: 10,
+    },
+    summaryContainer: {
+      gap: 10,
+    },
+    rowsContainer: {
+      gap: 10,
+      marginLeft: 20,
+    },
+    rowContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 20,
+      marginBottom: 20,
+    },
+    feedContainer: {
+      margin: 20,
+      alignItems: 'stretch',
+      gap: 20,
+    },
+  });
+
   const renderHeader = () => (
     <>
-      <ThemedView style={styles.titleContainer}> TODO fix the header to match the design
-        <ThemedText type={'title'}>UNI.CON</ThemedText>
-        <ThemedText type={'title'}>{school.toUpperCase()}</ThemedText>
+      <ThemedView style={styles.titleContainer}>
+        <ThemedView style={styles.credibilityScoreContainer}>
+          <ThemedText type={'subtitle'}>Credibility Score</ThemedText>
+          <ThemedView style={styles.rowsContainer}>
+            <ThemedText type={'subtitle'}>300</ThemedText>
+          </ThemedView>
+        </ThemedView>
+        <ThemedView style={styles.summaryContainer}>
+          <ThemedText type={'subtitle'}>Account Summary</ThemedText>
+          <ThemedView style={styles.rowsContainer}>
+            <ThemedView style={styles.rowContainer}>
+              <ThemedText type={'defaultSemiBold'}>University</ThemedText>
+              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.rowContainer}>
+              <ThemedText type={'defaultSemiBold'}>Student Email</ThemedText>
+              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.rowContainer}>
+              <ThemedText type={'defaultSemiBold'}>Google Account</ThemedText>
+              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.rowContainer}>
+              <ThemedText type={'defaultSemiBold'}>Update Password</ThemedText>
+              <ThemedText onPress={() => router.push(`/newPassword`)} type={'default'}>(Click for Update)</ThemedText>
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>
         <ThemedButton
@@ -131,24 +191,3 @@ export default function ProfilePage() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  titleContainer: {
-    marginTop: 20,
-    gap: 20,
-    marginBottom: 40,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 20,
-  },
-  feedContainer: {
-    
-    alignItems: 'stretch',
-    gap: 20,
-  },
-});

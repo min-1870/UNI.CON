@@ -111,8 +111,8 @@ class UserViewSet(viewsets.ModelViewSet):
         
         new_password = make_password(new_password)
 
-        with transaction.atomic():
-            user_instance.update(password=new_password)
+        user_instance.password = new_password
+        user_instance.save()
 
         return Response({"detail":"The password has been updated."}, status=status.HTTP_200_OK)
     
