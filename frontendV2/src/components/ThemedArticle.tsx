@@ -124,9 +124,9 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
     <View style={[styles.container]}>
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
-            {article.unicon || (
+            {article.unicon && (
               <Text style={[styles.uni]}>
-                {article.user_school.toUpperCase()}
+              {article.user_school.toUpperCase()}
               </Text>
             )}
           <Text style={[styles.name]}>
@@ -152,6 +152,11 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
         <Pressable>
             <Text style={[styles.button]}>
               comment {article.comments_count}
+            </Text>
+        </Pressable>
+        <Pressable>
+            <Text style={[styles.button]}>
+              view {article.views_count}
             </Text>
         </Pressable>
         <Pressable onPress={handleSave}>
