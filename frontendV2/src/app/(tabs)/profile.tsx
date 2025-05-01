@@ -15,7 +15,9 @@ export default function ProfilePage() {
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [school, setSchool] = useState('');
+  const [university, setUniversity] = useState('');
+  const [points, setPoints] = useState('');
+  const [email, setEmail] = useState('');
   const fetchedArticlePage = useRef(null);
 
   const apiEndpoints = {
@@ -28,8 +30,12 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchArticles();
     const fetchSchool = async () => {
-      const storedSchool = await getData('initial');
-      setSchool(storedSchool||"");
+      const storedUniversity = await getData('university');
+      const storedEmail = await getData('email');
+      const storedPoints = await getData('points');
+      setUniversity(storedUniversity||"");
+      setEmail(storedEmail||"");
+      setPoints(storedPoints||'');
     };
     fetchSchool();
   }, [sortOption]);
@@ -104,6 +110,13 @@ export default function ProfilePage() {
       alignItems: 'stretch',
       gap: 20,
     },
+    csRowContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 10,
+      alignItems: 'flex-end',
+      marginLeft: 20,
+    },
   });
 
   const renderHeader = () => (
@@ -111,8 +124,9 @@ export default function ProfilePage() {
       <ThemedView style={styles.titleContainer}>
         <ThemedView style={styles.credibilityScoreContainer}>
           <ThemedText type={'subtitle'}>Credibility Score</ThemedText>
-          <ThemedView style={styles.rowsContainer}>
-            <ThemedText type={'subtitle'}>300</ThemedText>
+          <ThemedView style={styles.csRowContainer}>
+          <ThemedText type={'summaryPoints'}>{points}</ThemedText>
+          <ThemedText type={'default'}>Points</ThemedText>
           </ThemedView>
         </ThemedView>
         <ThemedView style={styles.summaryContainer}>
@@ -120,15 +134,15 @@ export default function ProfilePage() {
           <ThemedView style={styles.rowsContainer}>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>University</ThemedText>
-              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+              <ThemedText type={'default'}>{university}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Student Email</ThemedText>
-              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+              <ThemedText type={'default'}>{email}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Google Account</ThemedText>
-              <ThemedText type={'default'}>{school.toUpperCase()}</ThemedText>
+              <ThemedText type={'default'}>(PLACE HOLDER)</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Update Password</ThemedText>

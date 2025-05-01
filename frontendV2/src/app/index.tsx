@@ -29,8 +29,13 @@ export default function LoginPage() {
       },
     });
     if (!response.error) {
+      console.log(response.data)
       setData('id', response.data.id);
       setData('access', response.data.access);
+      setData('email', response.data.email);
+      setData('points', response.data.points);
+      setData('university_colors', response.data.university_colors);
+      setData('university', response.data.university);
       setData('refresh', response.data.refresh);
       setData('color', response.data.color);
       setData('initial', response.data.initial);

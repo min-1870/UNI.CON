@@ -15,7 +15,7 @@ export default function HomePage() {
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [school, setSchool] = useState('');
+  const [university, setUniversity] = useState('');
   const fetchedArticlePage = useRef(null);
 
   const apiEndpoints = {
@@ -27,8 +27,8 @@ export default function HomePage() {
   useEffect(() => {
     fetchArticles();
     const fetchSchool = async () => {
-      const storedSchool = await getData('initial');
-      setSchool(storedSchool||"");
+      const storedUniversity = await getData('university');
+      setUniversity(storedUniversity||"");
     };
     fetchSchool();
   }, [sortOption]);
@@ -78,7 +78,8 @@ export default function HomePage() {
           <ThemedText >Notification</ThemedText>
         </ThemedButton> */}
         <ThemedText type={'title'}>UNI.CON</ThemedText>
-        <ThemedText type={'title'}>{school.toUpperCase()}</ThemedText>
+        <ThemedText type={'title'}>{university}</ThemedText>
+        <ThemedText type={'default'}>Currently, they are chatting about..</ThemedText>
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>
         <ThemedButton
