@@ -71,15 +71,39 @@ export default function HomePage() {
     
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    titleContainer: {
+      marginTop: 20,
+      gap: 20,
+      marginBottom: 40,
+    },
+    titleContentContainer:{
+      margin: 20,
+      gap: 10,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 20,
+      marginBottom: 20,
+    },
+    feedContainer: {
+      alignItems: 'stretch',
+      marginHorizontal: 20,
+      gap: 20,
+    },
+  });
+
   const renderHeader = () => (
     <>
       <ThemedView style={styles.titleContainer}>
-        {/* <ThemedButton onPress={() => router.push('/notification')}>
-          <ThemedText >Notification</ThemedText>
-        </ThemedButton> */}
-        <ThemedText type={'title'}>UNI.CON</ThemedText>
-        <ThemedText type={'title'}>{university}</ThemedText>
-        <ThemedText type={'default'}>Currently, they are chatting about..</ThemedText>
+        <ThemedText type={'subtitle'}>UNI.CON</ThemedText>
+        <ThemedView style={styles.titleContentContainer}>
+          <ThemedText type={'title'}>{university}</ThemedText>
+          <ThemedText type={'defaultSemiBold'}>Currently, they are chatting about..</ThemedText>
+        </ThemedView>
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>
         <ThemedButton
@@ -129,23 +153,3 @@ export default function HomePage() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  titleContainer: {
-    marginTop: 20,
-    gap: 20,
-    marginBottom: 40,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 20,
-  },
-  feedContainer: {
-    alignItems: 'stretch',
-    marginHorizontal: 20,
-    gap: 20,
-  },
-});
