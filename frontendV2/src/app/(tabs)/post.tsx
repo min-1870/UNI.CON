@@ -2,7 +2,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import ThemedButton from '@/components/ThemedButton';
 import React, { useState, useLayoutEffect } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -10,29 +10,65 @@ import {fetchAPI, getData} from "@/components/Utils";
 import type { TabParamList } from './_layout';
 import { Ionicons } from '@expo/vector-icons';
 import {API_URL} from "@/constants/Domains";
+import {
+  View,
+  Text,
+  NativeSyntheticEvent,
+  TextInputKeyPressEventData,
+} from 'react-native';
+import ThemedTag from '@/components/ThemedTag';
 
 export default function NewArticlePage() {
   
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
   const [title, setTitle] = useState('');
   const [body,  setBody]  = useState('');
-  const [tags,  setTags]  = useState('');
+  const [unicon, setUnicon] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState('error here');
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const place_holder_color = useThemeColor({}, 'default_placeholder_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
   
-  const handlePost = async () => { //TODO fix this function to post the article
-    // setLoading(true);
-    // const resp = await fetchAPI(`${API_URL}/community/article/`, {
-    //   method: 'POST',
-    //   token: true,
-    //   body: { title, body },
-    // });
-    // setLoading(false);
+  const [raw, setRaw] = useState('');       // what the user is typing now
+  const [tags, setTags] = useState<string[]>([]);  // all confirmed tags
+  // when the user presses space (or comma), commit the current word as a tag
+  const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (e.nativeEvent.key === ' ' || e.nativeEvent.key === ',') {
+      const word = raw.trim();
+      if (word.length > 0 && !tags.includes(word)) {
+        setTags([...tags, word]);
+      }
+      setRaw('');  // clear the input
+    }
+  };
 
+  const removeTag = (indexToRemove: number) => {
+    setTags(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handlePost = async () => { //TODO fix this function to post the article
+    setLoading(true);
+    const response = await fetchAPI(
+      `${API_URL}/community/article/`, 
+      {
+        method: 'POST',
+        token: true,
+        body: { 
+          title: title, 
+          body: body, 
+          unicon: unicon,
+          tags: []
+        },
+      }
+    );
+    setLoading(false);
+    if (!response.error){
+
+    }else{
+
+    }
     // if (!resp.error) {
     //   navigation.goBack();
     // } else {
@@ -122,15 +158,20 @@ export default function NewArticlePage() {
     },
     tagAreaContainer:{
       padding: 20,
+      gap: 20,
       display: 'flex',
       flex: 1,
     },
+    chipContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+    },
     tagTextArea: {
-      flex: 1,
-      borderWidth: 0,
-      borderRadius: 4,
+      flexGrow: 1,
+      minWidth: 80,
       fontSize: 16,
-      color: default_text_color,
+      padding: 4,
     },
   });
 
@@ -140,6 +181,7 @@ export default function NewArticlePage() {
         <ThemedView style={styles.textAreasContainer}>
           <TextInput
             style={styles.titleTextArea}
+            underlineColorAndroid="transparent" 
             numberOfLines={6}            //initial height (Android only)
             placeholder="Title"
             placeholderTextColor={place_holder_color}
@@ -150,10 +192,11 @@ export default function NewArticlePage() {
           />
           <TextInput
             style={styles.bodyTextArea}
+            underlineColorAndroid="transparent" 
             multiline
             numberOfLines={6}            //initial height (Android only)
             placeholder="Body Text"
-            placeholderTextColor={'#a8a4a4'}
+            placeholderTextColor={place_holder_color}
             value={body}
             onChangeText={setBody}
             textAlignVertical="top"      //keep cursor at top on Android
@@ -161,13 +204,14 @@ export default function NewArticlePage() {
           />
         </ThemedView>
 
+        {error || <ThemedText type="error">{error}</ThemedText>}
         <ThemedView style={styles.uniconContainer}>
             <ThemedText>
               By turning on the unicon option your post will be visible to other supported university students
             </ThemedText>
             <ThemedButton
-              type={'feedChecked'}
-              onPress={() => {}}
+              type={unicon ? 'toggled' : 'unToggled'}
+              onPress={() => {setUnicon(!unicon)}}
             >
               UNI.CON
             </ThemedButton>
@@ -176,18 +220,23 @@ export default function NewArticlePage() {
         
       <ThemedView style={styles.tagAreaContainer}>
         <ThemedText type={'subtitle'}>Add Tags</ThemedText>
-
-        <TextInput
+        <View style={styles.chipContainer}>
+          {tags.map((tag, i) => (
+            <Pressable onPress={() => removeTag(i)}>
+              <ThemedTag text={tag} type={'default'} key={i}/>
+            </Pressable>
+          ))}
+          <TextInput
             style={styles.tagTextArea}
-            multiline
-            numberOfLines={6}            //initial height (Android only)
-            placeholder="tags"
+            value={raw}
+            onChangeText={setRaw}
+            onKeyPress={onKeyPress}
+            placeholder="Type and hit space"
             placeholderTextColor={place_holder_color}
-            value={tags}
-            onChangeText={setTags}
-            textAlignVertical="top"      //keep cursor at top on Android
-            scrollEnabled                //allow scrolling when text overflows
+            autoCorrect={false}
+            autoCapitalize="none"
           />
+        </View>
       </ThemedView>
     </ThemedView>
   );

@@ -3,7 +3,7 @@ import { Pressable, Text, StyleSheet, type ButtonProps } from 'react-native';
 import { ReactNode } from 'react';
 
 type ThemedButtonProps = Omit<ButtonProps, 'title'> & {
-  type?: 'auth' | 'feedChecked' | 'feedUnchecked';
+  type?: 'auth' | 'feedChecked' | 'feedUnchecked' | 'toggled' | 'unToggled';
   children: ReactNode;
 };
 
@@ -16,6 +16,7 @@ export default function ThemedButton({
     const background_color = useThemeColor({}, 'default_brand_color');
     const textColor = useThemeColor({}, 'default_text_color');
     const borderColor = useThemeColor({}, 'default_placeholder_color');
+    const default_brand_color = useThemeColor({}, 'default_brand_color');
 
   const styles = StyleSheet.create({
     auth: { //TODO fix the styles to match the design
@@ -43,6 +44,24 @@ export default function ThemedButton({
       alignItems: 'center',
       justifyContent: 'center',
     },
+    toggled: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 50,
+      backgroundColor: default_brand_color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    unToggled: {
+
+      paddingHorizontal: 15,
+      paddingVertical: 5,
+      borderRadius: 50,
+      borderWidth: 5,
+      borderColor: default_brand_color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
   });
   return (
     <Pressable
@@ -50,6 +69,8 @@ export default function ThemedButton({
         type === 'auth' ? styles.auth : undefined,
         type === 'feedChecked' ? styles.feed_checked : undefined,
         type === 'feedUnchecked' ? styles.feed_unchecked : undefined,
+        type === 'toggled' ? styles.toggled : undefined,
+        type === 'unToggled' ? styles.unToggled : undefined,
         { 
           opacity: (pressed || disabled) ? 0.5 : 1,
         }

@@ -11,7 +11,8 @@ const custom_colors = {
     default_background_color: '#f8f9f7',
     default_placeholder_color: '#a2a9b2',
     default_input_background_color: '#f2f2f2',
-    default_error_color: '#e6566c',
+    default_error_color: '#f92665',
+    default_tag_background_color: '#e4e6e8'
 
   };
   
