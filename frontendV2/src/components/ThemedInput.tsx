@@ -17,8 +17,10 @@ export default function ThemedInput({
     const styles = StyleSheet.create({
       auth: { //TODO fix the styles to match the design
         padding: 12,
+        marginBottom: 20,
+        paddingHorizontal: 20,
         backgroundColor: backgroundColor,
-        borderRadius: 7,
+        borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         color: textColor, 

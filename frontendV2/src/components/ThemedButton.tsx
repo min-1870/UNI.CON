@@ -21,12 +21,13 @@ export default function ThemedButton({
   const styles = StyleSheet.create({
     auth: { //TODO fix the styles to match the design
       padding: 12,
-      borderRadius: 7,
+      borderRadius: 20,
       width: '100%',
       backgroundColor: background_color,
       alignItems: 'center',
       justifyContent: 'center',
     },
+    
     feed_checked: {
       paddingHorizontal: 20,
       paddingVertical: 10,
