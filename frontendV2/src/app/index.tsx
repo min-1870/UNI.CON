@@ -1,35 +1,54 @@
-import { StyleSheet,View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import {API_URL} from "@/constants/Domains";
-import {fetchAPI, setData} from "@/components/Utils";
+import { API_URL } from "@/constants/Domains";
+import { fetchAPI, setData } from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Toast from 'react-native-toast-message';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginPage() {
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e?: any) => {
-    if (e && e.preventDefault) e.preventDefault();
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
+    expoClientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+
+      Toast.show({
+        type: 'success',
+        text1: 'Signed in with Google!',
+      });
+
+      // Send token to backend or process login here if needed
+      router.push("/(tabs)");
+    }
+  }, [response]);
+
+  const handleSubmit = async () => {
     const url = `${API_URL}/account/user/login/`;
     setLoading(true);
+
     const response = await fetchAPI(url, {
       method: 'POST',
       token: false,
-      body: {
-        email: email,
-        password: password,
-      },
+      body: { email, password },
     });
+
     if (!response.error) {
-      console.log(response.data)
       setData('id', response.data.id);
       setData('access', response.data.access);
       setData('email', response.data.email);
@@ -43,7 +62,7 @@ export default function LoginPage() {
 
       Toast.show({
         type: 'success',
-        text1: `Hi, ${response.data.id} !`,
+        text1: `Hi, ${response.data.id}!`,
       });
 
       router.push("/(tabs)");
@@ -55,9 +74,10 @@ export default function LoginPage() {
         text2: "Try again.",
       });
     }
+
     setLoading(false);
   };
-  
+
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
@@ -94,26 +114,22 @@ export default function LoginPage() {
         </ThemedText>
 
         <View style={styles.socialButtonContainer}>
-          <ThemedButton onPress={() => console.log('Google login')} style={styles.googleButton}>
+          <ThemedButton onPress={() => promptAsync()} disabled={!request} style={styles.googleButton}>
             <View style={styles.googleButtonContent}>
               <View style={styles.googleIconWrapper}>
-                {/* Google SVG icon */}
-                <View>
-                  {/* @ts-ignore */}
-                  <svg viewBox="0 0 48 48" width="20" height="20">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                    <path fill="none" d="M0 0h48v48H0z"/>
-                  </svg>
-                </View>
+                {/* @ts-ignore */}
+                <svg viewBox="0 0 48 48" width="20" height="20">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  <path fill="none" d="M0 0h48v48H0z"/>
+                </svg>
               </View>
               <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
             </View>
           </ThemedButton>
         </View>
-
       </ThemedView>
     </ThemedView>
   );
@@ -193,7 +209,7 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     borderWidth: 1,
-    borderColor: '#d1d5db', // gray-300
+    borderColor: '#d1d5db',
     backgroundColor: '#fff',
     borderRadius: 20,
     marginTop: 10,

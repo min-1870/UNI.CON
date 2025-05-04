@@ -5,6 +5,8 @@ import ThemedView from '@/components/ThemedView';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
+import { useLocalSearchParams } from 'expo-router';
+const { email } = useLocalSearchParams();
 
 export default function EmailVerificationPage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);

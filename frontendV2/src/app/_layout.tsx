@@ -31,15 +31,20 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="validation" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          animation: 'default',
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="validation" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="article" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <Toast/>
+      <Toast />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

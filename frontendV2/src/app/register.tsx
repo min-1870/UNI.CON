@@ -43,11 +43,9 @@ export default function RegisterPage() {
         text1: 'Oops ! Please fill all entries. 🙁',
         text2: 'All fields are required.',
       });
-
       return;
     }
 
-    
     if (password !== confirmPassword) {
       Toast.show({
         type: 'error',
@@ -69,10 +67,16 @@ export default function RegisterPage() {
 
     setTimeout(() => {
       setLoading(false);
-      router.push('/');
+      router.push({
+        pathname: '/validation',
+        params: {
+          email: email.trim().toLowerCase(),
+        },
+      });
     }, 1500);
   };
 
+  
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
@@ -98,10 +102,10 @@ export default function RegisterPage() {
         
 
         <View style={{ marginTop: 4, marginBottom: 12 }}>
-          <ThemedText style={{ fontSize: 12, color: /\S+@\S+\.(edu|edu\.au)$/.test(email) ? '#10b981' : '#ef4444', marginLeft: 5, marginRight: 5 }}>
-            {/\S+@\S+\.(edu|edu\.au)$/.test(email)
+          <ThemedText style={{ fontSize: 12, color: /\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email) ? '#10b981' : '#ef4444', marginLeft: 5, marginRight: 5 }}>
+            {/\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email)
               ? '✔️ You can create an account.'
-              : '𝗫 Please use a university email (.edu or .edu.au).'}
+              : '𝗫 Currently 🥲 - only UNSW , University of Sydney , UTS emails are accepted.'}
           </ThemedText>
         </View>
 
