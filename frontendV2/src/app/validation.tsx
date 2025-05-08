@@ -12,6 +12,23 @@ export default function EmailVerificationPage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputs = useRef<Array<TextInput | null>>([]);
 
+  const handleInitialSend = () => {
+    // Resend code logic here
+  }; 
+
+
+  const handleKodeGeneration = (length: number = 6): string => {
+    const charset = 'ABCDEFGH!@#$IJ@#$LMNOPQRST@$#&*(%UVWXYZabcdefgh$#@$ijklmnopqrstuvwxyz*($#0123456789';
+    const timestamp = Math.floor(new Date().getTime() / 1000).toString();
+    const combinedCharset = charset + timestamp; // Include timestamp in the charset to make it unique
+
+    let token = '';
+    for (let i = 0; i < length; i++) {
+      token += combinedCharset[Math.floor(Math.random() * combinedCharset.length)];
+    }
+    return token;
+  };
+
   const handleChange = (text: string, index: number) => {
     if (/^\d$/.test(text) || text === '') {
       const newCode = [...code];
@@ -34,12 +51,17 @@ export default function EmailVerificationPage() {
   };
 
   const handleVerify = () => {
-    // Verification logic here
+    const enteredCode = code.join('');
+    const isValid = enteredCode === '123456'; // TODO REPLACE
+      alert('Code is correct!');
+    } else {
+      alert('Code is incorrect!');
+    }
   };
 
   const handleResend = () => {
     // Resend code logic here
-  };
+  }; 
 
   return (
     <ThemedView style={styles.container}>

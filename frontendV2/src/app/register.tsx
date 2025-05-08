@@ -31,11 +31,14 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ length: false, upper: false, lower: false });
 
+  
+
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(password));
   }, [password]);
 
   const handleRegister = () => {
+
     if (!name || !email || !password || !confirmPassword) {
 
       Toast.show({
@@ -46,6 +49,26 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!/\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email. 🙁',
+        text2: 'Please use a valid university email.',
+      });
+      return;
+    } else if ( /\S+@+(unsw.edu.au)$/.test(email)) {
+      var university = 'unsw' ;
+    }
+    else  if (/\S+@+(sydney.edu.au)$/.test(email)) {
+      var university = 'sydney' ;
+    }
+    else  if (/\S+@+(uts.edu.au)$/.test(email)) {
+      var university = 'uts' ;
+    }
+    else  if (/\S+@+(unsw.edu.au)$/.test(email)) {
+      var university = 'unsw' ;
+    }
+   
     if (password !== confirmPassword) {
       Toast.show({
         type: 'error',
@@ -108,7 +131,6 @@ export default function RegisterPage() {
               : '𝗫 Currently 🥲 - only UNSW , University of Sydney , UTS emails are accepted.'}
           </ThemedText>
         </View>
-
 
         <ThemedText>Password</ThemedText>
         <View style={styles.inputWrapper}>
