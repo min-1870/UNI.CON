@@ -22,6 +22,7 @@
     "@react-navigation/native": "^7.0.14",
     "axios": "^1.8.4",
     "expo": "~52.0.40",
+    "expo-auth-session": "~6.0.3",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.8",
     "expo-font": "~13.0.4",
@@ -43,8 +44,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-toast-message": "^2.3.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-auth-session": "~6.0.3"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

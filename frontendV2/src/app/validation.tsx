@@ -1,21 +1,30 @@
-import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ThemedView from '@/components/ThemedView';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
-import { useLocalSearchParams } from 'expo-router';
-const { email } = useLocalSearchParams();
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
 export default function EmailVerificationPage() {
+  const { email } = useLocalSearchParams();
+  const router = useRouter();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputs = useRef<Array<TextInput | null>>([]);
 
-  const handleInitialSend = () => {
-    // Resend code logic here
-  }; 
+  const [resendCount, setResendCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [validated, setValidated] = useState(false);
 
+  const handleInitialSend = () => {
+    console.log(`Sending verification code to: ${email}`);
+  };
+
+  useEffect(() => {
+    handleInitialSend();
+  }, []);
 
   const handleKodeGeneration = (length: number = 6): string => {
     const charset = 'ABCDEFGH!@#$IJ@#$LMNOPQRST@$#&*(%UVWXYZabcdefgh$#@$ijklmnopqrstuvwxyz*($#0123456789';
@@ -35,9 +44,7 @@ export default function EmailVerificationPage() {
       newCode[index] = text;
       setCode(newCode);
       if (text !== '' && index < 5) {
-        setTimeout(() => {
-          inputs.current[index + 1]?.focus();
-        }, 100);
+        inputs.current[index + 1]?.focus();
       }
     }
   };
@@ -52,16 +59,42 @@ export default function EmailVerificationPage() {
 
   const handleVerify = () => {
     const enteredCode = code.join('');
-    const isValid = enteredCode === '123456'; // TODO REPLACE
-      alert('Code is correct!');
-    } else {
-      alert('Code is incorrect!');
-    }
+    setLoading(true);
+
+    setTimeout(() => {
+      if (enteredCode === '123456') {
+        Toast.show({
+          type: 'success',
+          text1: 'Code verified! 🎉',
+          text2: 'Redirecting you to the last step.',
+        });
+        setValidated(true);
+        setLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          router.push('/tnc'); // Update this path as needed
+        }, 1500);
+      } else {
+        setLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Code is incorrect. 🙁',
+          text2: 'Please try again.',
+        });
+        setCode(['', '', '', '', '', '']);
+        inputs.current[0]?.focus();
+      }
+    }, 1000); // simulate 1s loading delay
   };
 
   const handleResend = () => {
-    // Resend code logic here
-  }; 
+    if (resendCount >= 3) {
+      alert('You have reached the maximum resend attempts for today.');
+      return;
+    }
+    setResendCount(resendCount + 1);
+    handleInitialSend();
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -84,15 +117,19 @@ export default function EmailVerificationPage() {
               ref={el => inputs.current[i] = el}
               autoFocus={i === 0}
               textAlign="center"
+              editable={!validated}
             />
           ))}
         </View>
         
-        <ThemedButton onPress={handleVerify} style={styles.verifyButton}>
-          Verify
+        <ThemedButton onPress={handleVerify} style={styles.verifyButton} disabled={loading || validated}>
+          {loading ? 'Verifying...' : validated ? 'Verified' : 'Verify'}
         </ThemedButton>
+        {validated && loading && (
+          <ActivityIndicator size="large" color="#4ade80" style={{ marginTop: 16 }} />
+        )}
         <View style={styles.divider} />
-        <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleResend} activeOpacity={0.7} disabled={loading || validated}>
           <ThemedText style={styles.resendText}>
             Didn't receive a code? <Text style={{ color: '#3B82F6' }}>Resend</Text>
           </ThemedText>
