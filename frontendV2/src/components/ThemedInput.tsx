@@ -16,11 +16,17 @@ export default function ThemedInput({
     const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
     const styles = StyleSheet.create({
-      auth: {
-        paddingHorizontal: 30,
-        paddingVertical:18,
+      auth: { //TODO fix the styles to match the design
+        padding: 12,
+        marginBottom: 20,
+        paddingHorizontal: 20,
         backgroundColor: backgroundColor,
-        borderRadius: 50,
+        // auth: {
+        //   paddingHorizontal: 30,
+        //   paddingVertical:18,
+        //   backgroundColor: backgroundColor,
+        //   borderRadius: 50,
+        borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         color: textColor, 

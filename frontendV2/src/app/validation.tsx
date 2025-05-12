@@ -1,88 +1,140 @@
-import { StyleSheet } from 'react-native';
-import { Link, router } from 'expo-router';
-import ThemedText from '@/components/ThemedText';
+import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ThemedView from '@/components/ThemedView';
-import {API_URL} from "@/constants/Domains";
-import {fetchAPI, getData, setData} from "@/components/Utils";
+import ThemedInput from '@/components/ThemedInput';
+import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
-import AuthTextInput from '@/components/ThemedInput';
-import React, { useState, useEffect } from "react";
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
+export default function EmailVerificationPage() {
+  const { email } = useLocalSearchParams();
+  const router = useRouter();
+  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const inputs = useRef<Array<TextInput | null>>([]);
 
-export default function ValidationPage() {
-  const [email, setEmail] = useState("");
+  const [resendCount, setResendCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [validated, setValidated] = useState(false);
+
+  const handleInitialSend = () => {
+    console.log(`Sending verification code to: ${email}`);
+  };
+
   useEffect(() => {
-    const fetchEmail = async () => {
-      const storedEmail = await getData('email');
-      setEmail(storedEmail||"");
-    };
-    setData('email', 'z5364523@unsw.edu.au')
-    fetchEmail();
+    handleInitialSend();
   }, []);
 
-  
-  const [validationCode, setValidationCode] = useState("");
+  const handleKodeGeneration = (length: number = 6): string => {
+    const charset = 'ABCDEFGH!@#$IJ@#$LMNOPQRST@$#&*(%UVWXYZabcdefgh$#@$ijklmnopqrstuvwxyz*($#0123456789';
+    const timestamp = Math.floor(new Date().getTime() / 1000).toString();
+    const combinedCharset = charset + timestamp; // Include timestamp in the charset to make it unique
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e?: any) => {
-    if (e && e.preventDefault) e.preventDefault();
-    const url = `${API_URL}/account/user/login/`;
-    setLoading(true);
-    const response = await fetchAPI(url, {
-      method: 'POST',
-      token: false,
-      body: {
-        email: validationCode
-      },
-    });
-    if (!response.error) {
-      setData('is_validated', 'true');
-
-      router.push("/(tabs)");
-    } else {
-      setError(response?.data || "An error occurred");
+    let token = '';
+    for (let i = 0; i < length; i++) {
+      token += combinedCharset[Math.floor(Math.random() * combinedCharset.length)];
     }
-    setLoading(false);
+    return token;
+  };
+
+  const handleChange = (text: string, index: number) => {
+    if (/^\d$/.test(text) || text === '') {
+      const newCode = [...code];
+      newCode[index] = text;
+      setCode(newCode);
+      if (text !== '' && index < 5) {
+        inputs.current[index + 1]?.focus();
+      }
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && code[index] === '' && index > 0) {
+      setTimeout(() => {
+        inputs.current[index - 1]?.focus();
+      }, 100);
+    }
+  };
+
+  const handleVerify = () => {
+    const enteredCode = code.join('');
+    setLoading(true);
+
+    setTimeout(() => {
+      if (enteredCode === '123456') {
+        Toast.show({
+          type: 'success',
+          text1: 'Code verified! 🎉',
+          text2: 'Redirecting you to the last step.',
+        });
+        setValidated(true);
+        setLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          router.push('/tnc'); // Update this path as needed
+        }, 1500);
+      } else {
+        setLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Code is incorrect. 🙁',
+          text2: 'Please try again.',
+        });
+        setCode(['', '', '', '', '', '']);
+        inputs.current[0]?.focus();
+      }
+    }, 1000); // simulate 1s loading delay
+  };
+
+  const handleResend = () => {
+    if (resendCount >= 3) {
+      alert('You have reached the maximum resend attempts for today.');
+      return;
+    }
+    setResendCount(resendCount + 1);
+    handleInitialSend();
   };
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.titleContainer1}>
-        <ThemedText type="subtitle">We have sent you an email to</ThemedText>
-        <ThemedText type="default">{email}</ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.titleContainer2}>
-        <ThemedText type="default">It will include 6-digits authentication number.</ThemedText>
-        <ThemedText type="default">This code will be valid for 7 minutes.</ThemedText>
-      </ThemedView>
-      {/* <Link href="/(tabs)" style={{ color: 'blue' }}>SIGN IN</Link>
-      <Link href="/register" style={{ color: 'blue' }}>GO TO SIGN UP PAGE</Link> */}
-      
-      <ThemedView style={styles.textInputContainer}>
-        <AuthTextInput
-          onChangeText={setValidationCode}
-          value={validationCode}
-          placeholder="Validation Code"
-          keyboardType='number-pad'
-        />
-      </ThemedView>
-      
-      <ThemedView style={styles.buttonContainer}>
-        {error || <ThemedText type="error">{error}</ThemedText>}
-        <ThemedButton 
-          onPress={handleSubmit} 
-          disabled={loading}
-          type={'auth'}
-        >
-          {loading ? 'Submitting..' : 'Submit'}
+      <View style={styles.card}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="mail" size={24} color="white" />
+        </View>
+        <ThemedText type="title" style={styles.title}>Email Verification</ThemedText>
+        <ThemedText style={styles.subtitle}>Please enter the 6-digit code sent to your email</ThemedText>
+        <View style={styles.codeInputRow}>
+          {[...Array(6)].map((_, i) => (
+            <ThemedInput
+              key={i}
+              style={styles.codeBox}
+              maxLength={1}
+              keyboardType="number-pad"
+              value={code[i]}
+              onChangeText={(text) => handleChange(text, i)}
+              onKeyPress={(e) => handleKeyPress(e, i)}
+              ref={el => inputs.current[i] = el}
+              autoFocus={i === 0}
+              textAlign="center"
+              editable={!validated}
+            />
+          ))}
+        </View>
+        
+        <ThemedButton onPress={handleVerify} style={styles.verifyButton} disabled={loading || validated}>
+          {loading ? 'Verifying...' : validated ? 'Verified' : 'Verify'}
         </ThemedButton>
-        <ThemedText type="default">
-          I didn't received an email
-        </ThemedText>
-      </ThemedView>
-
+        {validated && loading && (
+          <ActivityIndicator size="large" color="#4ade80" style={{ marginTop: 16 }} />
+        )}
+        <View style={styles.divider} />
+        <TouchableOpacity onPress={handleResend} activeOpacity={0.7} disabled={loading || validated}>
+          <ThemedText style={styles.resendText}>
+            Didn't receive a code? <Text style={{ color: '#3B82F6' }}>Resend</Text>
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }
@@ -90,27 +142,76 @@ export default function ValidationPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    padding: 20,
+  },
+  card: {
+    width: '100%',
+    padding: 24,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    alignItems: 'center',
+  },
+  iconCircle: {
+    backgroundColor: '#dc2626', // red-600
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#6b7280',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  codeInputRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 30,
-  },
-  titleContainer1: {
-    alignItems: 'center',
-    marginTop: 100,
-  },
-  titleContainer2: {
-    alignItems: 'center',
-    marginTop: 100,
-  },
-  textInputContainer: {
-    alignItems: 'flex-start',
-    gap: 10,
+    marginBottom: 24,
     width: '100%',
   },
-  buttonContainer: {
-    alignItems: 'center',
-    marginBottom: 300,
+  codeBox: {
+    backgroundColor: '#f3f4f6', // Tailwind gray-100
+    borderRadius: 10,
+    height: 48,
+    width: 48,
+    fontSize: 24,
+    color: '#111827', // Tailwind gray-900
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  resendText: {
+    color: '#6b7280',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    alignSelf: 'stretch',
+    marginVertical: 16,
+  },
+  verifyButton: {
+    backgroundColor: '#4ade80', // Tailwind green-400
+    borderRadius: 10,
+    paddingVertical: 12,
     width: '100%',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
