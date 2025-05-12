@@ -13,6 +13,7 @@ export default function ThemedInput({
     const backgroundColor = useThemeColor({}, 'default_input_background_color');
     const placeholderColor = useThemeColor({}, 'default_placeholder_color');
     const textColor = useThemeColor({}, 'default_text_color');
+    const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
     const styles = StyleSheet.create({
       auth: { //TODO fix the styles to match the design
@@ -20,7 +21,12 @@ export default function ThemedInput({
         marginBottom: 20,
         paddingHorizontal: 20,
         backgroundColor: backgroundColor,
-        borderRadius: 25,
+        // auth: {
+        //   paddingHorizontal: 30,
+        //   paddingVertical:18,
+        //   backgroundColor: backgroundColor,
+        //   borderRadius: 50,
+        borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         color: textColor, 
@@ -36,15 +42,22 @@ export default function ThemedInput({
         color: textColor, 
         width: '100%',
       },
-      search: { //TODO fix the styles to match the design
-        padding: 12,
-        paddingHorizontal: 20,
-        backgroundColor: backgroundColor,
+      search: {
+        paddingHorizontal: 30,
+        paddingVertical:18,
+        backgroundColor: default_card_background_color,
         borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center',
         color: textColor, 
         width: '100%',
+        shadowColor: 'rgba(0, 0, 0, 1)',
+        shadowOffset: { width: 0, height: 3 },
+        
+        shadowRadius: 13,
+        shadowOpacity: 0.08,
+        backdropFilter: 'blur(10px)', // For web platforms
+        elevation: 10, // For Android shadow
       },
     })
 
@@ -53,6 +66,7 @@ export default function ThemedInput({
       style={[
         type === 'auth' ? styles.auth : undefined,
         type === 'comment' ? styles.comment : undefined,
+        type === 'search' ? styles.search : undefined,
       ]}
       {...rest}
       placeholderTextColor={placeholderColor}

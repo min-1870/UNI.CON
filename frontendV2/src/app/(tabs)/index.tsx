@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
 import { router } from 'expo-router';
-
+import { useThemeColor } from '@/hooks/useThemeColor';
 export default function HomePage() {
 
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
@@ -17,6 +17,7 @@ export default function HomePage() {
   const [error, setError] = useState(false);
   const [university, setUniversity] = useState('');
   const fetchedArticlePage = useRef(null);
+  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
   const apiEndpoints = {
     all: `${API_URL}/community/article`,
@@ -82,12 +83,22 @@ export default function HomePage() {
     },
     titleContentContainer:{
       margin: 20,
-      gap: 10,
+      gap: 20,
     },
     buttonContainer: {
       flexDirection: 'row',
-      gap: 20,
-      marginBottom: 20,
+      alignSelf: 'flex-start',
+      gap: 10,
+      padding: 5,
+      borderRadius: 50,
+      backgroundColor: default_card_background_color,
+      shadowColor: 'rgba(0, 0, 0, 1)',
+      shadowOffset: { width: 0, height: 3 },
+      
+      shadowRadius: 13,
+      shadowOpacity: 0.08,
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
     },
     feedContainer: {
       alignItems: 'stretch',
@@ -102,7 +113,7 @@ export default function HomePage() {
         <ThemedText type={'subtitle'}>UNI.CON</ThemedText>
         <ThemedView style={styles.titleContentContainer}>
           <ThemedText type={'title'}>{university}</ThemedText>
-          <ThemedText type={'defaultSemiBold'}>Currently, they are chatting about..</ThemedText>
+          <ThemedText type={'default'} style={{ fontWeight: '500' }}>Currently, they are chatting about..</ThemedText>
         </ThemedView>
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>
@@ -110,19 +121,19 @@ export default function HomePage() {
           type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('all')}
         >
-          All
+          <ThemedText type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}>All</ThemedText>
         </ThemedButton>
         <ThemedButton
           type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('hot')}
         >
-          Hot
+          <ThemedText type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'} >Hot</ThemedText>
         </ThemedButton>
         <ThemedButton
           type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('recommend')}
         >
-          Recommend
+          <ThemedText type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'} >Recommend</ThemedText>
         </ThemedButton>
       </ThemedView>
     </>

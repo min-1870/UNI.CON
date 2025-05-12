@@ -82,12 +82,13 @@ export default function SearchPage() {
     <ThemedView style={styles.container}>
       <ThemedView style={styles.searchBarContainer}>
         <ThemedInput
+          type={'search'}
           onChangeText={setSearchContent}
           value={searchContent}
           placeholder="search anything..."
           keyboardType='default'
           onSubmitEditing={fetchArticles}
-        />TODO fix the styles to match the design
+        />
       </ThemedView>
       {loading ? (
         <ThemedText>Loading...</ThemedText>
