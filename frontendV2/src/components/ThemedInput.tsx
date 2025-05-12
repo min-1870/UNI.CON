@@ -20,7 +20,7 @@ export default function ThemedInput({
         marginBottom: 20,
         paddingHorizontal: 20,
         backgroundColor: backgroundColor,
-        borderRadius: 5,
+        borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',
         color: textColor, 

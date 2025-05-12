@@ -86,11 +86,13 @@ export default function LoginPage() {
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
 
         <ThemedText>University Email</ThemedText>
+        <View style={styles.emailRow}>
         <ThemedInput
           onChangeText={setEmail}
           value={email}
           keyboardType='email-address'
         />
+        </View>
 
         <ThemedText>Password</ThemedText>
         <View style={styles.passwordRow}>
@@ -102,6 +104,14 @@ export default function LoginPage() {
         </View>
 
         {error ? <ThemedText type="error">{error}</ThemedText> : null}
+
+        <ThemedText
+  type="link"
+  onPress={() => router.push("/forgot-password")}
+  style={styles.passwordForgot}
+>
+  Forgot Password?
+</ThemedText>
 
         <ThemedButton onPress={handleSubmit} disabled={loading} style={styles.loginButton}>
           {loading ? 'Logging in...' : 'Login'}
@@ -174,15 +184,34 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 20,
   },
-  passwordRow: {
+  emailRow: {
+    backgroundColor:'f3f4f6',
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginVertical: 6,
+    marginBottom: 0,
+  },
+
+  passwordRow: {
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 6,
+    marginBottom: 0,
+  },
+  passwordForgot: {
+    color: '#059669',
+    fontWeight: '600',
+    textAlign: 'right',
+    marginBottom: 40,
+    textDecorationLine: 'underline',
   },
   loginButton: {
     backgroundColor: '#4ade80',
-    borderRadius: 10,
+    borderRadius: 30,
     paddingVertical: 12,
     width: '100%',
     alignItems: 'center',
@@ -197,6 +226,7 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     color: '#6b7280',
+    marginBottom: 30,
   },
   link: {
     color: '#059669',

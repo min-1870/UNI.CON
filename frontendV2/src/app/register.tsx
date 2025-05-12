@@ -107,14 +107,14 @@ export default function RegisterPage() {
         <ThemedText type="title" style={styles.title}>Create Account</ThemedText>
         <ThemedText style={styles.subtitle}>Join our university community</ThemedText>
 
-        <ThemedText>User Name</ThemedText>
-        <View style={styles.inputWrapper}>
+        {/* <ThemedText>User Name</ThemedText>
+        {/* <View style={styles.inputWrapper}>
           <ThemedInput
             value={`@${name}`}
             onChangeText={(text) => setName(text.replace(/^@/, ''))}
             style={styles.input}
           />
-        </View>
+        </View> */} 
 
         <ThemedText>University Email</ThemedText>
         <ThemedInput
@@ -261,15 +261,18 @@ const styles = StyleSheet.create({
   inputWrapper: {
     position: 'relative',
     marginBottom: 16,
+    borderRadius: 25
   },
+  
   input: {
     backgroundColor: '#f3f4f6', // Tailwind gray-100
-    borderRadius: 10,
+    borderRadius: 25,
     height: 48,
     fontSize: 16,
     color: '#111827', // Tailwind gray-900
     paddingHorizontal: 16,
     paddingRight: 40, // 👈 makes room for the eye icon
+    
   },
   eyeIcon: {
     position: 'absolute',

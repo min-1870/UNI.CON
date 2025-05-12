@@ -43,8 +43,16 @@ export default function EmailVerificationPage() {
       const newCode = [...code];
       newCode[index] = text;
       setCode(newCode);
+
       if (text !== '' && index < 5) {
-        inputs.current[index + 1]?.focus();
+        setTimeout(() => {
+          inputs.current[index + 1]?.focus();
+        }, 100); // slight delay for better user experience
+      }
+
+      // Auto-submit if all digits are entered
+      if (newCode.every(char => char !== '')) {
+        handleVerify(newCode.join(''));
       }
     }
   };
@@ -57,12 +65,12 @@ export default function EmailVerificationPage() {
     }
   };
 
-  const handleVerify = () => {
-    const enteredCode = code.join('');
+  const handleVerify = (entered?: string) => {
+    const finalCode = entered || code.join('');
     setLoading(true);
 
     setTimeout(() => {
-      if (enteredCode === '123456') {
+      if (finalCode === '123456') {
         Toast.show({
           type: 'success',
           text1: 'Code verified! 🎉',
@@ -103,7 +111,9 @@ export default function EmailVerificationPage() {
           <Ionicons name="mail" size={24} color="white" />
         </View>
         <ThemedText type="title" style={styles.title}>Email Verification</ThemedText>
-        <ThemedText style={styles.subtitle}>Please enter the 6-digit code sent to your email</ThemedText>
+        <ThemedText style={styles.subtitle}>We have sent you an email to {email} </ThemedText>
+        <ThemedText style={styles.subtitle}>It will include 6-digits verification code. <br></br>
+        This code will be valid for 7 minutes.</ThemedText>
         <View style={styles.codeInputRow}>
           {[...Array(6)].map((_, i) => (
             <ThemedInput
@@ -122,16 +132,16 @@ export default function EmailVerificationPage() {
           ))}
         </View>
         
-        <ThemedButton onPress={handleVerify} style={styles.verifyButton} disabled={loading || validated}>
+        {/* <ThemedButton onPress={handleVerify} style={styles.verifyButton} disabled={loading || validated}>
           {loading ? 'Verifying...' : validated ? 'Verified' : 'Verify'}
-        </ThemedButton>
+        </ThemedButton> */}
         {validated && loading && (
           <ActivityIndicator size="large" color="#4ade80" style={{ marginTop: 16 }} />
         )}
         <View style={styles.divider} />
         <TouchableOpacity onPress={handleResend} activeOpacity={0.7} disabled={loading || validated}>
           <ThemedText style={styles.resendText}>
-            Didn't receive a code? <Text style={{ color: '#3B82F6' }}>Resend</Text>
+          I didn’t receive an email  <Text style={{ color: '#3B82F6' }}>Resend</Text>
           </ThemedText>
         </TouchableOpacity>
       </View>
