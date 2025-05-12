@@ -7,9 +7,9 @@ import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
 import { router } from 'expo-router';
-
+import { useThemeColor } from '@/hooks/useThemeColor';
 export default function ProfilePage() {
-
+  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
@@ -84,6 +84,7 @@ export default function ProfilePage() {
     },
     titleContainer: {
       gap: 20,
+      marginBottom: 20,
     },
     credibilityScoreContainer: {
       gap: 10,
@@ -102,8 +103,18 @@ export default function ProfilePage() {
     },
     buttonContainer: {
       flexDirection: 'row',
+      // alignSelf: 'flex-start',
       gap: 20,
-      marginBottom: 20,
+      padding: 5,
+      borderRadius: 50,
+      backgroundColor: default_card_background_color,
+      shadowColor: 'rgba(0, 0, 0, 1)',
+      shadowOffset: { width: 0, height: 3 },
+      
+      shadowRadius: 13,
+      shadowOpacity: 0.08,
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
     },
     feedContainer: {
       margin: 20,
@@ -156,25 +167,25 @@ export default function ProfilePage() {
           type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('posted')}
         >
-          Posted
+          <ThemedText type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'} >Posted</ThemedText>
         </ThemedButton>
         <ThemedButton
           type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('saved')}
         >
-          Saved
+          <ThemedText type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'} >Saved</ThemedText>
         </ThemedButton>
         <ThemedButton
           type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('commented')}
         >
-          Commented
+          <ThemedText type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'} >Commented</ThemedText>
         </ThemedButton>
         <ThemedButton
           type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('liked')}
         >
-          Liked
+          <ThemedText type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'} >Liked</ThemedText>
         </ThemedButton>
       </ThemedView>
     </>

@@ -3,7 +3,7 @@ import { Text, type TextProps, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked';
 };
 
 export default function ThemedText({
@@ -14,6 +14,8 @@ export default function ThemedText({
   const default_brand_color = useThemeColor({}, 'default_brand_color');
   const errorColor = useThemeColor({}, 'default_error_color');
   const defaultColor = useThemeColor({}, 'default_text_color');
+  const feed_unchecked_color = useThemeColor({}, 'default_placeholder_color');
+  // const feed_unchecked_color = useThemeColor({}, 'default_text_color');
   
   return (
     <Text
@@ -26,6 +28,10 @@ export default function ThemedText({
               ? errorColor
               : type === 'summaryPoints'
               ? default_brand_color
+              : type === 'feedChecked'
+              ? defaultColor
+              : type === 'feedUnchecked'
+              ? feed_unchecked_color
               : undefined,
         },
         type === 'default' ? styles.default : undefined,
@@ -35,6 +41,8 @@ export default function ThemedText({
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
         type === 'summaryPoints' ? styles.summaryPoints : undefined,
+        type === 'feedChecked' ? styles.feedChecked : undefined,
+        type === 'feedUnchecked' ? styles.feedUnchecked : undefined,
         style,
       ]}
       {...rest}
@@ -74,4 +82,14 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '600',
   },
+  feedChecked: {
+    fontSize: 15,
+    fontWeight: '500',
+    
+  },
+  feedUnchecked: {
+    fontSize: 15,
+    fontWeight: '500',
+    
+  }
 });

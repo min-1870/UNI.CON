@@ -5,7 +5,7 @@
 
 const custom_colors = {
 
-    default_brand_color: '#57EC6B',
+    default_brand_color: '#81ef90',
     default_card_background_color:  '#f7f7f7',
     default_text_color: '#11181C',
     default_background_color: '#f8f9f7',

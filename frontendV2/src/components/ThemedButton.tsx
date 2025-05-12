@@ -15,13 +15,13 @@ export default function ThemedButton({
 }: ThemedButtonProps) {
     const background_color = useThemeColor({}, 'default_brand_color');
     const textColor = useThemeColor({}, 'default_text_color');
-    const borderColor = useThemeColor({}, 'default_placeholder_color');
     const default_brand_color = useThemeColor({}, 'default_brand_color');
+    const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
   const styles = StyleSheet.create({
     auth: { //TODO fix the styles to match the design
-      padding: 12,
-      borderRadius: 7,
+      padding: 18,
+      borderRadius: 50,
       width: '100%',
       backgroundColor: background_color,
       alignItems: 'center',
@@ -39,8 +39,7 @@ export default function ThemedButton({
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 50,
-      borderWidth: 1,
-      borderColor: borderColor,
+      backgroundColor: default_card_background_color,
       alignItems: 'center',
       justifyContent: 'center',
     },
