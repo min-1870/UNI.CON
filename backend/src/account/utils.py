@@ -32,20 +32,26 @@ def send_email(subject, body, email):
         print("Error:", e)
 
 
-def exchange_google_code_for_data(redirect_uri, code):
+def exchange_google_code_for_data(redirect_uri, code, code_verifier):
     data = {
         "code": code,
         "client_id": config("GOOGLE_CLIENT_ID"),
         "client_secret": config("GOOGLE_CLIENT_SECRET"),
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
+        "code_verifier": code_verifier,    
     }
             
     response = requests.post(config("GOOGLE_TOKEN_URI"), data=data)
+    print("TOKEN RESPONSE:", response.status_code, response.text)
     token_data = response.json()
             
     if "id_token" in token_data:
-        decoded_token = jwt.decode(token_data.get("id_token"), options={"verify_signature": False}) 
+        decoded_token = jwt.decode(
+            token_data.get("id_token"),
+            options={"verify_signature": False},
+            algorithms=["RS256"], 
+        ) 
         return decoded_token
     else:
         return None

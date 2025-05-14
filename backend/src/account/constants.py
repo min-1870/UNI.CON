@@ -21,6 +21,6 @@ SSO_SESSION_CACHE_KEY = (
     lambda session_id: f"SSO_SESSION_{session_id}_CACHE_KEY"
 )
 GOOGLE_LOGIN_CALLBACK_URL = "http://localhost:8000/api/account/user/googlelogin/"
-GOOGLE_LINK_CALLBACK_URL = "http://localhost:8000/api/account/user/googlelink/"
+GOOGLE_LINK_CALLBACK_URL = "http://localhost:8081"#"http://localhost:8000/api/account/user/googlelink/"
 MYPAGE_REDIRECT_URI = "http://localhost:5173/mypage"
 FEED_REDIRECT_URI = "http://localhost:5173/feed"

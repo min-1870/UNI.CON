@@ -144,22 +144,24 @@ class UserViewSet(viewsets.ModelViewSet):
         cache.set(SSO_SESSION_CACHE_KEY(session_id), request.user.id, timeout=300)
         return Response({"state": session_id})
     
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"])
     def googlelink(self, request): 
 
         # Get user id from cache        
-        session_id = request.GET.get('state')
-        user_id = cache.get(SSO_SESSION_CACHE_KEY(session_id))
+        state = request.data["state"]
+        user_id = cache.get(SSO_SESSION_CACHE_KEY(state))
 
         # Exchange code for data
-        code = request.GET.get('code')
+        code = request.data["code"]
+        code_verifier = request.data["code_verifier"]
         decoded_data = exchange_google_code_for_data(
             GOOGLE_LINK_CALLBACK_URL,
-            code
+            code,
+            code_verifier
         )
 
         # Extract user details and update
-        gmail = decoded_data.get("email")    
+        gmail = decoded_data.get("email")   
         with transaction.atomic():
             if user_id and gmail:
                 User.objects.filter(id=user_id).update(gmail=gmail)

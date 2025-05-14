@@ -8,6 +8,8 @@ import {fetchAPI, getData} from "@/components/Utils";
 import {API_URL} from "@/constants/Domains";
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import * as AuthSession from 'expo-auth-session';
+
 export default function ProfilePage() {
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
@@ -19,6 +21,15 @@ export default function ProfilePage() {
   const [points, setPoints] = useState('');
   const [email, setEmail] = useState('');
   const fetchedArticlePage = useRef(null);
+
+  const BACKEND_STATE_URL = `${API_URL}/account/user/google_auth_session/`;
+  const GOOGLE_LINK_URL = `${API_URL}/account/user/googlelink/`
+  const GOOGLE_CLIENT_ID = '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com';
+  const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
+  const discovery = {
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenEndpoint:         'https://oauth2.googleapis.com/token',
+  };
 
   const apiEndpoints = {
     posted: `${API_URL}/community/article/posted_articles`,
@@ -76,6 +87,61 @@ export default function ProfilePage() {
       setError(response?.data?.detail || "An error occurred");
     }
     
+  };
+
+  const connectGoogle = async () => {
+    try {
+
+      // Get temp session ID from the API server
+      const response = await fetchAPI(BACKEND_STATE_URL, {
+        method: 'GET',
+        token: true,
+      });
+
+      if (response.error) {
+        setError(response?.data?.detail || "An error occurred");
+        return;
+      }
+
+      // Generate a code verifier and challenge for PKCE
+      const request = new AuthSession.AuthRequest({
+        clientId: GOOGLE_CLIENT_ID,
+        scopes: ['openid', 'profile', 'email'], 
+        redirectUri: GOOGLE_LINK_CALLBACK_URL,
+        responseType: 'code',
+        extraParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+          state: response.data.state,
+        },
+      });
+
+      // Send to Oauth
+      await request.makeAuthUrlAsync(discovery);
+      const result = await request.promptAsync(discovery);
+
+      if (result.type === 'success') {
+        const { code, state } = result.params;
+
+        // Send back the response to API server
+        const response = await fetchAPI(
+          GOOGLE_LINK_URL, {
+          method: 'POST',
+          token: true,
+          body: { code, state, code_verifier: request.codeVerifier }
+        });
+
+        if (response.error) {
+          setError(response?.data?.detail || "An error occurred");
+          return;
+        }
+
+      } else {
+        console.log("Google sign-in cancelled or failed:", result);
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -153,7 +219,7 @@ export default function ProfilePage() {
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Google Account</ThemedText>
-              <ThemedText type={'default'}>(PLACE HOLDER)</ThemedText>
+              <ThemedText type={'default'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Update Password</ThemedText>
