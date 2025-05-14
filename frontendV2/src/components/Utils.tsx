@@ -1,5 +1,5 @@
 import axios from "axios";
-import {API_URL} from "@/constants/Domains";
+import URLs from "@/constants/Urls";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Function to save data
@@ -36,11 +36,10 @@ const removeData = async (key:string) => {
 const fetchNewAccessToken = async () => {
     
     const refreshToken = getData('refresh');
-    const url = `${API_URL}/account/token/refresh`
 
     try {
         const response = await axios.post(
-            url,
+            URLs.NEW_TOKEN,
             {
             refresh: refreshToken,
             },

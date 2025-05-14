@@ -43,7 +43,7 @@ def exchange_google_code_for_data(redirect_uri, code, code_verifier):
     }
             
     response = requests.post(config("GOOGLE_TOKEN_URI"), data=data)
-    print("TOKEN RESPONSE:", response.status_code, response.text)
+    # print("TOKEN RESPONSE:", response.status_code, response.text)
     token_data = response.json()
             
     if "id_token" in token_data:

@@ -1,14 +1,14 @@
+import React, { useState, useEffect, useRef  } from "react";
+import ThemedArticle from '@/components/ThemedArticle';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import {fetchAPI, getData} from "@/components/Utils";
+import ThemedButton from '@/components/ThemedButton';
 import { StyleSheet, FlatList } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import ThemedButton from '@/components/ThemedButton';
-import ThemedArticle from '@/components/ThemedArticle';
-import React, { useState, useEffect, useRef  } from "react";
-import {fetchAPI, getData} from "@/components/Utils";
-import {API_URL} from "@/constants/Domains";
-import { router } from 'expo-router';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import * as AuthSession from 'expo-auth-session';
+import { router } from 'expo-router';
+import URLs from "@/constants/Urls";
 
 export default function ProfilePage() {
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
@@ -21,21 +21,17 @@ export default function ProfilePage() {
   const [points, setPoints] = useState('');
   const [email, setEmail] = useState('');
   const fetchedArticlePage = useRef(null);
-
-  const BACKEND_STATE_URL = `${API_URL}/account/user/google_auth_session/`;
-  const GOOGLE_LINK_URL = `${API_URL}/account/user/googlelink/`
-  const GOOGLE_CLIENT_ID = '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com';
-  const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
+  
   const discovery = {
-    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenEndpoint:         'https://oauth2.googleapis.com/token',
+    authorizationEndpoint: URLs.authorizationEndpoint,
+    tokenEndpoint: URLs.tokenEndpoint,
   };
 
   const apiEndpoints = {
-    posted: `${API_URL}/community/article/posted_articles`,
-    saved: `${API_URL}/community/article/saved_articles`,
-    commented: `${API_URL}/community/article/commented_articles`,
-    liked: `${API_URL}/community/article/liked_articles`,
+    posted: URLs.POSTED_ARTICLES,
+    saved: URLs.SAVED_ARTICLES,
+    commented: URLs.COMMENTED_ARTICLES,
+    liked: URLs.LIKED_ARTICLES,
   };
 
   useEffect(() => {
@@ -90,10 +86,11 @@ export default function ProfilePage() {
   };
 
   const connectGoogle = async () => {
+    const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
     try {
 
       // Get temp session ID from the API server
-      const response = await fetchAPI(BACKEND_STATE_URL, {
+      const response = await fetchAPI(URLs.TEMP_STATE, {
         method: 'GET',
         token: true,
       });
@@ -105,7 +102,7 @@ export default function ProfilePage() {
 
       // Generate a code verifier and challenge for PKCE
       const request = new AuthSession.AuthRequest({
-        clientId: GOOGLE_CLIENT_ID,
+        clientId: URLs.GOOGLE_CLIENT_ID,
         scopes: ['openid', 'profile', 'email'], 
         redirectUri: GOOGLE_LINK_CALLBACK_URL,
         responseType: 'code',
@@ -125,7 +122,7 @@ export default function ProfilePage() {
 
         // Send back the response to API server
         const response = await fetchAPI(
-          GOOGLE_LINK_URL, {
+          URLs.GOOGLE_LINK_URL, {
           method: 'POST',
           token: true,
           body: { code, state, code_verifier: request.codeVerifier }

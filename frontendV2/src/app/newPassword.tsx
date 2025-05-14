@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import {API_URL} from "@/constants/Domains";
+import URLs from "@/constants/Urls";
 import {fetchAPI, setData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
@@ -24,9 +24,8 @@ export default function NewPasswordPage() {
       setError("Passwords do not match");
       return;
     }
-    const url = `${API_URL}/account/user/newpassword/`;
     setLoading(true);
-    const response = await fetchAPI(url, {
+    const response = await fetchAPI(URLs.NEW_PASSWORD, {
       method: 'POST',
       token: true,
       body: {

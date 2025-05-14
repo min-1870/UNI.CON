@@ -168,25 +168,33 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return HttpResponseRedirect(MYPAGE_REDIRECT_URI)
     
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"])
     def googlelogin(self, request): 
 
         # Exchange code for data
-        code = request.GET.get('code')
+        code = request.data["code"]
+        code_verifier = request.data["code_verifier"]
         decoded_data = exchange_google_code_for_data(
             GOOGLE_LOGIN_CALLBACK_URL,
-            code
+            code,
+            code_verifier
         )
 
         # Extract user details and update
         gmail = decoded_data.get("email")
         user_instance = User.objects.filter(gmail=gmail).first()
 
+        if user_instance is None:
+            return Response(
+                {"detail": "The email is not registered."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user_instance = annotate_user(user_instance)
         serializer = self.get_serializer(user_instance)
-        query_string = urllib.parse.urlencode(serializer.data, safe='#').replace('#', '%23')
 
-        return HttpResponseRedirect(FEED_REDIRECT_URI+"?"+query_string)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
     
 
     def retrieve(self, request, *args, **kwargs):
