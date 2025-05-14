@@ -42,6 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="validation" />
         <Stack.Screen name="tnc" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="feed" />
         <Stack.Screen name="article" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
       </Stack>
