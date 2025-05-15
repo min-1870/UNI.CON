@@ -15,7 +15,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'DMSerifDisplay-Regular': require('../assets/fonts/DMSerifDisplay-Regular.ttf'),
+      'DMSerifDisplay-Italic': require('../assets/fonts/DMSerifDisplay-Italic.ttf'),
+      'Roboto-Regular': require('../assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
   });
   const user = true;
 
@@ -45,6 +48,7 @@ export default function RootLayout() {
         <Stack.Screen name="feed" />
         <Stack.Screen name="article" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
+        <Stack.Screen name="registerComplete" />
       </Stack>
       <Toast />
       <StatusBar style="auto" />
