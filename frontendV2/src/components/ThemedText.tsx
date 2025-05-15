@@ -3,7 +3,7 @@ import { Text, type TextProps, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked' | 'Wording';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked';
 };
 
 export default function ThemedText({
@@ -43,7 +43,6 @@ export default function ThemedText({
         type === 'summaryPoints' ? styles.summaryPoints : undefined,
         type === 'feedChecked' ? styles.feedChecked : undefined,
         type === 'feedUnchecked' ? styles.feedUnchecked : undefined,
-        type === 'Wording' ? styles.Wording : undefined,
         style,
       ]}
       {...rest}
@@ -66,7 +65,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: 'bold',
     lineHeight: 32,
   },
@@ -91,12 +90,6 @@ const styles = StyleSheet.create({
   feedUnchecked: {
     fontSize: 15,
     fontWeight: '500',
-  },
-  Wording :{
-    fontSize: 50,
-    fontWeight: '500',
-    color:'rgb(8, 8, 8)',
-    fontFamily: 'DMSerifDisplay-Regular'
+    
   }
-  // Add more styles as needed
 });
