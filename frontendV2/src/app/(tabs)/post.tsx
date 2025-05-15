@@ -9,7 +9,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import type { TabParamList } from './_layout';
 import { Ionicons } from '@expo/vector-icons';
-import {API_URL} from "@/constants/Domains";
+import URLs from "@/constants/Urls";
 import {
   View,
   Text,
@@ -51,7 +51,7 @@ export default function NewArticlePage() {
   const handlePost = async () => { //TODO fix this function to post the article
     setLoading(true);
     const response = await fetchAPI(
-      `${API_URL}/community/article/`, 
+      URLs.ARTICLE(), 
       {
         method: 'POST',
         token: true,

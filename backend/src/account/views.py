@@ -144,47 +144,57 @@ class UserViewSet(viewsets.ModelViewSet):
         cache.set(SSO_SESSION_CACHE_KEY(session_id), request.user.id, timeout=300)
         return Response({"state": session_id})
     
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"])
     def googlelink(self, request): 
 
         # Get user id from cache        
-        session_id = request.GET.get('state')
-        user_id = cache.get(SSO_SESSION_CACHE_KEY(session_id))
+        state = request.data["state"]
+        user_id = cache.get(SSO_SESSION_CACHE_KEY(state))
 
         # Exchange code for data
-        code = request.GET.get('code')
+        code = request.data["code"]
+        code_verifier = request.data["code_verifier"]
         decoded_data = exchange_google_code_for_data(
             GOOGLE_LINK_CALLBACK_URL,
-            code
+            code,
+            code_verifier
         )
 
         # Extract user details and update
-        gmail = decoded_data.get("email")    
+        gmail = decoded_data.get("email")   
         with transaction.atomic():
             if user_id and gmail:
                 User.objects.filter(id=user_id).update(gmail=gmail)
 
         return HttpResponseRedirect(MYPAGE_REDIRECT_URI)
     
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"])
     def googlelogin(self, request): 
 
         # Exchange code for data
-        code = request.GET.get('code')
+        code = request.data["code"]
+        code_verifier = request.data["code_verifier"]
         decoded_data = exchange_google_code_for_data(
             GOOGLE_LOGIN_CALLBACK_URL,
-            code
+            code,
+            code_verifier
         )
 
         # Extract user details and update
         gmail = decoded_data.get("email")
         user_instance = User.objects.filter(gmail=gmail).first()
 
+        if user_instance is None:
+            return Response(
+                {"detail": "The email is not registered."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user_instance = annotate_user(user_instance)
         serializer = self.get_serializer(user_instance)
-        query_string = urllib.parse.urlencode(serializer.data, safe='#').replace('#', '%23')
 
-        return HttpResponseRedirect(FEED_REDIRECT_URI+"?"+query_string)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
     
 
     def retrieve(self, request, *args, **kwargs):

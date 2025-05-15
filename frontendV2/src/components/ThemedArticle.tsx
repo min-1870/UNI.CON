@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import React,  { useState } from "react";
 import {fetchAPI} from "@/components/Utils";
-import {API_URL} from "@/constants/Domains";
+import URLs from "@/constants/Urls";
 import moment from 'moment';
 import { router } from 'expo-router';
 
@@ -23,8 +23,8 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
 
   const handleLike = async () => {
       const url = article.like_status
-          ? `${API_URL}/community/article/${article.id}/unlike/`
-          : `${API_URL}/community/article/${article.id}/like/`;
+          ? URLs.ARTICLE_UNLIKE(article.id)
+          : URLs.ARTICLE_LIKE(article.id);
       const response_data = await fetchAPI(url, {method: 'POST'})
       if (response_data) {
           setArticleState((prevState: any) => ({
@@ -37,8 +37,8 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
     
   const handleSave = async () => {
       const url = article.save_status
-      ? `${API_URL}/community/article/${article.id}/unsave/`
-      : `${API_URL}/community/article/${article.id}/save/`;
+      ? URLs.ARTICLE_UNSAVE(article.id)
+      : URLs.ARTICLE_SAVE(article.id);
       
       const data = await fetchAPI(url, {method: 'POST'})
       if (data) {

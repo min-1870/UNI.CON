@@ -5,7 +5,7 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
-import {API_URL} from "@/constants/Domains";
+import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
 export default function HomePage() {
@@ -20,9 +20,9 @@ export default function HomePage() {
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
   const apiEndpoints = {
-    all: `${API_URL}/community/article`,
-    hot: `${API_URL}/community/article/hot`,
-    recommend: `${API_URL}/community/article/preference`,
+    all: URLs.TIME_SORTED_ARTICLES,
+    hot: URLs.HOT_SORTED_ARTICLES,
+    recommend: URLs.PREFERENCE_SORTED_ARTICLES,
   };
 
   useEffect(() => {
