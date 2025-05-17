@@ -25,7 +25,7 @@ from community.constants import (
 from community.models import Article, ArticleLike, Tag, ArticleTag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
-from django.db.models import Case, When, F, Q
+from django.db.models import Case, When, F, Q, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
@@ -410,6 +410,23 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
 
+    #TODO Implement caching to work as scheduler, and apply timeframe for fetching
+    @action(detail=False, methods=["get"])
+    def trending_tags(self, request, *args, **kwargs): 
+
+        tags = Tag.objects.filter(
+                articletag__article__user__school=request.user.school,
+                articletag__article__deleted=False
+            ).annotate(
+                use_count=Count('articletag')
+            ).order_by('-use_count')[:5]  
+
+        tags_data = [tag.name for tag in tags]
+        if len(tags_data) < 5:
+            tags_data = ['Course','Study','Exam','CS','Uni']
+
+        return Response({"tags":tags_data}, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=["get"])
     def new_notifications(self, request, *args, **kwargs):            
         
