@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedButton from '@/components/ThemedButton';
@@ -8,6 +8,8 @@ import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
+
+import ThemedTag from '@/components/ThemedTag';
 export default function HomePage() {
 
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
@@ -16,6 +18,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [university, setUniversity] = useState('');
+  const [tags, setTags] = useState([]);
   const fetchedArticlePage = useRef(null);
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
@@ -27,12 +30,28 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchArticles();
+    fetchTrendingTags();
     const fetchSchool = async () => {
       const storedUniversity = await getData('university');
       setUniversity(storedUniversity||"");
     };
     fetchSchool();
+    setError(false);
   }, [sortOption]);
+  
+  const fetchTrendingTags = async () => {
+    setLoading(true);
+    const response = await fetchAPI(URLs.TRENDING_TAGS, {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      setTags(response.data?.tags)
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+    }
+    setLoading(false);
+  };
   
   const fetchArticles = async () => {
     setLoading(true);
@@ -79,11 +98,15 @@ export default function HomePage() {
     titleContainer: {
       marginTop: 20,
       gap: 20,
-      marginBottom: 40,
+      marginBottom: 20,
     },
     titleContentContainer:{
       margin: 20,
       gap: 20,
+    },
+    trendingTagsContainers:{
+      flexDirection: 'row',
+      alignSelf: 'flex-start',
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -114,6 +137,13 @@ export default function HomePage() {
         <ThemedView style={styles.titleContentContainer}>
           <ThemedText type={'title'}>{university}</ThemedText>
           <ThemedText type={'default'} style={{ fontWeight: '500' }}>Currently, they are chatting about..</ThemedText>
+          <ThemedView style={styles.trendingTagsContainers}>
+            {tags.map((tag, i) => (
+              <Pressable >
+                <ThemedTag text={tag} type={'ranked'} key={i}/>
+              </Pressable>
+            ))}
+          </ThemedView>
         </ThemedView>
       </ThemedView>
       <ThemedView style={styles.buttonContainer}>

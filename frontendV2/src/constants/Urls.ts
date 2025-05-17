@@ -32,8 +32,8 @@ const URLS = {
     OLD_NOTIFICATIONS: `${domain}/community/article/old_notifications`,
     NEW_NOTIFICATIONS: `${domain}/community/article/new_notifications`,
 
-    // 
-
+    // Tags
+    TRENDING_TAGS: `${domain}/community/article/trending_tags`,
 
     // CRUDE Article
     ARTICLE: (articleId: string = '') => `${domain}/community/article/${articleId}`,

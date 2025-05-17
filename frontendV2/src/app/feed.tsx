@@ -1,3 +1,14 @@
+
+
+
+
+
+// huh??????? I already built the feed page at (tabs)/index.tsx
+// login w EMAIL: root@unsw.edu.au PW: rootroot
+
+
+
+
 import React, { useState } from 'react';
 import {
   View,
