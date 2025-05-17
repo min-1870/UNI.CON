@@ -5,7 +5,7 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
+import {API_URL} from "@/constants/Domains";
 
 export default function NotificationPage() {
 
@@ -20,9 +20,9 @@ export default function NotificationPage() {
   const fetchedArticlePage = useRef(null);
 
   const apiEndpoints = {
-    all: ``,
-    hot: ``,
-    recommend: ``,
+    all: `${API_URL}/community/article`,
+    hot: `${API_URL}/community/article/hot`,
+    recommend: `${API_URL}/community/article/preference`,
   };
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function NotificationPage() {
   
   const fetchNewNotification = async () => {
     setLoading(true);
-    const response = await fetchAPI(URLs.NEW_NOTIFICATIONS, {
+    const response = await fetchAPI(`${API_URL}/community/article/new_notifications`, {
       method: 'GET',
       token: true,
     });
@@ -57,7 +57,7 @@ export default function NotificationPage() {
   
   const fetchOldNotification = async () => {
     setLoading(true);
-    const response = await fetchAPI(URLs.OLD_NOTIFICATIONS, {
+    const response = await fetchAPI(`${API_URL}/community/article/old_notifications`, {
       method: 'GET',
       token: true,
     });

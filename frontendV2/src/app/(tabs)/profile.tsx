@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useRef  } from "react";
-import ThemedArticle from '@/components/ThemedArticle';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import {fetchAPI, getData} from "@/components/Utils";
-import ThemedButton from '@/components/ThemedButton';
 import { StyleSheet, FlatList } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import * as AuthSession from 'expo-auth-session';
+import ThemedButton from '@/components/ThemedButton';
+import ThemedArticle from '@/components/ThemedArticle';
+import React, { useState, useEffect, useRef  } from "react";
+import {fetchAPI, getData} from "@/components/Utils";
+import {API_URL} from "@/constants/Domains";
 import { router } from 'expo-router';
-import URLs from "@/constants/Urls";
-
+import { useThemeColor } from '@/hooks/useThemeColor';
 export default function ProfilePage() {
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
@@ -21,17 +19,12 @@ export default function ProfilePage() {
   const [points, setPoints] = useState('');
   const [email, setEmail] = useState('');
   const fetchedArticlePage = useRef(null);
-  
-  const discovery = {
-    authorizationEndpoint: URLs.authorizationEndpoint,
-    tokenEndpoint: URLs.tokenEndpoint,
-  };
 
   const apiEndpoints = {
-    posted: URLs.POSTED_ARTICLES,
-    saved: URLs.SAVED_ARTICLES,
-    commented: URLs.COMMENTED_ARTICLES,
-    liked: URLs.LIKED_ARTICLES,
+    posted: `${API_URL}/community/article/posted_articles`,
+    saved: `${API_URL}/community/article/saved_articles`,
+    commented: `${API_URL}/community/article/commented_articles`,
+    liked: `${API_URL}/community/article/liked_articles`,
   };
 
   useEffect(() => {
@@ -83,62 +76,6 @@ export default function ProfilePage() {
       setError(response?.data?.detail || "An error occurred");
     }
     
-  };
-
-  const connectGoogle = async () => {
-    const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
-    try {
-
-      // Get temp session ID from the API server
-      const response = await fetchAPI(URLs.TEMP_STATE, {
-        method: 'GET',
-        token: true,
-      });
-
-      if (response.error) {
-        setError(response?.data?.detail || "An error occurred");
-        return;
-      }
-
-      // Generate a code verifier and challenge for PKCE
-      const request = new AuthSession.AuthRequest({
-        clientId: URLs.GOOGLE_CLIENT_ID,
-        scopes: ['openid', 'profile', 'email'], 
-        redirectUri: GOOGLE_LINK_CALLBACK_URL,
-        responseType: 'code',
-        extraParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-          state: response.data.state,
-        },
-      });
-
-      // Send to Oauth
-      await request.makeAuthUrlAsync(discovery);
-      const result = await request.promptAsync(discovery);
-
-      if (result.type === 'success') {
-        const { code, state } = result.params;
-
-        // Send back the response to API server
-        const response = await fetchAPI(
-          URLs.GOOGLE_LINK_URL, {
-          method: 'POST',
-          token: true,
-          body: { code, state, code_verifier: request.codeVerifier }
-        });
-
-        if (response.error) {
-          setError(response?.data?.detail || "An error occurred");
-          return;
-        }
-
-      } else {
-        console.log("Google sign-in cancelled or failed:", result);
-      }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-    }
   };
 
   const styles = StyleSheet.create({
@@ -216,7 +153,7 @@ export default function ProfilePage() {
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Google Account</ThemedText>
-              <ThemedText type={'default'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
+              <ThemedText type={'default'}>(PLACE HOLDER)</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'defaultSemiBold'}>Update Password</ThemedText>

@@ -5,7 +5,7 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
+import {API_URL} from "@/constants/Domains";
 import ThemedInput from '@/components/ThemedInput';
 
 export default function SearchPage() {
@@ -26,11 +26,11 @@ export default function SearchPage() {
   const fetchArticles = async () => {
     setLoading(true);
     const response = await (searchContent.length === 0 
-      ? fetchAPI(URLs.HOT_SORTED_ARTICLES, {
+      ? fetchAPI(`${API_URL}/community/article/hot`, {
           method: 'GET',
           token: true,
         })
-      : fetchAPI(URLs.SEARCHING_ARTICLE(searchContent), {
+      : fetchAPI(`${API_URL}/community/article/search?search_content=${searchContent}`, {
           method: 'GET',
           token: true,
         }));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
+import BottomNav from '../components/ui/BottomNav';
 
 const TAGS = ['All', 'School', 'IT'];
 
@@ -83,6 +84,8 @@ export default function Feed() {
   const [searchText, setSearchText] = useState('');
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('Latest');
+  const [navVisible, setNavVisible] = useState(true);
+  const scrollOffset = useRef(0);
 
   const filteredPosts = POSTS.filter(post => {
     const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
@@ -188,7 +191,15 @@ export default function Feed() {
             styles={styles}
           />
         )}
+        onScroll={({ nativeEvent }) => {
+          const currentOffset = nativeEvent.contentOffset.y;
+          const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+          setNavVisible(direction === 'up' || currentOffset < 10);
+          scrollOffset.current = currentOffset;
+        }}
+        scrollEventThrottle={16}
       />
+      <BottomNav isVisible={navVisible} />
     </View>
   );
 }
@@ -198,6 +209,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingTop: 50,
+    minWidth: 450,
+    maxWidth: 500,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -225,6 +239,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 15,
     marginRight: 10,
+    marginBottom: 6,
     textAlign: 'center',
   },
   tagBadgeSelected: {
@@ -270,7 +285,6 @@ const styles = StyleSheet.create({
   },
   filterTabs: {
     flexDirection: 'row',
-    
   },
   
   filterTab: {
@@ -283,6 +297,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 6,
   },
 
   filterTabSelected: {
@@ -309,95 +324,5 @@ const styles = StyleSheet.create({
     color: '#444',
     fontWeight: '600',
   },
-  postCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    transitionDuration: '200ms',
-    transform: [{ scale: 1 }],
-   
-  },
-  postHeader: {
   
-    flexDirection: 'row',
-    marginBottom: 10,
-    fontFamily: 'Roboto_400Regular',
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userAvatar: {
-    backgroundColor: '#57EC6B',
-    width: 30,
-    height: 30,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  userAvatarText: {
-    color: '#fff',
-    fontWeight: '300',
-    fontSize: 15,
-  },
-  userName: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: '#222',
-  },
-  postTimestamp: {
-    marginLeft:15,
-    fontSize: 12,
-    color: '#999',
-  },
-  postTitle: {
-    fontWeight: '600',
-    fontSize: 20,
-    marginBottom: 10,
-    color: '#222',
-  },
-  postContent: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 10,
-  },
-  postTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  postTagBadge: {
-    backgroundColor: '#e0f2f1',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginBottom: 6,
-  },
-  postTagText: {
-    fontSize: 12,
-    color: '#00796b',
-    fontWeight: '600',
-  },
-  postActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  actionText: {
-    marginLeft: 6,
-    color: '#666',
-    fontSize: 13,
-  },
 });

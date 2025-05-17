@@ -80,7 +80,7 @@ export default function EmailVerificationPage() {
         setLoading(true);
         setTimeout(() => {
           setLoading(false);
-          router.push('/tnc'); // Update this path as needed
+          router.push('/terms-and-conditions');
         }, 1500);
       } else {
         setLoading(false);

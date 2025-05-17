@@ -1,15 +1,15 @@
+import { StyleSheet, View } from 'react-native';
+import { Link, router } from 'expo-router';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import { API_URL } from "@/constants/Domains";
 import { fetchAPI, setData } from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/ThemedText';
-import ThemedView from '@/components/ThemedView';
-import * as AuthSession from 'expo-auth-session';
-import { StyleSheet, View } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
+import React, { useState, useEffect } from "react";
 import Toast from 'react-native-toast-message';
-import { Link, router } from 'expo-router';
-import React, { useState } from "react";
-import URLs from "@/constants/Urls";
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,14 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
-  const discovery = {
-    authorizationEndpoint: URLs.authorizationEndpoint,
-    tokenEndpoint:         URLs.tokenEndpoint,
-  };
 
-  /*
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
     expoClientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
@@ -44,12 +37,12 @@ export default function LoginPage() {
       router.push("/(tabs)");
     }
   }, [response]);
-  */
 
   const handleSubmit = async () => {
+    const url = `${API_URL}/account/user/login/`;
     setLoading(true);
 
-    const response = await fetchAPI(URLs.LOGIN, {
+    const response = await fetchAPI(url, {
       method: 'POST',
       token: false,
       body: { email, password },
@@ -85,60 +78,12 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const googleLogin = async () => {
-    setLoading(true);
-    try {
-      // Generate a code verifier and challenge for PKCE
-      const request = new AuthSession.AuthRequest({
-        clientId: URLs.GOOGLE_CLIENT_ID,
-        scopes: ['openid', 'profile', 'email'], 
-        redirectUri: GOOGLE_LOGIN_CALLBACK_URL,
-        responseType: 'code',
-        extraParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      });
-
-      // Send to Oauth
-      await request.makeAuthUrlAsync(discovery);
-      const oauth_response = await request.promptAsync(discovery);
-
-      if (oauth_response.type === 'success') {
-        const { code } = oauth_response.params;
-        
-        // Send back the response to API server
-        const login_response = await fetchAPI(
-          URLs.GOOGLE_LOGIN, {
-          method: 'POST',
-          token: false,
-          body: { code, code_verifier: request.codeVerifier }
-        });
-
-        if (!login_response.error) {
-          router.push("/(tabs)");
-        } else {
-          console.log(login_response)
-          setError(login_response?.data?.detail || "Google account is not registered");
-          return;
-        }
-
-      } else {
-        setError("Failed to login with Google");
-      }
-    } catch (err) {
-      setError(`Unexpected error: ${err}`);
-    }
-    
-    setLoading(false);
-  };
-
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
-        <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
-        <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
+        <ThemedText style={[styles.badge, { marginBottom: 70 , marginTop: 70}]}>UNI.CON </ThemedText>
+        {/* <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText> */}
 
         <ThemedText>University Email</ThemedText>
         <View style={styles.emailRow}>
@@ -179,7 +124,7 @@ export default function LoginPage() {
         </ThemedText>
 
         <View style={styles.socialButtonContainer}>
-          <ThemedButton onPress={() => googleLogin()} disabled={loading} style={styles.googleButton}>
+          <ThemedButton onPress={() => promptAsync()} disabled={!request} style={styles.googleButton}>
             <View style={styles.googleButtonContent}>
               <View style={styles.googleIconWrapper}>
                 {/* @ts-ignore */}

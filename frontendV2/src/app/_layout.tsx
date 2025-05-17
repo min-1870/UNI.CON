@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import BottomNav from '@/components/ui/BottomNav';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -43,14 +44,15 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="register" />
         <Stack.Screen name="validation" />
-        <Stack.Screen name="tnc" />
+        <Stack.Screen name="terms-and-conditions" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="feed" />
         <Stack.Screen name="article" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
-        <Stack.Screen name="registerComplete" />
+        <Stack.Screen name="registration-success" />
       </Stack>
       <Toast />
+      <BottomNav />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

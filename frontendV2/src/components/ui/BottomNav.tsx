@@ -1,83 +1,94 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Animated,
+} from 'react-native';
+import { Home, ShoppingCart, Search, User } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
-// Dummy screens
-function HomeScreen() {
-  return <View style={styles.screen}><Text>Home</Text></View>;
-}
-function CartScreen() {
-  return <View style={styles.screen}><Text>Cart</Text></View>;
-}
-function SearchScreen() {
-  return <View style={styles.screen}><Text>Search</Text></View>;
-}
-function ProfileScreen() {
-  return <View style={styles.screen}><Text>Profile</Text></View>;
+interface BottomNavProps {
+  isVisible: boolean;
 }
 
-const Tab = createBottomTabNavigator();
+const { width } = Dimensions.get('window');
 
-export default function BottomTabs() {
+const BottomNav = ({ isVisible }: BottomNavProps) => {
+  const navigation = useNavigation();
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: isVisible ? 0 : 100,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isVisible]);
+
+  const handleNavigate = (target: string) => {
+    navigation.navigate(target as never);
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="home-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="cart-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="search-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="person-outline" size={24} color={color} />,
-        }}
-      />
-    </Tab.Navigator>
+    <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => handleNavigate('Feed')}
+        >
+          <Home size={24} color="#999" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => handleNavigate('Shop')}
+        >
+          <ShoppingCart size={24} color="#999" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => handleNavigate('Search')}
+        >
+          <Search size={24} color="#999" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => handleNavigate('Profile')}
+        >
+          <User size={24} color="#999" />
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  tabBar: {
+  container: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 15,
     left: 20,
     right: 20,
-    elevation: 5,
-    backgroundColor: 'white',
+    zIndex: 999,
+  },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
     borderRadius: 20,
-    height: 70,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
+    elevation: 10,
   },
-  screen: {
-    flex: 1,
+  navButton: {
+    padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
+
+export default BottomNav;

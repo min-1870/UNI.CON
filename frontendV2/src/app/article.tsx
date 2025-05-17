@@ -7,7 +7,7 @@ import ThemedComment from '@/components/ThemedComment';
 import ThemedInput from '@/components/ThemedInput';
 import React, { useState, useEffect } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
+import {API_URL} from "@/constants/Domains";
 import { useRoute, RouteProp } from '@react-navigation/native';
 
 export default function ArticlePage() {
@@ -30,7 +30,7 @@ export default function ArticlePage() {
   const fetchArticle = async () => {
     setLoading(true);
     const response = await fetchAPI(
-      URLs.ARTICLE(articleId), {
+      `${API_URL}/community/article/${articleId}`, {
       method: 'GET',
       token: true,
     });
@@ -46,7 +46,7 @@ export default function ArticlePage() {
 
   const handleSendComment = async () => {
     const response = await fetchAPI(
-      URLs.COMMENT(), {
+      `${API_URL}/community/comment/`, {
       method: 'POST',
       token: true,
       body: {
@@ -77,13 +77,13 @@ export default function ArticlePage() {
     let url = '';
     if (parent_commentId) {
       url = comments.find((comment) => comment.id === parent_commentId)?.nested_comments.find((nestedComment: { id: string; }) => nestedComment.id === commentId)?.like_status
-        ? URLs.COMMENT_LIKE(commentId)  
-        : URLs.COMMENT_UNLIKE(commentId);
+        ? `${API_URL}/community/comment/${commentId}/unlike/`  
+        : `${API_URL}/community/comment/${commentId}/like/`;
     }
     else {
       url = comments.find((comment) => comment.id === commentId)?.like_status
-        ? URLs.COMMENT_UNLIKE(commentId)  
-        : URLs.COMMENT_LIKE(commentId);
+        ? `${API_URL}/community/comment/${commentId}/unlike/`
+        : `${API_URL}/community/comment/${commentId}/like/`;
     };
     const response = await fetchAPI(url, { method: 'POST', token: true });
     if (!response.error) {
@@ -136,7 +136,8 @@ export default function ArticlePage() {
       );
       return;
     }else{
-      const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
+      const url = `${API_URL}/community/comment/${commentId}`;
+      const response = await fetchAPI(url, { method: 'GET', token: true });
       if (!response.error) {
         setComments((prevComments) =>
           prevComments.map((comment) =>
@@ -156,7 +157,7 @@ export default function ArticlePage() {
 
   const handleReplyComment = async () => {
     const response = await fetchAPI(
-      URLs.COMMENT(), {
+      `${API_URL}/community/comment/`, {
       method: 'POST',
       token: true,
       body: {
