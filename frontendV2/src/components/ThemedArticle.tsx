@@ -1,7 +1,8 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import ThemedTag from '@/components/ThemedTag';
 import React,  { useState } from "react";
-import {fetchAPI} from "@/components/Utils";
+import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import moment from 'moment';
 import { router } from 'expo-router';
@@ -18,10 +19,21 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
   const time_color = useThemeColor({}, 'default_placeholder_color');
   const points_color = useThemeColor({}, 'default_brand_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
+  const [trending_tags, setTrendingTags] = useState<string[]>([]);
   
+  React.useEffect(() => {
+    const fetchTrendingTags = async () => {
+      const tags = await getData('trending_tags');
+      setTrendingTags(Array.isArray(tags) ? tags : []);
+    };
+    fetchTrendingTags();
+  }, []);
+
   const [article, setArticleState] = useState(article_data);
 
   const handleLike = async () => {
+    console.log(123);
+    console.log(article);
       const url = article.like_status
           ? URLs.ARTICLE_UNLIKE(article.id)
           : URLs.ARTICLE_LIKE(article.id);
@@ -34,7 +46,6 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
           }));
       }
   };
-    
   const handleSave = async () => {
       const url = article.save_status
       ? URLs.ARTICLE_UNSAVE(article.id)
@@ -105,8 +116,14 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       color: default_text_color,
       fontWeight: '400',
       fontSize: 17,
+      textAlign: 'justify',
+      marginBottom: 5,
+    },
+    tagContainer:{
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
       marginBottom: 20,
-      textAlign: 'justify' 
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -142,6 +159,16 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
 
         <Text style={[styles.title]}>{article.title}</Text>
         <Text style={[styles.body]}>{article.body}</Text>
+        <View style={styles.tagContainer}>
+          {article.tag.length > 0 && article.tag
+            .map((tag: string, i: number) => (
+              <ThemedTag
+                text={tag}
+                type={trending_tags.includes(tag) ? 'ranked' : 'default'}
+                key={i}
+              />
+          ))}
+        </View>
       </Pressable>
       <View style={[styles.buttonContainer]}>
         <Pressable onPress={handleLike}>

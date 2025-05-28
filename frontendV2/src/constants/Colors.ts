@@ -12,7 +12,11 @@ const custom_colors = {
     default_placeholder_color: '#a2a9b2',
     default_input_background_color: '#f2f2f2',
     default_error_color: '#f92665',
-    default_tag_background_color: '#e4e6e8'
+    default_tag_background_color: '#e4e6e8',
+
+    //Tags
+    rankedTagBackgroundColor: '#E2F7E3',
+    rankedTagTextColor: '#3CC94F',
 
   };
   

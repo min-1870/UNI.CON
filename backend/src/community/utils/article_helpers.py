@@ -16,6 +16,7 @@ from django.core.cache import cache
 from account.models import User
 from django.urls import resolve
 from django.db import transaction
+from django.contrib.postgres.aggregates import ArrayAgg
 
 
 def get_paginated_articles(request, queryset, cache_key=None):
@@ -108,16 +109,14 @@ def get_serialized_articles(user_instance, article_ids, queryset):
         ),
         tag=Coalesce(
             Subquery(
-                ArticleTag.objects.filter(article=OuterRef("pk"))
-                .values("tag__name")
-                .annotate(
-                    tags=Func(
-                        F("tag__name"), Value(","), function="STRING_AGG"
-                    )
-                )
-                .values("tags")[:1],
-            ),
-            Value(""),
+                ArticleTag.objects.filter(
+                    article=OuterRef('pk')
+                ).values(
+                    'article'
+                ).annotate(
+                    tag_list=ArrayAgg('tag__name', distinct=True)
+                ).values('tag_list')[:1]
+            ), Value([])
         ),
     )
 
@@ -213,7 +212,7 @@ def get_serialized_article(request, article_instance):
         tag = ArticleTag.objects.filter(article=article_instance).values_list(
             "tag__name", flat=True
         )
-        article_instance.tag = ", ".join(tag) if tag else ""
+        article_instance.tag = list(tag) if tag else []
 
         # Make an annotated_article to set the cache
         serialized_annotated_article = ArticleResponseSerializer(article_instance).data

@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 
 type TagProps = {
     text: String;
-    type: 'default'|'ranked'|'uni';
+    type: 'default'|'ranked'|'bigRanked'|'uni';
   };
   
 
@@ -14,13 +14,29 @@ export default function ThemedTag({
 }: TagProps) {
     const background_color = useThemeColor({}, 'default_tag_background_color');
     const textColor = useThemeColor({}, 'default_text_color');
-
-
+    const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
+    const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
+    
 
   const styles = type === 'ranked' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: background_color,
+        backgroundColor: rankedBackgroundColor,
+        borderRadius: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 8,
+        marginBottom: 8,
+        },
+        Text: {
+        fontSize: 12,
+        color: rankedTextColor,
+        },
+    })
+    : type === 'bigRanked' ?
+    StyleSheet.create({
+        tag: {
+        backgroundColor: rankedBackgroundColor,
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -29,7 +45,7 @@ export default function ThemedTag({
         },
         Text: {
         fontSize: 14,
-        color: textColor,
+        color: rankedTextColor,
         },
     })
     : type === 'uni' ?

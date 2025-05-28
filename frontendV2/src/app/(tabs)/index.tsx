@@ -4,7 +4,7 @@ import ThemedView from '@/components/ThemedView';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedArticle from '@/components/ThemedArticle';
 import React, { useState, useEffect, useRef  } from "react";
-import {fetchAPI, getData} from "@/components/Utils";
+import {fetchAPI, getData, setData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -47,6 +47,7 @@ export default function HomePage() {
     });
     if (!response.error) {
       setTags(response.data?.tags)
+      setData('trending_tags', Array.isArray(response.data?.tags) ? response.data.tags : []);
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
@@ -140,7 +141,7 @@ export default function HomePage() {
           <ThemedView style={styles.trendingTagsContainers}>
             {tags.map((tag, i) => (
               <Pressable >
-                <ThemedTag text={tag} type={'ranked'} key={i}/>
+                <ThemedTag text={tag} type={'bigRanked'} key={i}/>
               </Pressable>
             ))}
           </ThemedView>

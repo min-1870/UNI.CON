@@ -3,7 +3,7 @@ import URLs from "@/constants/Urls";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Function to save data
-const setData = async (key:string, value:string) => {
+const setData = async (key:string, value:any) => {
   try {
     await AsyncStorage.setItem(key, value);
   } catch (e) {
