@@ -84,10 +84,10 @@ export default function SearchPage() {
   const renderHeader = () => (
     <>
       <ThemedView style={styles.tagsContainer}>
-        <ThemedText type={'subtitle'}>Trending</ThemedText>
+        <ThemedText type={'contentTitle'}>Trending</ThemedText>
       </ThemedView>
       <ThemedView style={styles.resultsContainer}>
-        <ThemedText type={'subtitle'}>Results</ThemedText>
+        <ThemedText type={'contentTitle'}>Results</ThemedText>
       </ThemedView>
     </>
   );

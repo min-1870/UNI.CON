@@ -111,13 +111,11 @@ export default function HomePage() {
       flex: 1,
     },
     titleContainer: {
-      marginTop: 20,
-      gap: 20,
-      marginBottom: 20,
+      marginTop: 15,
     },
     titleContentContainer:{
-      margin: 20,
-      gap: 20,
+      marginHorizontal: 15,
+      marginVertical: 30
     },
     trendingTagsContainers:{
       flexDirection: 'row',
@@ -127,7 +125,7 @@ export default function HomePage() {
       flexDirection: 'row',
       alignSelf: 'flex-start',
       gap: 10,
-      padding: 5,
+      padding: 3,
       borderRadius: 50,
       backgroundColor: default_card_background_color,
       shadowColor: 'rgba(0, 0, 0, 1)',
@@ -140,7 +138,7 @@ export default function HomePage() {
     },
     feedContainer: {
       alignItems: 'stretch',
-      marginHorizontal: 20,
+      marginHorizontal: 15,
       gap: 20,
     },
   });
@@ -148,14 +146,14 @@ export default function HomePage() {
   const renderHeader = () => (
     <>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type={'subtitle'}>UNI.CON</ThemedText>
+        <ThemedText type={'articleTitle'}>UNI.CON</ThemedText>
         <ThemedView style={styles.titleContentContainer}>
-          <ThemedText type={'title'}>{university}</ThemedText>
-          <ThemedText type={'default'} style={{ fontWeight: '500' }}>Currently, they are chatting about..</ThemedText>
+          <ThemedText type={'university'} style={{marginBottom:15}}>{university}</ThemedText>
+          <ThemedText type={'contentSubTitle'} style={{ marginBottom:5 }}>Currently, they are chatting about..</ThemedText>
           <ThemedView style={styles.trendingTagsContainers}>
-            {tags.map((tag, i) => (
-              <Pressable >
-                <ThemedTag text={tag} type={'bigRanked'} key={i}/>
+            {tags.slice(0, 3).map((tag, i) => (
+              <Pressable key={i}>
+                <ThemedTag text={tag} type={'bigRanked'} />
               </Pressable>
             ))}
           </ThemedView>

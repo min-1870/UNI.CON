@@ -1,5 +1,6 @@
 {
   "expo": {
+    "assetBundlePatterns": ["assets/fonts/*"],
     "name": "src",
     "slug": "src",
     "version": "1.0.0",

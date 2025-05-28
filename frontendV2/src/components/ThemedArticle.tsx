@@ -1,12 +1,13 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedText from '@/components/ThemedText';
 import React,  { useState } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import moment from 'moment';
 import { router } from 'expo-router';
-
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 
 type ThemedArticleProps = {
   article_data: any;
@@ -69,7 +70,7 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       flex: 1,
       color: background_color,
       borderRadius: 30,
-      padding: 30, 
+      padding: 16, 
       shadowColor: 'rgba(0, 0, 0, 1)',
       shadowOffset: { width: 0, height: 3 },
       
@@ -84,46 +85,20 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      marginBottom: 20,
-    },
-    uni: {
-      color: default_text_color,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    name: {
-      color: default_text_color,
-      fontWeight: '600',
-      fontSize: 20,
-    },
-    points: {
-      color: points_color,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    time: {
-      color: time_color,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    title: {
-      color: default_text_color,
-      fontWeight: '600',
-      fontSize: 23,
-      marginBottom: 5,
+      marginBottom: 14,
     },
     body: {
       color: default_text_color,
       fontWeight: '400',
       fontSize: 17,
       textAlign: 'justify',
-      marginBottom: 5,
+      marginBottom: 3,
     },
     tagContainer:{
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 10,
-      marginBottom: 20,
+      marginBottom: 14,
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -131,8 +106,10 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       gap: 10,
     },
     button: {
-      color: button_color,
-      fontSize: 15,
+      display: 'flex',
+      gap: 4,
+      alignItems: 'flex-end',
+      flexDirection: 'row',
     },
   });
 
@@ -142,23 +119,23 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
             {article.unicon && (
-              <Text style={[styles.uni]}>
+              <ThemedText type='articleAuthor'>
               {article.user_school.toUpperCase()}
-              </Text>
+              </ThemedText>
             )}
-          <Text style={[styles.name]}>
+          <ThemedText type='articleAuthor'>
             {article.user_temp_name}
-          </Text>
-          <Text style={[styles.points]}>
+          </ThemedText>
+          <ThemedText type='articlePoints'>
             {article.user_static_points}
-          </Text>
-          <Text style={[styles.time]}>
+          </ThemedText>
+          <ThemedText type='articleDate'>
             {moment(article.created_at).fromNow()}
-          </Text>
+          </ThemedText>
         </View>
 
-        <Text style={[styles.title]}>{article.title}</Text>
-        <Text style={[styles.body]}>{article.body}</Text>
+        <ThemedText type='articleTitle'>{article.title}</ThemedText>
+        <ThemedText type='articleBody'>{article.body}</ThemedText>
         <View style={styles.tagContainer}>
           {article.tag.length > 0 && article.tag
             .map((tag: string, i: number) => (
@@ -171,25 +148,42 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
         </View>
       </Pressable>
       <View style={[styles.buttonContainer]}>
-        <Pressable onPress={handleLike}>
-            <Text style={[styles.button]}>
-              {article.like_status ? 'Liked' : 'Like'} {article.likes_count}
-            </Text>
+        <Pressable onPress={handleLike} style={[styles.button]}>
+          <AntDesign
+            name={article.like_status ? 'heart' : 'hearto'} // different glyphs if you prefer
+            size={15}
+            color={button_color} // use a color from your theme
+          />
+          <ThemedText type='articleButton'>
+            {article.likes_count}
+          </ThemedText>
         </Pressable>
-        <Pressable>
-            <Text style={[styles.button]}>
-              comment {article.comments_count}
-            </Text>
-        </Pressable>
-        <Pressable>
-            <Text style={[styles.button]}>
-              view {article.views_count}
-            </Text>
-        </Pressable>
-        <Pressable onPress={handleSave}>
-            <Text style={[styles.button]}>
-              {article.save_status ? 'Saved' : 'Save'}
-            </Text>
+        <View style={[styles.button]}>
+          <AntDesign
+            name={'message1'} // different glyphs if you prefer
+            size={15}
+            color={button_color} // use a color from your theme
+          />
+          <ThemedText type='articleButton'>
+            {article.comments_count}
+          </ThemedText>
+        </View>
+        <View style={[styles.button]}>
+          <AntDesign
+            name={'eyeo'} // different glyphs if you prefer
+            size={15}
+            color={button_color} // use a color from your theme
+          />
+          <ThemedText type='articleButton'>
+            {article.views_count}
+          </ThemedText>
+        </View>
+        <Pressable onPress={handleSave} style={[styles.button]}>
+          <FontAwesome
+            name={article.save_status ? 'bookmark' : 'bookmark-o'} // different glyphs if you prefer
+            size={15}
+            color={button_color} // use a color from your theme
+          />
         </Pressable>
       </View>
     </View>

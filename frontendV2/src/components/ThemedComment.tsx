@@ -1,6 +1,9 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import ThemedText from '@/components/ThemedText';
 import moment from 'moment';
+
+import { AntDesign } from '@expo/vector-icons';
 
 type CommentProps = {
   comment_data: any;
@@ -72,9 +75,11 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
       justifyContent: 'center',
     },
     button: {
-      color: button_color,
-      fontSize: 15,
-    }
+      display: 'flex',
+      gap: 4,
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+    },
   });
 
   
@@ -82,38 +87,44 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
     <View style={comment_data.parent_comment ? styles.nested_container : styles.container}>
       <View style={styles.info_container}>
           {comment_data.unicon || (
-            <Text style={[styles.uni]}>
+            <ThemedText type='articleAuthor' style={{fontSize:12}}>
               {comment_data.user_school.toUpperCase()}
-            </Text>
+            </ThemedText>
           )}
-        <Text style={[styles.name]}>
+        <ThemedText type='articleAuthor' style={{fontSize:12}}>
           {comment_data.user_temp_name}
-        </Text>
-        <Text style={[styles.points]}>
+        </ThemedText>
+        <ThemedText type='articlePoints' style={{fontSize:9}}>
           {comment_data.user_static_points}
-        </Text>
-        <Text style={[styles.time]}>
+        </ThemedText>
+        <ThemedText type='articleDate' style={{fontSize:9}}>
           {moment(comment_data.created_at).fromNow()}
-        </Text>
+        </ThemedText>
       </View>
-      <Text style={styles.body}> {comment_data.body}</Text>
+      <ThemedText type='articleBody'> {comment_data.body} </ThemedText>
       <View style={styles.button_container}>
 
         
         {comment_data.parent_comment ? null : (
             <>
               <Pressable onPress={() => handleReply && handleReply(comment_data.id)} >
-                <Text style={[styles.button]} >
+                <ThemedText type='articleButton' >
                   Reply
-                </Text>
+                </ThemedText>
               </Pressable>
             </>
         )}
 
-        <Pressable onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
-          <Text style={[styles.button]}>
-            {comment_data.like_status ? 'Liked' : 'Like'} {comment_data.likes_count}
-          </Text>
+        <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
+          
+          <AntDesign
+            name={comment_data.like_status ? 'heart' : 'hearto'} // different glyphs if you prefer
+            size={15}
+            color={button_color} // use a color from your theme
+          />
+          <ThemedText type='articleButton'>
+            {comment_data.likes_count}
+          </ThemedText>
         </Pressable> 
 
       </View>
@@ -122,10 +133,10 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
             <>
               {comment_data.comments_count == 0 ? null : (
                 <Pressable onPress={() => handleNestedComment(comment_data.id)} > 
-                  <Text style={[styles.button]}>
+                  <ThemedText type='articleButton'>
                     {comment_data.showReplies ? 'Hide Replies..' : `Show ${comment_data.comments_count} Replies`}
                     
-                  </Text>
+                  </ThemedText>
                 </Pressable>
               )}
             </>

@@ -7,7 +7,8 @@ const custom_colors = {
 
     default_brand_color: '#81ef90',
     default_card_background_color:  '#f7f7f7',
-    default_text_color: '#11181C',
+    default_title_color: '#232835',
+    default_text_color: '#474854',
     default_background_color: '#f8f9f7',
     default_placeholder_color: '#a2a9b2',
     default_input_background_color: '#f2f2f2',
@@ -17,6 +18,8 @@ const custom_colors = {
     //Tags
     rankedTagBackgroundColor: '#E2F7E3',
     rankedTagTextColor: '#3CC94F',
+
+    //
 
   };
   

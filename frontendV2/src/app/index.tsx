@@ -25,27 +25,6 @@ export default function LoginPage() {
     tokenEndpoint:         URLs.tokenEndpoint,
   };
 
-  /*
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-    expoClientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-
-      Toast.show({
-        type: 'success',
-        text1: 'Signed in with Google!',
-      });
-
-      // Send token to backend or process login here if needed
-      router.push("/(tabs)");
-    }
-  }, [response]);
-  */
-
   const handleSubmit = async () => {
     setLoading(true);
 
@@ -137,8 +116,8 @@ export default function LoginPage() {
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
-        <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
+        <ThemedText type="university" >Welcome Back</ThemedText>
+        <ThemedText type='contentSubTitle'>Sign in to continue</ThemedText>
 
         <ThemedText>University Email</ThemedText>
         <View style={styles.emailRow}>
@@ -169,7 +148,7 @@ export default function LoginPage() {
 </ThemedText>
 
         <ThemedButton onPress={handleSubmit} disabled={loading} style={styles.loginButton}>
-          {loading ? 'Logging in...' : 'Login'}
+          <ThemedText>{loading ? 'Logging in...' : 'Login'}</ThemedText>
         </ThemedButton>
 
         <View style={styles.divider} />

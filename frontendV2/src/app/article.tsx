@@ -11,6 +11,7 @@ import URLs from "@/constants/Urls";
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { Animated } from 'react-native';
 
+import { AntDesign } from '@expo/vector-icons';
 export default function ArticlePage() {
   const route = useRoute<RouteProp<{ params: { id: string } }>>();
   const articleId = route.params?.id;
@@ -208,7 +209,7 @@ export default function ArticlePage() {
       height: 40,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingHorizontal: 40,
+      paddingHorizontal: 20,
       paddingVertical:10,
       gap: 15,
     },
@@ -268,7 +269,7 @@ export default function ArticlePage() {
             type={'feedChecked'}
             onPress={() => setFocusedComment(null)}
           >
-            X
+          <ThemedText type={'feedChecked'}>X</ThemedText>
           </ThemedButton>
         </ThemedView>
       )}
@@ -285,7 +286,11 @@ export default function ArticlePage() {
           type={'feedChecked'}
           onPress={focusedComment ? handleReplyComment : handleSendComment}
         >
-          Send
+          <AntDesign
+            name='arrowright'
+            size={25}
+            color={'#000'}
+          />
         </ThemedButton>
       </ThemedView>
     </>

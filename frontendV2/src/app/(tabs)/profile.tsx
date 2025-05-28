@@ -181,8 +181,9 @@ export default function ProfilePage() {
     buttonContainer: {
       flexDirection: 'row',
       // alignSelf: 'flex-start',
-      gap: 20,
-      padding: 5,
+      // gap: 10,
+      justifyContent: 'space-between',
+      padding: 3,
       borderRadius: 50,
       backgroundColor: default_card_background_color,
       shadowColor: 'rgba(0, 0, 0, 1)',
@@ -211,30 +212,30 @@ export default function ProfilePage() {
     <>
       <ThemedView style={styles.titleContainer}>
         <ThemedView style={styles.credibilityScoreContainer}>
-          <ThemedText type={'subtitle'}>Credibility Score</ThemedText>
+          <ThemedText type={'contentTitle'}>Credibility Score</ThemedText>
           <ThemedView style={styles.csRowContainer}>
           <ThemedText type={'summaryPoints'}>{points}</ThemedText>
-          <ThemedText type={'default'}>Points</ThemedText>
+          <ThemedText type={'contentSubTitle'}>Points</ThemedText>
           </ThemedView>
         </ThemedView>
         <ThemedView style={styles.summaryContainer}>
-          <ThemedText type={'subtitle'}>Account Summary</ThemedText>
+          <ThemedText type={'contentTitle'}>Account Summary</ThemedText>
           <ThemedView style={styles.rowsContainer}>
             <ThemedView style={styles.rowContainer}>
-              <ThemedText type={'defaultSemiBold'}>University</ThemedText>
-              <ThemedText type={'default'}>{university}</ThemedText>
+              <ThemedText type={'contentSubTitle'}>University</ThemedText>
+              <ThemedText type={'articleBody'}>{university}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
-              <ThemedText type={'defaultSemiBold'}>Student Email</ThemedText>
-              <ThemedText type={'default'}>{email}</ThemedText>
+              <ThemedText type={'contentSubTitle'}>Student Email</ThemedText>
+              <ThemedText type={'articleBody'}>{email}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
-              <ThemedText type={'defaultSemiBold'}>Google Account</ThemedText>
-              <ThemedText type={'default'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
+              <ThemedText type={'contentSubTitle'}>Google Account</ThemedText>
+              <ThemedText type={'articleBody'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
-              <ThemedText type={'defaultSemiBold'}>Update Password</ThemedText>
-              <ThemedText onPress={() => router.push(`/newPassword`)} type={'default'}>(Click for Update)</ThemedText>
+              <ThemedText type={'contentSubTitle'}>Update Password</ThemedText>
+              <ThemedText onPress={() => router.push(`/newPassword`)} type={'articleBody'}>(Click for Update)</ThemedText>
             </ThemedView>
           </ThemedView>
         </ThemedView>
