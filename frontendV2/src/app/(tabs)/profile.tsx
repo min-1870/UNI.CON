@@ -9,8 +9,10 @@ import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
+import { Animated } from 'react-native';
 
 export default function ProfilePage() {
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [nextArticlePage, setNextArticlePage] = useState(null);
@@ -46,6 +48,18 @@ export default function ProfilePage() {
     };
     fetchSchool();
   }, [sortOption]);
+    
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.setValue(0);
+    } else {
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
   
   const fetchArticles = async () => {
     setLoading(true);
@@ -255,10 +269,8 @@ export default function ProfilePage() {
   );
   return (
     <ThemedView style={styles.container}>
-      {loading ? (
-        <ThemedText>Loading...</ThemedText>
-      ) : (
-        <>
+      {loading ? null : (
+        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
@@ -273,7 +285,7 @@ export default function ProfilePage() {
               fetchMoreArticles();
             }}
           />
-        </>
+        </Animated.View>
       )}
     </ThemedView>
   );

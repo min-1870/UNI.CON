@@ -8,10 +8,12 @@ import {fetchAPI, getData, setData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { Animated } from 'react-native';
 
 import ThemedTag from '@/components/ThemedTag';
 export default function HomePage() {
 
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
@@ -39,6 +41,18 @@ export default function HomePage() {
     setError(false);
   }, [sortOption]);
   
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.setValue(0);
+    } else {
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
+
   const fetchTrendingTags = async () => {
     setLoading(true);
     const response = await fetchAPI(URLs.TRENDING_TAGS, {
@@ -171,10 +185,8 @@ export default function HomePage() {
   );
   return (
     <ThemedView style={styles.container}>
-      {loading ? (
-        <ThemedText>Loading...</ThemedText>
-      ) : (
-        <>
+      {loading ? null : (
+        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
@@ -189,7 +201,7 @@ export default function HomePage() {
               fetchMoreArticles();
             }}
           />
-        </>
+        </Animated.View>
       )}
     </ThemedView>
   );

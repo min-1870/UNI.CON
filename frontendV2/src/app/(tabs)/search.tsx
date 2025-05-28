@@ -7,9 +7,11 @@ import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import ThemedInput from '@/components/ThemedInput';
+import { Animated } from 'react-native';
 
 export default function SearchPage() {
 
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +25,18 @@ export default function SearchPage() {
   }, []);
 
   
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.setValue(0);
+    } else {
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
+
   const fetchArticles = async () => {
     setLoading(true);
     const response = await (searchContent.length === 0 
@@ -90,10 +104,8 @@ export default function SearchPage() {
           onSubmitEditing={fetchArticles}
         />
       </ThemedView>
-      {loading ? (
-        <ThemedText>Loading...</ThemedText>
-      ) : (
-        <>
+      {loading ? null : (
+        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
@@ -108,7 +120,7 @@ export default function SearchPage() {
             }}
             ListHeaderComponent={renderHeader}
           />
-        </>
+        </Animated.View>
       )}
     </ThemedView>
   );

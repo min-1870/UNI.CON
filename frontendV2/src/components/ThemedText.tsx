@@ -3,7 +3,7 @@ import { Text, type TextProps, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked' | 'Wording';
+  type?: 'default' | 'contentPlaceholder' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked' | 'Wording';
 };
 
 export default function ThemedText({
@@ -17,86 +17,98 @@ export default function ThemedText({
   const feed_unchecked_color = useThemeColor({}, 'default_placeholder_color');
   // const feed_unchecked_color = useThemeColor({}, 'default_text_color');
   
+  const h1_font_size = 40;
+  const h2_font_size = 30;
+  const h3_font_size = 20;
+  const context_font_size = 12;
+
+  const styles = type === 'title' ?
+    StyleSheet.create({
+      text:{
+        fontSize: h1_font_size,
+        fontWeight: 'bold',
+        lineHeight: 32,
+        color: defaultColor
+      }
+    })
+  : type === 'subtitle' ?
+    StyleSheet.create({
+      text: {
+        fontSize: h2_font_size,
+        fontWeight: '600',
+        color: defaultColor
+      }
+    }) 
+  : type === 'contentPlaceholder' ?
+    StyleSheet.create({
+      text: {
+        fontSize: h3_font_size,
+        fontWeight: '600',
+        color: feed_unchecked_color
+      }
+    }) 
+  :  type === 'defaultSemiBold' ?
+    StyleSheet.create({
+      text: {
+        fontSize: context_font_size,
+        lineHeight: 24,
+        fontWeight: '600',
+        color: defaultColor
+      }
+    })
+  : type === 'link' ?
+    StyleSheet.create({
+      text: {
+        lineHeight: 30,
+        fontSize: context_font_size,
+        color: '#0a7ea4',
+      }
+    })
+  : type === 'summaryPoints' ?
+    StyleSheet.create({
+      text: {
+        fontSize: 30,
+        fontWeight: '600',
+        color: default_brand_color
+      }
+    })
+  : type === 'feedChecked' ?
+    StyleSheet.create({
+      text: {
+        fontSize: context_font_size,
+        fontWeight: '500',
+        color: defaultColor
+      }
+    })
+  : type === 'feedUnchecked' ?
+    StyleSheet.create({
+      text: {
+        fontSize: context_font_size,
+        fontWeight: '500',
+        color: feed_unchecked_color
+      }
+    })
+  : type === 'Wording' ?
+      StyleSheet.create({
+        text: {
+          fontSize: 50,
+          fontWeight: '500',
+          color: 'rgb(8, 8, 8)',
+          fontFamily: 'DMSerifDisplay-Regular'
+        }
+      })
+  : StyleSheet.create({
+      text: {
+        fontSize: context_font_size,
+        color: defaultColor,
+      }
+  });
+
+
   return (
     <Text
-      style={[
-        {
-          color:
-            type === 'default'
-              ? defaultColor
-              : type === 'error'
-              ? errorColor
-              : type === 'summaryPoints'
-              ? default_brand_color
-              : type === 'feedChecked'
-              ? defaultColor
-              : type === 'feedUnchecked'
-              ? feed_unchecked_color
-              : undefined,
-        },
-        type === 'default' ? styles.default : undefined,
-        type === 'error' ? styles.error : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        type === 'summaryPoints' ? styles.summaryPoints : undefined,
-        type === 'feedChecked' ? styles.feedChecked : undefined,
-        type === 'feedUnchecked' ? styles.feedUnchecked : undefined,
-        type === 'Wording' ? styles.Wording : undefined,
-        style,
-      ]}
+      style={styles.text}
       {...rest}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  error: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 30,
-    fontWeight: '600',
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
-  },
-  summaryPoints: {
-    fontSize: 30,
-    fontWeight: '600',
-  },
-  feedChecked: {
-    fontSize: 15,
-    fontWeight: '500',
-    
-  },
-  feedUnchecked: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  Wording :{
-    fontSize: 50,
-    fontWeight: '500',
-    color:'rgb(8, 8, 8)',
-    fontFamily: 'DMSerifDisplay-Regular'
-  }
-  // Add more styles as needed
-});

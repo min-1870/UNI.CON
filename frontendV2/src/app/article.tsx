@@ -5,14 +5,16 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedComment from '@/components/ThemedComment';
 import ThemedInput from '@/components/ThemedInput';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { useRoute, RouteProp } from '@react-navigation/native';
+import { Animated } from 'react-native';
 
 export default function ArticlePage() {
   const route = useRoute<RouteProp<{ params: { id: string } }>>();
   const articleId = route.params?.id;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
 
   const [nextCommentPage, setNextCommentPage] = useState(null);
   const [article, setArticle] = useState(null);
@@ -22,11 +24,23 @@ export default function ArticlePage() {
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
   const [newComment, setNewComment] = useState('');
   const [focusedComment, setFocusedComment] = useState<number | null>(null);
+
   useEffect(() => {
     fetchArticle();
-    
   }, []);
   
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.setValue(0);
+    } else {
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
+
   const fetchArticle = async () => {
     setLoading(true);
     const response = await fetchAPI(
@@ -183,13 +197,41 @@ export default function ArticlePage() {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    feedContainer: {
+      alignItems: 'stretch',
+    },
+    focusedCommentContainer: {
+      height: 40,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 40,
+      paddingVertical:10,
+      gap: 15,
+    },
+    commentBarContainer: {
+      height: 70,
+      flexDirection: 'row',
+      paddingHorizontal: 30,
+      paddingVertical:10,
+      gap: 20,
+    },
+    NCF: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: 200
+    }
+  });
+
   return (
     <>
       <ThemedView style={styles.container}>
-        {loading ? (
-          <ThemedText>Loading...</ThemedText>
-        ) : (
-            <>
+        {loading ? null : (
+            <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
             {error && <ThemedText type="error">{error}</ThemedText>}
             <FlatList
               data={comments}
@@ -204,10 +246,14 @@ export default function ArticlePage() {
               )}
               contentContainerStyle={styles.feedContainer}
               showsVerticalScrollIndicator={false}
-              ListEmptyComponent={<ThemedText>No comments found.</ThemedText>}
+              ListEmptyComponent={
+                <ThemedView style={styles.NCF}>
+                  <ThemedText type='contentPlaceholder'>No comments found.</ThemedText>
+                </ThemedView>
+              }
               ListHeaderComponent={() => <>{headerContent}</>}
             />
-            </>
+            </Animated.View>
         )}
       </ThemedView>
       {focusedComment && (
@@ -245,27 +291,3 @@ export default function ArticlePage() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  feedContainer: {
-    alignItems: 'stretch',
-  },
-  focusedCommentContainer: {
-    height: 40,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 40,
-    paddingVertical:10,
-    gap: 15,
-  },
-  commentBarContainer: {
-    height: 70,
-    flexDirection: 'row',
-    paddingHorizontal: 30,
-    paddingVertical:10,
-    gap: 20,
-  }
-});
