@@ -66,6 +66,19 @@ export default function ThemedButton({
           justifyContent: 'center',
         },
       })
+    : type === 'unToggled'
+    ? StyleSheet.create({
+        button: {
+          paddingHorizontal: 15,
+          paddingVertical: 5,
+          borderRadius: 50,
+          borderWidth: 5,
+          borderColor: default_brand_color,
+          backgroundColor: default_card_background_color,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      })
     : StyleSheet.create({
         button: {
           paddingHorizontal: 15,

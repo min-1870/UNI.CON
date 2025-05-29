@@ -16,8 +16,8 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native';
-import ThemedTag from '@/components/ThemedTag';
-
+import Toast from 'react-native-toast-message';
+import ThemedTag from '@/components/ThemedTag';import { router } from 'expo-router';
 export default function NewArticlePage() {
   
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
@@ -25,7 +25,6 @@ export default function NewArticlePage() {
   const [body,  setBody]  = useState('');
   const [unicon, setUnicon] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('error here');
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const place_holder_color = useThemeColor({}, 'default_placeholder_color');
@@ -50,6 +49,14 @@ export default function NewArticlePage() {
 
   const handlePost = async () => { //TODO fix this function to post the article
     setLoading(true);
+    if (!title || !body) {
+      Toast.show({
+        type: 'error',
+        text1: `Title and body cannot be empty!`,
+      });
+      setLoading(false);
+      return;
+    }
     const response = await fetchAPI(
       URLs.ARTICLE(), 
       {
@@ -59,21 +66,24 @@ export default function NewArticlePage() {
           title: title, 
           body: body, 
           unicon: unicon,
-          tags: []
+          tag: tags
         },
       }
     );
-    setLoading(false);
     if (!response.error){
-
+      setTitle('');
+      setBody('');
+      setUnicon(false);
+      setRaw('');
+      setTags([]);
+      router.push(`/article?id=${response.data.id}`);
     }else{
-
+      Toast.show({
+        type: 'error',
+        text1: `Hi, ${response.data.detail}!`,
+      });
     }
-    // if (!resp.error) {
-    //   navigation.goBack();
-    // } else {
-    //   alert(resp.data.detail || 'Failed to post');
-    // }
+    setLoading(false);
   };
 
   useLayoutEffect(() => {
@@ -203,23 +213,21 @@ export default function NewArticlePage() {
             scrollEnabled                //allow scrolling when text overflows
           />
         </ThemedView>
-
-        {error || <ThemedText type="error">{error}</ThemedText>}
         <ThemedView style={styles.uniconContainer}>
             <ThemedText>
               By turning on the unicon option your post will be visible to other supported university students
             </ThemedText>
             <ThemedButton
               type={unicon ? 'toggled' : 'unToggled'}
-              onPress={() => {setUnicon(!unicon)}}
+              onPress={() => setUnicon(!unicon)}
             >
-              UNI.CON
+              <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
             </ThemedButton>
           </ThemedView>
       </ThemedView>
         
       <ThemedView style={styles.tagAreaContainer}>
-        <ThemedText type={'subtitle'}>Add Tags</ThemedText>
+        <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
             <Pressable onPress={() => removeTag(i)}>
