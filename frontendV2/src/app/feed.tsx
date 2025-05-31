@@ -8,10 +8,21 @@ import {
   FlatList,
   StyleSheet,
   Switch,
+  Animated,
+  Keyboard,
+  Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Dimensions,
+  Pressable,
+  Image,
+  TextInputProps,
+  TextStyle,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
 import BottomNav from '../components/ui/BottomNav';
+import CreatePost from '../components/CreatePost';
 
 const TAGS = ['All', 'School', 'IT'];
 
@@ -79,13 +90,150 @@ const POSTS = [
   },
 ];
 
+interface TextFormat {
+  bold: boolean;
+  italic: boolean;
+  size: 'normal' | 'heading';
+}
+
+interface FormattedText {
+  text: string;
+  format: TextFormat;
+}
+
 export default function Feed() {
   const [selectedTag, setSelectedTag] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('Latest');
   const [navVisible, setNavVisible] = useState(true);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const scrollOffset = useRef(0);
+  
+  // New state for post creation
+  const [postContent, setPostContent] = useState('');
+  const [postTitle, setPostTitle] = useState('');
+  const [selectedPostTags, setSelectedPostTags] = useState<string[]>([]);
+  
+  // New state for hashtags
+  const [hashtagInput, setHashtagInput] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  
+  // Animation values
+  const expandAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  
+  // Animation values for modal
+  const modalAnim = useRef(new Animated.Value(0)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const blurAnim = useRef(new Animated.Value(0)).current;
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [formattedContent, setFormattedContent] = useState<FormattedText[]>([]);
+  const [currentFormat, setCurrentFormat] = useState<TextFormat>({ bold: false, italic: false, size: 'normal' });
+  const [isTitleFocused, setIsTitleFocused] = useState(false);
+  const [isContentFocused, setIsContentFocused] = useState(false);
+  const [isHashtagInputActive, setIsHashtagInputActive] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const newPostAnim = useRef(new Animated.Value(0)).current;
+  const [lastPostId, setLastPostId] = useState<string | null>(null);
+
+  const handleCreatePostPress = () => {
+    setIsCreatingPost(true);
+  };
+
+  const handleCancelPost = () => {
+    setIsCreatingPost(false);
+  };
+
+  const handleSubmitPost = async (post: {
+    title: string;
+    content: string;
+    hashtags: string[];
+    image?: string;
+  }) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const newPost = {
+        id: String(POSTS.length + 1),
+        user: 'Current User',
+        timestamp: 'Just now',
+        title: post.title,
+        content: post.content,
+        tags: post.hashtags,
+        likes: 0,
+        comments: 0,
+        bookmarks: 0,
+        image: post.image,
+      };
+      
+      POSTS.unshift(newPost);
+      setLastPostId(newPost.id);
+      
+      // Animate the new post
+      newPostAnim.setValue(0);
+      Animated.spring(newPostAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }).start();
+
+      setIsCreatingPost(false);
+    } catch (err) {
+      setError('Failed to create post. Please try again.');
+      throw err; // Re-throw to let CreatePost component handle the error
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const togglePostTag = (tag: string) => {
+    setSelectedPostTags(prev => 
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const handleContentChange = (text: string) => {
+    setPostContent(text);
+    // Apply formatting to the text
+    const formattedText = {
+      text,
+      format: currentFormat
+    };
+    setFormattedContent([formattedText]);
+  };
+
+  const toggleFormat = (format: keyof TextFormat) => {
+    setCurrentFormat(prev => ({
+      ...prev,
+      [format]: format === 'size' ? (prev.size === 'normal' ? 'heading' : 'normal') : !prev[format],
+    }));
+  };
+
+  const handleHashtagInput = (text: string) => {
+    if (text.endsWith(' ') || text.endsWith(',')) {
+      const tag = text.trim().replace(',', '');
+      if (tag && !hashtags.includes(tag)) {
+        setHashtags(prev => [...prev, tag]);
+        setHashtagInput('');
+      }
+    } else {
+      setHashtagInput(text);
+    }
+  };
+
+  const removeHashtag = (tagToRemove: string) => {
+    setHashtags(hashtags.filter(tag => tag !== tagToRemove));
+  };
 
   const filteredPosts = POSTS.filter(post => {
     const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
@@ -96,6 +244,60 @@ export default function Feed() {
   });
 
   const FILTERS = ['All', 'Hot', 'Recommended'];
+
+  const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentOffset = nativeEvent.contentOffset.y;
+    const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+    setNavVisible(direction === 'up' && currentOffset > 10);
+    scrollOffset.current = currentOffset;
+  };
+
+  const pickImage = async () => {
+    try {
+      // For Mac, we'll use a file input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e: any) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event: any) => {
+            setSelectedImage(event.target.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    } catch (error) {
+      console.error('Error picking image:', error);
+      alert('Error selecting image. Please try again.');
+    }
+  };
+
+  const renderPost = ({ item, index }: { item: any; index: number }) => {
+    const isNewPost = item.id === lastPostId;
+    
+    return (
+      <Animated.View
+        style={[
+          isNewPost && {
+            transform: [
+              {
+                scale: newPostAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
+                }),
+              },
+            ],
+            opacity: newPostAnim,
+          },
+        ]}
+      >
+        <PostCard post={item} />
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -133,17 +335,26 @@ export default function Feed() {
         ))}
       </ScrollView>
 
-      {/* New Post */}
-      <View style={styles.newPostContainer}>
+      {/* New Post Button */}
+      <TouchableOpacity
+        style={styles.newPostButton}
+        onPress={handleCreatePostPress}
+      >
         <TextInput
           style={styles.searchInput}
           placeholder="What's on your mind?"
-          value={searchText}
-          onChangeText={setSearchText}
           placeholderTextColor="#999"
+          editable={false}
         />
         <FontAwesome name="pencil" size={20} color="#666" />
-      </View>
+      </TouchableOpacity>
+
+      {/* Create Post Modal */}
+      <CreatePost
+        isVisible={isCreatingPost}
+        onClose={handleCancelPost}
+        onSubmit={handleSubmitPost}
+      />
 
       {/* Filter Tabs and Toggle */}
       <View style={styles.filterToggleContainer}>
@@ -183,23 +394,12 @@ export default function Feed() {
       <FlatList
         data={filteredPosts}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 20 }}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            styles={styles}
-          />
-        )}
-        onScroll={({ nativeEvent }) => {
-          const currentOffset = nativeEvent.contentOffset.y;
-          const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
-          setNavVisible(direction === 'up' || currentOffset < 10);
-          scrollOffset.current = currentOffset;
-        }}
+        renderItem={renderPost}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 80 }}
       />
-      <BottomNav isVisible={navVisible} />
+      <BottomNav isVisible={navVisible && !isCreatingPost} />
     </View>
   );
 }
@@ -252,13 +452,12 @@ const styles = StyleSheet.create({
   tagTextSelected: {
     color: '#fff',
   },
-  newPostContainer: {
+  newPostButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 0.2,
     borderColor: '#E5E7EB',
-    height: 50,
     marginHorizontal: 15,
     borderRadius: 25,
     paddingHorizontal: 15,
@@ -275,6 +474,84 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#222',
+  },
+  postForm: {
+    flex: 1,
+    padding: 10,
+  },
+  postTitleInput: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 15,
+    padding: 5,
+  },
+  postContentInput: {
+    fontSize: 16,
+    color: '#222',
+    padding: 10,
+    textAlignVertical: 'top',
+    minHeight: 150,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+  },
+  postTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  postTagBadge: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 6,
+  },
+  postTagBadgeSelected: {
+    backgroundColor: '#57EC6B',
+  },
+  postTagText: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  postTagTextSelected: {
+    color: '#fff',
+  },
+  postActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    paddingTop: 15,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  cancelButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+  submitButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#57EC6B',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   filterToggleContainer: {
     flexDirection: 'row',
@@ -324,5 +601,175 @@ const styles = StyleSheet.create({
     color: '#444',
     fontWeight: '600',
   },
-  
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  backdropPressable: {
+    flex: 1,
+  },
+  modalContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    zIndex: 2,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    transform: [
+      { translateX: -225 },
+      { translateY: -300 },
+    ],
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  modalScrollContent: {
+    flex: 1,
+  },
+  modalScrollContentContainer: {
+    flexGrow: 1,
+  },
+  modalContentWrapper: {
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+  formatToolbar: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  formatButton: {
+    padding: 8,
+    marginRight: 8,
+    borderRadius: 8,
+  },
+  formatButtonActive: {
+    backgroundColor: '#F3F4F6',
+  },
+  imageUploadButton: {
+    width: '100%',
+    height: 80,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginBottom: 15,
+    overflow: 'hidden',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  imagePlaceholderText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  hashtagContainer: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  hashtagScrollContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  hashtagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E5E7EB',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  hashtagPillText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  hashtagRemoveButton: {
+    marginLeft: 6,
+  },
+  hashtagButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  hashtagInput: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 120,
+    fontSize: 14,
+    color: '#374151',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  hashtagIcon: {
+    fontSize: 16,
+    color: '#666',
+    marginRight: 4,
+  },
+  hashtagButtonText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  inputFocused: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 8,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  italicText: {
+    fontStyle: 'italic',
+  },
+  headingText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  postCardWrapper: {
+    marginHorizontal: 15,
+    marginBottom: 20,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
 });

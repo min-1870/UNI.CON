@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 // PostCard expects props:
 // - post: { user, timestamp, title, content, tags, likes, comments, bookmarks, image }
 // - styles: StyleSheet object from feed.tsx (for reuse)
 interface Post {
+  id: string;
   user: string;
   timestamp: string;
   title: string;
@@ -35,10 +37,6 @@ const styles = StyleSheet.create({
     elevation: 3,
     transitionDuration: '200ms',
     transform: [{ scale: 1 }],
-    maxWidth: 450,
-    alignSelf: 'center',
-     
-   
   },
   postHeader: {
   
@@ -120,8 +118,18 @@ const styles = StyleSheet.create({
 });
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
+  const router = useRouter();
+
+  const handleArticlePress = () => {
+    router.push(`/article?id=${post.id}`);
+  };
+
   return (
-    <View style={styles.postCard}>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={handleArticlePress}
+      style={[styles.postCard, { width: '100%', maxWidth: 420, alignSelf: 'center' }]}
+    >
       <View style={styles.postHeader}>
         <View style={styles.userInfo}>
           <View style={styles.userAvatar}>
@@ -177,10 +185,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <Text style={styles.actionText}>{post.bookmarks}</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
-
-
 
 export default PostCard;
