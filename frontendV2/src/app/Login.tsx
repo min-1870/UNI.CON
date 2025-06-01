@@ -39,42 +39,42 @@ export default function LoginPage() {
   }, [response]);
 
   const handleSubmit = async () => {
-    const url = `${API_URL}/account/user/login/`;
+    const url = `https://unicon.min1870.com/api/account/user/login/`;
     setLoading(true);
-
-    const response = await fetchAPI(url, {
-      method: 'POST',
-      token: false,
-      body: { email, password },
-    });
-
-    if (!response.error) {
-      setData('id', response.data.id);
-      setData('access', response.data.access);
-      setData('email', response.data.email);
-      setData('points', response.data.points);
-      setData('university_colors', response.data.university_colors);
-      setData('university', response.data.university);
-      setData('refresh', response.data.refresh);
-      setData('color', response.data.color);
-      setData('initial', response.data.initial);
-      setData('is_validated', response.data.is_validated);
-
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response.data.id}!`,
+    try {
+      console.log('Attempting login with:', { email, password, url });
+      const response = await fetchAPI(url, {
+        method: 'POST',
+        token: false,
+        body: { email, password },
       });
+      console.log('Login API response:', response);
 
-      router.push("/(tabs)");
-    } else {
-      setError(response?.data?.detail || "An error occurred");
+      if (!response.error) {
+        await setData('access', response.data.access);
+        await setData('refresh', response.data.refresh);
+        await setData('user', response.data.user);
+        Toast.show({
+          type: 'success',
+          text1: `Welcome!`,
+        });
+      } else {
+        setError(response?.data?.detail || 'Login failed');
+        Toast.show({
+          type: 'error',
+          text1: 'Login failed',
+          text2: response?.data?.detail || 'Check your credentials.',
+        });
+      }
+    } catch (e) {
+      console.error('Network or fetch error:', e);
+      setError('Network error. Please check your connection or backend.');
       Toast.show({
         type: 'error',
-        text1: "We couldn't log you in.",
-        text2: "Try again.",
+        text1: 'Network error',
+        text2: 'Please check your connection or backend.',
       });
     }
-
     setLoading(false);
   };
 

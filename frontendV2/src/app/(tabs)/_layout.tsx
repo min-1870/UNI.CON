@@ -2,61 +2,64 @@ import React from 'react';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import NewArticlePage from './post';
-import HomePage from './index';
+import FeedPage from '../feed';
 import SearchPage from './search';
 import ProfilePage from './profile';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 export type TabParamList = {
-  home: undefined;
+  feed: undefined;
   search: undefined;
   post: undefined;         
   profile: undefined;
 };
 
-const Tabs = createBottomTabNavigator<TabParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <Tabs.Navigator>
-      <Tabs.Screen
-        name="home"
-        component={HomePage}
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+        tabBarInactiveTintColor: colorScheme === 'dark' ? '#666' : '#999',
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="feed"
+        component={FeedPage}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Feed',
+          tabBarIcon: ({ color }) => <IconSymbol name="home" color={color} />,
         }}
       />
-      <Tabs.Screen
+      <Tab.Screen
         name="search"
         component={SearchPage}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Search',
+          tabBarIcon: ({ color }) => <IconSymbol name="search" color={color} />,
         }}
-        />
-      <Tabs.Screen
+      />
+      <Tab.Screen
         name="post"
         component={NewArticlePage}
         options={{
-          headerShown: true,
-          title: 'New Article',
-          tabBarStyle: { display: 'none' },  
-          tabBarLabel: 'Post', 
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Post',
+          tabBarIcon: ({ color }) => <IconSymbol name="plus" color={color} />,
         }}
       />
-      <Tabs.Screen
+      <Tab.Screen
         name="profile"
         component={ProfilePage}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol name="user" color={color} />,
         }}
-        />
-    </Tabs.Navigator>
+      />
+    </Tab.Navigator>
   );
 }

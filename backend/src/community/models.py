@@ -7,6 +7,7 @@ from community.constants import NOTIFICATION_GROUP
 class Article(models.Model):
     title = models.CharField(max_length=100, default="unknown", null=False)
     body = models.TextField(default="unknown", null=False)
+    body_format = models.CharField(max_length=20, default="markdown", null=False)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     unicon = models.BooleanField(default=True, null=False)

@@ -39,8 +39,9 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1 }],
   },
   postHeader: {
-  
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
     fontFamily: 'Roboto_400Regular',
   },
@@ -68,9 +69,11 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   postTimestamp: {
-    marginLeft:15,
     fontSize: 12,
     color: '#999',
+    fontWeight: '500',
+    marginLeft: 8,
+    alignSelf: 'flex-start',
   },
   postTitle: {
     fontWeight: '600',
@@ -117,6 +120,16 @@ const styles = StyleSheet.create({
   },
 });
 
+function getRelativeTime(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+  if (diff < 60) return 'now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const router = useRouter();
 
@@ -137,11 +150,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
               {post.user.charAt(0)}
             </Text>
           </View>
-          <View style={{ flexDirection: 'row' }}>
-            <Text style={styles.userName}>@{post.user}</Text>
-            <Text style={styles.postTimestamp}>· {post.timestamp}</Text>
-          </View>
+          <Text style={styles.userName}>@{post.user}</Text>
         </View>
+        <Text style={styles.postTimestamp}>{getRelativeTime(post.timestamp)}</Text>
       </View>
       <Text style={styles.postTitle}>{post.title}</Text>
       <Text style={styles.postContent} numberOfLines={2}>

@@ -6,6 +6,7 @@ from django.db import transaction
 class ArticleSerializer(serializers.ModelSerializer):
     tag = serializers.JSONField(required=False)
     search_content = serializers.CharField(required=False)
+    body_format = serializers.CharField(required=False, default='markdown')
 
     class Meta:
         model = Article
@@ -13,6 +14,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             # In Article Model
             "title",
             "body",
+            "body_format",
             "unicon",
             # Not in Article Model
             "tag",
@@ -32,11 +34,11 @@ class ArticleSerializer(serializers.ModelSerializer):
             "title": {"required": True},
             "body": {"required": True},
             "unicon": {"required": True},
-            "tag": {"required": True},
+            "tag": {"required": False},
+            "body_format": {"required": False},
         }
 
     def validate(self, data):
-
         # Validate the whitespace of the title
         title = data.get("title", "").strip()
         if not title:
@@ -50,12 +52,13 @@ class ArticleSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-
         # Link the foreign key
         user_instance = self.context["request"].user
         validated_data["user"] = user_instance
 
-        del validated_data["tag"]
+        # Only delete 'tag' if it exists
+        if "tag" in validated_data:
+            del validated_data["tag"]
 
         # Calculate and save the embedding vector
         validated_data["embedding_vector"] = get_embedding(

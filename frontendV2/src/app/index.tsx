@@ -39,43 +39,63 @@ export default function LoginPage() {
   }, [response]);
 
   const handleSubmit = async () => {
-    const url = `${API_URL}/account/user/login/`;
-    setLoading(true);
-
-    const response = await fetchAPI(url, {
-      method: 'POST',
-      token: false,
-      body: { email, password },
-    });
-
-    if (!response.error) {
-      setData('id', response.data.id);
-      setData('access', response.data.access);
-      setData('email', response.data.email);
-      setData('points', response.data.points);
-      setData('university_colors', response.data.university_colors);
-      setData('university', response.data.university);
-      setData('refresh', response.data.refresh);
-      setData('color', response.data.color);
-      setData('initial', response.data.initial);
-      setData('is_validated', response.data.is_validated);
-
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response.data.id}!`,
-      });
-
-      router.push("/(tabs)");
-    } else {
-      setError(response?.data?.detail || "An error occurred");
-      Toast.show({
-        type: 'error',
-        text1: "We couldn't log you in.",
-        text2: "Try again.",
-      });
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
     }
 
-    setLoading(false);
+    setLoading(true);
+    setError("");
+
+    try {
+      const url = `${API_URL}/account/user/login/`;
+      const response = await fetchAPI(url, {
+        method: 'POST',
+        token: false,
+        body: { email, password },
+      });
+
+      if (!response.error) {
+        // Store user data
+        await Promise.all([
+          setData('id', response.data.id),
+          setData('access', response.data.access),
+          setData('email', response.data.email),
+          setData('points', response.data.points),
+          setData('university_colors', response.data.university_colors),
+          setData('university', response.data.university),
+          setData('refresh', response.data.refresh),
+          setData('color', response.data.color),
+          setData('initial', response.data.initial),
+          setData('is_validated', response.data.is_validated)
+        ]);
+
+        Toast.show({
+          type: 'success',
+          text1: `Welcome back, ${response.data.id}!`,
+        });
+
+        router.push("/(tabs)");
+      } else {
+        const errorMessage = response.data?.detail || response.data?.message || "Login failed. Please try again.";
+        setError(errorMessage);
+        Toast.show({
+          type: 'error',
+          text1: "Login failed",
+          text2: errorMessage,
+        });
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError("Network error. Please check your connection.");
+      Toast.show({
+        type: 'error',
+        text1: "Network error",
+        text2: "Please check your connection and try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

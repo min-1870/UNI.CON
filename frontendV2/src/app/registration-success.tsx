@@ -84,7 +84,7 @@ export default function registrationComplete() {
       }),
     ]).start(() => {
       setTimeout(() => {
-        navigation.navigate('feed');
+        navigation.navigate('(tabs)', { screen: 'feed' });
       }, 2000);
     });
   }, []);

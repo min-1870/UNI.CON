@@ -35,7 +35,7 @@ const removeData = async (key:string) => {
 
 const fetchNewAccessToken = async () => {
     
-    const refreshToken = getData('refresh');
+    const refreshToken = await getData('refresh');
     const url = `${API_URL}/account/token/refresh`
 
     try {
@@ -48,11 +48,13 @@ const fetchNewAccessToken = async () => {
             headers: {
                 "Content-Type": "application/json",
             },
+            withCredentials: true,
             }
         );
-        setData('access', response.data.access);
+        await setData('access', response.data.access);
         return response.data.access
     } catch (error) {
+        console.error('Token refresh error:', error);
         return false;
     }
 };
@@ -71,6 +73,7 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
               method,
               url,
               headers,
+              withCredentials: true,
               ...(method !== "GET" && { data: body }), // Only add body for non-GET requests
           });
           // console.log(response.data)
@@ -88,6 +91,7 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
           return await request();
       } catch (error: unknown) {
           const err = error as any; // Explicitly cast error to any
+          console.error('API Error:', err.response?.data || err.message);
           return {
               error: true,
               data: err.response?.data || "An error occurred",

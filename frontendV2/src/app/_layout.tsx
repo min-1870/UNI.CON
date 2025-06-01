@@ -46,13 +46,11 @@ export default function RootLayout() {
         <Stack.Screen name="validation" />
         <Stack.Screen name="terms-and-conditions" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="feed" />
-        <Stack.Screen name="article" options={{ headerShown: true }} />
+        <Stack.Screen name="article" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
         <Stack.Screen name="registration-success" />
       </Stack>
       <Toast />
-      <BottomNav />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

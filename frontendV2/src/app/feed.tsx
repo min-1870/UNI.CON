@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,72 +23,12 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icon
 import PostCard from '../components/PostCard';
 import BottomNav from '../components/ui/BottomNav';
 import CreatePost from '../components/CreatePost';
+import { fetchAPI, getData } from '../components/Utils';
+import { API_URL } from '../constants/Domains';
+import URLS from '../constants/Urls';
+import { useFocusEffect } from '@react-navigation/native';
 
 const TAGS = ['All', 'School', 'IT'];
-
-const POSTS = [
-  {
-    id: '1',
-    user: 'Jane Doe',
-    timestamp: '2h ago',
-    title: 'Welcome to UNICON!',
-    content:
-      'We are excited to launch the new UNICON platform for all UNSW Sydney students. Stay tuned for updates and events.',
-    tags: ['News', 'Events'],
-    likes: 12,
-    comments: 5,
-    bookmarks: 3,
-    image: 'https://images.unsplash.com/photo-1508780709619-79562169bc64?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: '2',
-    user: 'John Smith',
-    timestamp: '1d ago',
-    title: 'Campus Job Fair',
-    content:
-      'Join us this Friday at the campus job fair to meet potential employers and learn about internship opportunities.',
-    tags: ['Jobs', 'Events'],
-    likes: 30,
-    comments: 10,
-    bookmarks: 7,
-  },
-  {
-    id: '3',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-  {
-    id: '4',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-  {
-    id: '5',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-];
 
 interface TextFormat {
   bold: boolean;
@@ -101,13 +41,22 @@ interface FormattedText {
   format: TextFormat;
 }
 
+const apiEndpoints = {
+  All: `${API_URL}/community/article`,
+  Hot: `${API_URL}/community/article/hot`,
+  Recommended: `${API_URL}/community/article/preference`,
+};
+
 export default function Feed() {
   const [selectedTag, setSelectedTag] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [isSwitchOn, setIsSwitchOn] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState('Latest');
+  const [selectedFilter, setSelectedFilter] = useState<keyof typeof apiEndpoints>('All');
   const [navVisible, setNavVisible] = useState(true);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollOffset = useRef(0);
   
   // New state for post creation
@@ -135,16 +84,63 @@ export default function Feed() {
   const [isContentFocused, setIsContentFocused] = useState(false);
   const [isHashtagInputActive, setIsHashtagInputActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const newPostAnim = useRef(new Animated.Value(0)).current;
+  const [newPostAnim, setNewPostAnim] = useState(new Animated.Value(0));
   const [lastPostId, setLastPostId] = useState<string | null>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchFeed();
+    }, [selectedFilter])
+  );
+
+  const fetchFeed = async () => {
+    setLoading(true);
+    setError(null);
+    const url = apiEndpoints[selectedFilter] || apiEndpoints.All;
+    const response = await fetchAPI(url, { method: 'GET', token: true });
+    console.log('Feed response:', response);
+    if (!response.error) {
+      // Try to find the articles array in the response
+      const articles = response.data?.results?.articles || response.data?.articles || response.data?.results || response.data || [];
+      setArticles(Array.isArray(articles) ? articles : []);
+    } else {
+      setError(response?.data?.detail || 'An error occurred');
+      console.error('Feed error:', response.data);
+    }
+    setLoading(false);
+  };
 
   const handleCreatePostPress = () => {
     setIsCreatingPost(true);
+    Animated.parallel([
+      Animated.timing(expandAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const handleCancelPost = () => {
-    setIsCreatingPost(false);
+    Animated.parallel([
+      Animated.timing(expandAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsCreatingPost(false);
+    });
   };
 
   const handleSubmitPost = async (post: {
@@ -153,44 +149,34 @@ export default function Feed() {
     hashtags: string[];
     image?: string;
   }) => {
-    setIsSubmitting(true);
+    setLoading(true);
     setError(null);
-
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newPost = {
-        id: String(POSTS.length + 1),
-        user: 'Current User',
-        timestamp: 'Just now',
-        title: post.title,
-        content: post.content,
-        tags: post.hashtags,
-        likes: 0,
-        comments: 0,
-        bookmarks: 0,
-        image: post.image,
-      };
-      
-      POSTS.unshift(newPost);
-      setLastPostId(newPost.id);
-      
-      // Animate the new post
-      newPostAnim.setValue(0);
-      Animated.spring(newPostAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start();
-
-      setIsCreatingPost(false);
-    } catch (err) {
-      setError('Failed to create post. Please try again.');
-      throw err; // Re-throw to let CreatePost component handle the error
+      // Convert hashtags array to comma-separated string
+      const course_code = post.hashtags.join(',');
+      const response = await fetchAPI(`${API_URL}/community/article/`, {
+        method: 'POST',
+        token: true,
+        body: {
+          title: post.title,
+          body: post.content,
+          unicon: true, // or get from UI
+          course_code,
+          // image: post.image, // Uncomment if backend supports image
+        },
+      });
+      if (response.error) {
+        setError(response.data?.detail || 'Failed to post article');
+        console.error('Post error:', response.data);
+      } else {
+        setIsCreatingPost(false);
+        await fetchFeed();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to post article');
+      console.error('Post error:', err);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -235,11 +221,11 @@ export default function Feed() {
     setHashtags(hashtags.filter(tag => tag !== tagToRemove));
   };
 
-  const filteredPosts = POSTS.filter(post => {
-    const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
+  const filteredArticles = articles.filter(post => {
+    const matchesTag = selectedTag === 'All' || (post.course_code && post.course_code.toLowerCase().includes(selectedTag.toLowerCase()));
     const matchesSearch =
       post.title.toLowerCase().includes(searchText.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchText.toLowerCase());
+      post.body.toLowerCase().includes(searchText.toLowerCase());
     return matchesTag && matchesSearch;
   });
 
@@ -294,7 +280,18 @@ export default function Feed() {
           },
         ]}
       >
-        <PostCard post={item} />
+        <PostCard post={{
+          id: String(item.id),
+          user: item.user_temp_name || 'Unknown',
+          timestamp: item.created_at,
+          title: item.title,
+          content: item.body,
+          tags: item.course_code ? item.course_code.split(',') : [],
+          likes: item.likes_count,
+          comments: item.comments_count,
+          bookmarks: 0, // You can add save_status if available
+          image: undefined, // Add image if available
+        }} />
       </Animated.View>
     );
   };
@@ -366,7 +363,7 @@ export default function Feed() {
                 styles.filterTab,
                 selectedFilter === filter && styles.filterTabSelected,
               ]}
-              onPress={() => setSelectedFilter(filter)}
+              onPress={() => setSelectedFilter(filter as keyof typeof apiEndpoints)}
             >
               <Text
                 style={[
@@ -391,14 +388,20 @@ export default function Feed() {
       </View>
 
       {/* Posts List */}
-      <FlatList
-        data={filteredPosts}
-        keyExtractor={item => item.id}
-        renderItem={renderPost}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      />
+      {loading ? (
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>Loading...</Text>
+      ) : error ? (
+        <Text style={{ textAlign: 'center', color: 'red', marginTop: 20 }}>{error}</Text>
+      ) : (
+        <FlatList
+          data={filteredArticles}
+          keyExtractor={item => String(item.id)}
+          renderItem={renderPost}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        />
+      )}
       <BottomNav isVisible={navVisible && !isCreatingPost} />
     </View>
   );
@@ -462,12 +465,15 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingHorizontal: 15,
     paddingVertical: 8,
-    marginBottom: 15,
+    marginBottom: 30,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
+    height: 50,
+    width: '90%',
+    alignSelf: 'center',
   },
   searchInput: {
     marginLeft: 10,
