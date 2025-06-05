@@ -1,8 +1,11 @@
 from community.constants import (
-    CACHE_TIMEOUT,
+    
     PAGINATOR_SIZE,
-    NOTIFICATIONS_CACHE_KEY,
+    
     EMAIL_NOTIFICATIONS_THRESHOLD,
+    NOTIFICATION_IDS_CACHE_KEY,
+    NOTIFICATION_CACHE_KEY,
+    
 )
 from community.task import send_email
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
@@ -13,50 +16,94 @@ from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.db import transaction
 from django.db import models
+from django_redis import get_redis_connection
+from django.utils import timezone
 
-def get_paginated_notifications(request, new=False):
-    if new:
-        return get_paginated_new_notifications(request)
+redis_conn = get_redis_connection("default")
+
+def to_unix_ms(dt):
+    """
+    Convert a Django DateTimeField (aware or naive) to an integer
+    timestamp in milliseconds.
+    """
+    if dt:
+        if timezone.is_naive(dt):
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp() * 1000)
     else:
-        return get_paginated_read_notifications(request)
+        return int(timezone.now().timestamp() * 1000)
 
-def get_paginated_new_notifications(request):
+def get_paginated_notifications(request, new=True):
     try:
         requested_page = int(request.query_params.get("page", 1))
+        dt = request.query_params.get("dt", None)
+        
+        if timezone.is_naive(dt):
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt = int(dt.timestamp() * 1000)
     except Exception:
-        requested_page = 0
+        requested_page = 1
+        dt = int(timezone.now().timestamp() * 1000)
     user_instance = request.user
 
-    # Cache notifications
-    cache_key = NOTIFICATIONS_CACHE_KEY(
-        user_instance.id
-    )
-    notifications_cache = cache.get(cache_key)
+    cache_key = NOTIFICATION_IDS_CACHE_KEY(user_instance.id, new)
 
-    # Initiate the cache if the cache is missing
-    if notifications_cache is None:
-        total_notifications = Notification.objects.filter(user=user_instance, read=True).count()
-        unaware_notifications = list(
-            Notification.objects.filter(
-                user=user_instance,
-                read=False,
-                email=False
-            ).values_list('id', flat=True)
+    # Check if the zset exists in Redis
+    if not redis_conn.exists(cache_key):
+        notifications = Notification.objects.filter(user_id=user_instance.id, read=not new).values_list(
+            "id", "created_at"
         )
-        notifications_cache = {
-            "total_notifications": total_notifications,
-            "unaware_notifications": unaware_notifications,
-            "notifications": {}
-        }
+        mapping = {}
+        for nid, created_at in notifications:
+            score = to_unix_ms(created_at)  
+            mapping[str(nid)] = score
 
-    total_notifications = Notification.objects.filter(user=user_instance, read=False).count()
-
-    start_index = (requested_page - 1) * PAGINATOR_SIZE
-    end_index = requested_page * PAGINATOR_SIZE
+        if mapping:
+            redis_conn.zadd(cache_key, mapping)
+            redis_conn.expire(cache_key, 60 * 24 * 60 * 60)
+        
+    # Fetch new notification IDs from the cache
+    raw_with_scores  = redis_conn.zrevrangebyscore(
+        cache_key,
+        max=dt,
+        min=0,
+        start=0,
+        num= PAGINATOR_SIZE,
+        withscores=True 
+    )
+    mapping = {member.decode(): int(score) for member, score in raw_with_scores }
+    id_list = list(mapping.keys())
     
-    notification_queryset = (
-        Notification.objects.filter(user=user_instance, read=False).annotate(
-            content=Coalesce(
+    # Move the zset ids to old notifications zset
+    if new and id_list:
+        redis_conn.zrem(cache_key, *id_list)
+        old_cache_key = NOTIFICATION_IDS_CACHE_KEY(user_instance.id, False)
+        if redis_conn.exists(old_cache_key):
+            redis_conn.zadd(old_cache_key, mapping)
+        
+        with transaction.atomic():
+            Notification.objects.filter(id__in=id_list).update(read=True)
+
+    # Bulk get notifications from cache
+    cache_keys = [NOTIFICATION_CACHE_KEY(nid) for nid in id_list]
+    cached = cache.get_many(cache_keys)
+
+    # Build the results dictionary
+    results = {}
+    missing_ids = []
+    for nid in id_list:
+        key = NOTIFICATION_CACHE_KEY(nid)
+        serialized_notification = cached.get(key)
+        if serialized_notification is None:
+            missing_ids.append(nid)
+            results[nid] = None
+        else:
+            results[nid] = serialized_notification
+
+    # If any misses, fetch from DB and re-cache
+    if missing_ids:
+        queryset = Notification.objects.filter(id__in=missing_ids).annotate(
+            title=Coalesce(
                 Case(
                     # If content_type is "article", get the title from Article
                     When(
@@ -65,6 +112,31 @@ def get_paginated_new_notifications(request):
                             Article.objects.filter(
                                 id=OuterRef("object_id")
                             ).values("title")[:1]
+                        )
+                    ),
+                    # If content_type is "comment", get the title from Article
+                    When(
+                        content_type__model="comment",
+                        then=Subquery(
+                            Comment.objects.filter(
+                                id=OuterRef("object_id")
+                            ).values("article__title")[:1]
+                        )
+                    ),
+                    default=Value("Unknown"),  # Default value if no match
+                    output_field=models.CharField(),
+                ),
+                Value("Unknown")
+            ),
+            body=Coalesce(
+                Case(
+                    # If content_type is "article", get the title from Article
+                    When(
+                        content_type__model="article",
+                        then=Subquery(
+                            Article.objects.filter(
+                                id=OuterRef("object_id")
+                            ).values("body")[:1]
                         )
                     ),
                     # If content_type is "comment", get the body from Comment
@@ -82,145 +154,26 @@ def get_paginated_new_notifications(request):
                 Value("Unknown") 
             ),
             type_name=F("content_type__model")
-        ).order_by("-created_at")[start_index:end_index]
-    )
-
-    # Mark the notifications as read in the database
-    read_notification_ids = list(notification_queryset.values_list('id', flat=True))
-    with transaction.atomic():
-        Notification.objects.filter(id__in=read_notification_ids).update(read=True)
-
-    # Update the cache with the new notifications
-    notifications_cache["total_notifications"] += len(notification_queryset)
-    notifications_cache["unaware_notifications"] = [
-        nid for nid in notifications_cache["unaware_notifications"]
-        if nid not in read_notification_ids
-    ]
-    cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
-
-    # Serialize the notifications
-    serialized_notifications = NotificationResponseSerializer(
-        notification_queryset, many=True
-    ).data
-
-    # Construct the response data with necessary pagination attributes
-    url = request.build_absolute_uri()
-    if end_index < total_notifications:
-        next_page = f"{url.split('?')[0]}?page={requested_page + 1}"
-    else:
-        next_page = None
-
-    return {
-        "count": total_notifications,
-        "next": next_page,
-        "results": {"notifications": serialized_notifications},
-    }
-
-
-def get_paginated_read_notifications(request):
-    try:
-        requested_page = int(request.query_params.get("page", 1))
-    except Exception:
-        requested_page = 0
-    user_instance = request.user
-
-    # Cache notifications
-    cache_key = NOTIFICATIONS_CACHE_KEY(
-        user_instance.id
-    )
-    notifications_cache = cache.get(cache_key)
-
-    # Initiate the cache if the cache is missing
-    if notifications_cache is None:
-        total_notifications = Notification.objects.filter(
-            user=user_instance,
-            read=True
-        ).count()
-        unaware_notifications = list(
-            Notification.objects.filter(
-                user=user_instance,
-                read=False,
-                email=False
-            ).values_list('id', flat=True)
         )
-        notifications_cache = {
-            "total_notifications": total_notifications,
-            "unaware_notifications": unaware_notifications,
-            "notifications": {}
-        }
-
-    # Return empty response if there are no notifications
-    if notifications_cache["total_notifications"] == 0:
-        cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
-        return {
-            "count": 0,
-            "next": None,
-            "results": {"notifications": []},
-        }
-
-    # Fetch notifications if the cache does not have enough notifications
-    if len(notifications_cache["notifications"]) < requested_page * PAGINATOR_SIZE:
-        start_index = len(notifications_cache["notifications"])
-        end_index = requested_page * PAGINATOR_SIZE
-        notification_queryset = (
-            Notification.objects.filter(user=user_instance, read=True).annotate(
-                content=Coalesce(
-                    Case(
-                        # If content_type is "article", get the title from Article
-                        When(
-                            content_type__model="article",
-                            then=Subquery(
-                                Article.objects.filter(
-                                    id=OuterRef("object_id")
-                                ).values("title")[:1]
-                            )
-                        ),
-                        # If content_type is "comment", get the body from Comment
-                        When(
-                            content_type__model="comment",
-                            then=Subquery(
-                                Comment.objects.filter(
-                                    id=OuterRef("object_id")
-                                ).values("body")[:1]
-                            )
-                        ),
-                        default=Value("Unknown"),  # Default value if no match
-                        output_field=models.CharField(),
-                    ),
-                    Value("Unknown") 
-                ),
-                type_name=F("content_type__model")
-            ).order_by("-created_at")[start_index:end_index]
-        )
-
-        # Serialize and update the cache with the new notifications
-        new_serialized_notifications = NotificationResponseSerializer(
-            notification_queryset, many=True
+        serialized_notifications = NotificationResponseSerializer(
+            queryset, many=True
         ).data
-        notifications_cache["notifications"].update(new_serialized_notifications)
-    
-    cache.set(cache_key, notifications_cache, CACHE_TIMEOUT)
-
-    # Slice the notifications that user requested only
-    start_index = (requested_page - 1) * 10
-    end_index = start_index + PAGINATOR_SIZE
-    serialized_notifications = list(
-        notifications_cache["notifications"].values()
-    )[start_index:end_index]
+        serialized_notifications = {NOTIFICATION_CACHE_KEY(str(n["id"])): n for n in serialized_notifications}       
+        cache.set_many(serialized_notifications)
+        for item in results.items():
+            if item[1] == None:
+                results[item[0]] = serialized_notifications[NOTIFICATION_CACHE_KEY(item[0])]
 
     # Construct the response data with necessary pagination attributes
-    url = request.build_absolute_uri()
-    if end_index < notifications_cache["total_notifications"]:
-        next_page = f"{url.split('?')[0]}?page={requested_page + 1}"
-    else:
+    if len(results.items()) < PAGINATOR_SIZE:
         next_page = None
-
+    else:
+        url = request.build_absolute_uri()
+        next_page = f"{url.split('?')[0]}?page={requested_page + 1}"
     return {
-        "count": notifications_cache["total_notifications"],
         "next": next_page,
-        "results": {"notifications": serialized_notifications},
+        "results": {"notifications": results.values()},
     }
-
 
 def add_notification(notification_type, user_instance, model_class, object_id):
 
@@ -234,36 +187,20 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             read=False,
             email=False
         )
-    
-    # Cache notifications
-    cache_key = NOTIFICATIONS_CACHE_KEY(
-        user_instance.id
-    )
-    serialized_notifications = cache.get(cache_key)
-    if serialized_notifications is None:
-        total_notifications = Notification.objects.filter(
-            user=user_instance,
-            read=True
-        ).count()
-        unaware_notifications = list(
-            Notification.objects.filter(
-                user=user_instance, 
-                read=False, 
-                email=False
-            ).values_list('id', flat=True)
-        )
-        serialized_notifications = {
-            "total_notifications": total_notifications,
-            "unaware_notifications": unaware_notifications,
-            "notifications": {}
-        }
 
-    # Update the cache with the new notification
-    serialized_notifications["unaware_notifications"].insert(0, notification.id)
+    cache_key = NOTIFICATION_IDS_CACHE_KEY(
+        user_instance.id, True
+    )
+    
+    # If the cache exists, add the new notification ID to the zset
+    if redis_conn.exists(cache_key):
+        redis_conn.zadd(
+            cache_key,
+            {str(notification.id): to_unix_ms(notification.created_at)}
+        )
 
     # Check if the user needs to be notified via email
-    if len(serialized_notifications["unaware_notifications"]) >= EMAIL_NOTIFICATIONS_THRESHOLD:
-
+    if redis_conn.zcard(cache_key) % EMAIL_NOTIFICATIONS_THRESHOLD == 0:
         # Fetch the notifications that have not been emailed
         notification_queryset = Notification.objects.filter(
             user=user_instance, 
@@ -308,9 +245,4 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             Notification.objects.filter(
                 id__in=notification_queryset.values_list('id', flat=True)
             ).update(email=True)
-        
-        # Update the cache
-        serialized_notifications["unaware_notifications"] = []
-    
-    cache.set(cache_key, serialized_notifications, CACHE_TIMEOUT)
     

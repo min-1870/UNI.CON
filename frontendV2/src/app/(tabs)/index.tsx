@@ -146,7 +146,9 @@ export default function HomePage() {
   const renderHeader = () => (
     <>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type={'articleTitle'}>UNI.CON</ThemedText>
+        <Pressable onPress={() => router.push('/notification')}>
+          <ThemedText type={'articleTitle'}>UNI.CON</ThemedText>
+        </Pressable>
         <ThemedView style={styles.titleContentContainer}>
           <ThemedText type={'university'} style={{marginBottom:15}}>{university}</ThemedText>
           <ThemedText type={'contentSubTitle'} style={{ marginBottom:5 }}>Currently, they are chatting about..</ThemedText>

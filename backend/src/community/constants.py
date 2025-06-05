@@ -42,10 +42,13 @@ COMMENTS_CACHE_KEY = (
 COMMENTS_LIKE_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_LIKED-COMMENTS"
 )
-NOTIFICATIONS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_NOTIFICATIONS"
-)
 
+NOTIFICATION_IDS_CACHE_KEY = (
+    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
+)
+NOTIFICATION_CACHE_KEY = (
+    lambda notification_id: f"NOTIFICATION_{notification_id}"
+)
 
 DELETED_TITLE = "[DELETED ARTICLE]"
 DELETED_BODY = "[DELETED CONTENT]"
