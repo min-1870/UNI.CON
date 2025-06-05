@@ -1,15 +1,16 @@
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import ThemedButton from '@/components/ThemedButton';
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import { StyleSheet, TextInput, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
-import type { TabParamList } from './_layout';
+import type { TabParamList } from './(tabs)/_layout';
 import { Ionicons } from '@expo/vector-icons';
 import URLs from "@/constants/Urls";
+import { useRoute, RouteProp } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -17,21 +18,76 @@ import {
   TextInputKeyPressEventData,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import ThemedTag from '@/components/ThemedTag';import { router } from 'expo-router';
-export default function NewArticlePage() {
+
+import ThemedTag from '@/components/ThemedTag';
+import { router } from 'expo-router';
+
+
+type Article = {
+  title: string;
+  body: string;
+  unicon: boolean;
+  tags: string[];
+};
+
+export default function ArticleEditPage() {
+  const route = useRoute<RouteProp<{ params: { id: string } }>>();
+  const articleId = route.params?.id;
   
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
-  const [title, setTitle] = useState('');
-  const [body,  setBody]  = useState('');
-  const [unicon, setUnicon] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [orgArticle,  setOrgArticle]  = useState<Article>({
+    title: '',
+    body: '',
+    unicon: false,
+    tags: [],
+  });
+  const [article,  setArticle]  = useState<Article>({
+    title: '',
+    body: '',
+    unicon: false,
+    tags: [],
+  });
+
+  
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const place_holder_color = useThemeColor({}, 'default_placeholder_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
+
   
   const [raw, setRaw] = useState('');       // what the user is typing now
   const [tags, setTags] = useState<string[]>([]);  // all confirmed tags
+
+
+  useEffect(() => {
+    fetchArticle();
+  }, []);
+
+  useEffect(() => {
+  setArticle(JSON.parse(JSON.stringify(orgArticle)));
+  }, [orgArticle]);
+
+  const fetchArticle = async () => {
+    setLoading(true);
+    const response = await fetchAPI(
+      URLs.ARTICLE(String(articleId)), {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      setOrgArticle({
+        title: response.data?.results?.article?.title,
+        body: response.data?.results?.article?.body,
+        unicon: response.data?.results?.article?.unicon,
+        tags: response.data?.results?.article?.tag,
+      })
+    } else {
+      // setError(response?.data?.detail || "An error occurred");
+    }
+    setLoading(false);
+  };
+
   // when the user presses space (or comma), commit the current word as a tag
   const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
     if (e.nativeEvent.key === ' ' || e.nativeEvent.key === ',') {
@@ -44,12 +100,15 @@ export default function NewArticlePage() {
   };
 
   const removeTag = (indexToRemove: number) => {
-    setTags(prev => prev.filter((_, i) => i !== indexToRemove));
+    setArticle((prev) => ({
+    ...prev,
+    tags: prev.tags.filter((_, i) => i !== indexToRemove)
+    }));
   };
 
-  const handlePost = async () => {
+  const handleUpdate = async () => {
     setLoading(true);
-    if (!title || !body) {
+    if (!article.title || !article.body) {
       Toast.show({
         type: 'error',
         text1: `Title and body cannot be empty!`,
@@ -58,25 +117,61 @@ export default function NewArticlePage() {
       return;
     }
     const response = await fetchAPI(
-      URLs.ARTICLE(), 
+      URLs.ARTICLE(String(articleId) + '/'), 
       {
-        method: 'POST',
+        method: 'PATCH',
         token: true,
         body: { 
-          title: title, 
-          body: body, 
-          unicon: unicon,
-          tag: tags
+          title: article.title, 
+          body: article.body, 
+          // unicon: article.unicon,
+          // tag: article.tags
         },
       }
     );
     if (!response.error){
-      setTitle('');
-      setBody('');
-      setUnicon(false);
-      setRaw('');
-      setTags([]);
-      router.push(`/article?id=${response.data.id}`);
+      setArticle({
+        title: '',
+        body: '',
+        unicon: false,
+        tags: [],
+      })
+      router.push(`/article?id=${articleId}`);
+    }else{
+      Toast.show({
+        type: 'error',
+        text1: `Hi, ${response.data.detail}!`,
+      });
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    if (!article.title || !article.body) {
+      Toast.show({
+        type: 'error',
+        text1: `Title and body cannot be empty!`,
+      });
+      setLoading(false);
+      return;
+    }
+    const response = await fetchAPI(
+      URLs.ARTICLE(String(articleId) + '/'), 
+      {
+        method: 'DELETE',
+        token: true,
+        body: {},
+      }
+    );
+    if (!response.error){
+      setArticle({
+        title: '',
+        body: '',
+        unicon: false,
+        tags: [],
+      })
+      router.push(`/article?id=${articleId}`);
     }else{
       Toast.show({
         type: 'error',
@@ -100,23 +195,41 @@ export default function NewArticlePage() {
           name="chevron-back" 
           size={24} 
           color={default_text_color}
-          onPress={() => navigation.navigate('home')}
+          // onPress={() => router.push(`/index`)}
+          onPress={() => router.push(`/article?id=${articleId}`)}
           style={{ marginLeft: 20 }}
         />
       ),
       headerRight: () => (
-        <ThemedText
-          type={'default'} 
-          onPress={handlePost} 
-          disabled={loading}
-          style={{ marginRight: 30 }}
-        >
-          Post
-        </ThemedText>
+        <Pressable onPress={() => {
+              if (
+                article.title === orgArticle?.title &&
+                article.body === orgArticle?.body &&
+                article.unicon === orgArticle?.unicon &&
+                JSON.stringify(article.tags) === JSON.stringify(orgArticle?.tags)
+              ) {
+                handleDelete();
+              } else {
+                handleUpdate();
+              }
+            }}>
+          <ThemedText
+            type={'default'}
+            disabled={loading}
+            style={{ marginRight: 30 }}
+          >
+            {article.title === orgArticle?.title &&
+            article.body === orgArticle?.body &&
+            article.unicon === orgArticle?.unicon &&
+            JSON.stringify(article.tags) === JSON.stringify(orgArticle?.tags)
+              ? 'Delete'
+              : 'Update'}
+          </ThemedText>
+        </Pressable>
       ),
       headerTitleAlign: 'center',
     });
-  }, [navigation, handlePost, loading]);
+  }, [navigation, handleUpdate, loading]);
 
 
   const styles = StyleSheet.create({
@@ -195,8 +308,8 @@ export default function NewArticlePage() {
             numberOfLines={6}            //initial height (Android only)
             placeholder="Title"
             placeholderTextColor={place_holder_color}
-            value={title}
-            onChangeText={setTitle}
+            value={article.title}
+            onChangeText={text => setArticle(prev => ({ ...prev, title: text }))}
             textAlignVertical="top"      //keep cursor at top on Android
             scrollEnabled                //allow scrolling when text overflows
           />
@@ -207,8 +320,8 @@ export default function NewArticlePage() {
             numberOfLines={6}            //initial height (Android only)
             placeholder="Body Text"
             placeholderTextColor={place_holder_color}
-            value={body}
-            onChangeText={setBody}
+            value={article.body}
+            onChangeText={text => setArticle(prev => ({ ...prev, body: text }))}
             textAlignVertical="top"      //keep cursor at top on Android
             scrollEnabled                //allow scrolling when text overflows
           />
@@ -218,8 +331,8 @@ export default function NewArticlePage() {
               By turning on the unicon option your post will be visible to other supported university students
             </ThemedText>
             <ThemedButton
-              type={unicon ? 'toggled' : 'unToggled'}
-              onPress={() => setUnicon(!unicon)}
+              type={article.unicon ? 'toggled' : 'unToggled'}
+              onPress={() => setArticle(prev => ({ ...prev, unicon: !article.unicon }))}
             >
               <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
             </ThemedButton>
@@ -229,7 +342,7 @@ export default function NewArticlePage() {
       <ThemedView style={styles.tagAreaContainer}>
         <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
-          {tags.map((tag, i) => (
+          {article.tags.map((tag, i) => (
             <Pressable onPress={() => removeTag(i)}>
               <ThemedTag text={tag} type={'default'} key={i}/>
             </Pressable>

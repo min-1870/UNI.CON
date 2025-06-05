@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedButton from '@/components/ThemedButton';
@@ -10,24 +10,70 @@ import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { Animated } from 'react-native';
-
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { AntDesign } from '@expo/vector-icons';
+import { useLayoutEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 export default function ArticlePage() {
   const route = useRoute<RouteProp<{ params: { id: string } }>>();
   const articleId = route.params?.id;
   const contentOpacity = useRef(new Animated.Value(0)).current;
-
+  const background_color = useThemeColor({}, 'default_card_background_color');
+  const text_color = useThemeColor({}, 'default_text_color');
   const [nextCommentPage, setNextCommentPage] = useState(null);
-  const [article, setArticle] = useState(null);
-  const [comments, setComments] = useState<{ id: string; [key: string]: any }[]>([]);
+  type Article = {
+    id: string;
+    user: number;
+    [key: string]: any;
+  };
+  const [article, setArticle] = useState<Article | null>(null);
+  const [comments, setComments] = useState<{ id: string; user: number; [key: string]: any }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
   const [newComment, setNewComment] = useState('');
   const [focusedComment, setFocusedComment] = useState<number | null>(null);
+  const navigation = useNavigation();
+  const [uid, setUid] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerStyle: {
+        backgroundColor: background_color, // navbar background
+        shadowColor: 'transparent', // remove iOS bottom border
+        elevation: 0, // remove Android shadow
+        borderWidth: 0, 
+      },
+      headerTintColor: text_color,
+      headerTitleAlign: 'center',
+      headerRight: () => (
+        <>
+          {article && uid !== null && article.user == uid && 
+            <Pressable>
+              <ThemedText
+                type={'default'} 
+                onPress={()=>{
+                    router.push(`/edit?id=${article.id}`);
+                }} 
+                disabled={loading}
+                style={{ marginRight: 30 }}
+              >
+                Edit
+              </ThemedText>
+            </Pressable>
+          }
+        </>
+      ),
+    });
+  }, [navigation, article, uid, loading]);
 
   useEffect(() => {
     fetchArticle();
+    const fetchSchool = async () => {
+      const storedUid = await getData('id');
+      setUid(Number(storedUid)||null)
+    };
+    fetchSchool();
   }, []);
   
   useEffect(() => {

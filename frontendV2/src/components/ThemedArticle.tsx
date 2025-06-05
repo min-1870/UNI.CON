@@ -16,6 +16,7 @@ type ThemedArticleProps = {
 
 export default function ThemedArticle({ article_data, type='default' }: ThemedArticleProps) {
   const background_color = useThemeColor({}, 'default_card_background_color');
+  const view_background_color = useThemeColor({}, 'default_view_card_background_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
   const [trending_tags, setTrendingTags] = useState<string[]>([]);
@@ -60,14 +61,20 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
   };
 
   const handleArticleDetail = () => {
+    setArticleState((prevState: any) => ({
+      ...prevState,
+      view_status: true,
+    }));
     router.push(`/article?id=${article.id}`);
   }
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      color: background_color,
+      backgroundColor: type == 'default' && article.view_status ? view_background_color : background_color,
       borderRadius: 20,
+      borderTopRightRadius: type=='detail' ? 0 : 20,
+      borderTopLeftRadius: type=='detail' ? 0 : 20,
       padding: 16, 
       shadowColor: 'rgba(0, 0, 0, 1)',
       shadowOffset: { width: 0, height: 3 },
