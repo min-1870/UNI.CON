@@ -17,8 +17,6 @@ type ThemedArticleProps = {
 export default function ThemedArticle({ article_data, type='default' }: ThemedArticleProps) {
   const background_color = useThemeColor({}, 'default_card_background_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
-  const time_color = useThemeColor({}, 'default_placeholder_color');
-  const points_color = useThemeColor({}, 'default_brand_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
   const [trending_tags, setTrendingTags] = useState<string[]>([]);
   

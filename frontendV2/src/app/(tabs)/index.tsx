@@ -10,6 +10,8 @@ import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Animated } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import ThemedTag from '@/components/ThemedTag';
 export default function HomePage() {
 
@@ -113,6 +115,12 @@ export default function HomePage() {
     titleContainer: {
       marginTop: 15,
     },
+    titleHeaderContainer:{
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignContent: 'center'
+    },
     titleContentContainer:{
       marginHorizontal: 15,
       marginVertical: 30
@@ -146,9 +154,15 @@ export default function HomePage() {
   const renderHeader = () => (
     <>
       <ThemedView style={styles.titleContainer}>
-        <Pressable onPress={() => router.push('/notification')}>
-          <ThemedText type={'articleTitle'}>UNI.CON</ThemedText>
-        </Pressable>
+        <ThemedView style={styles.titleHeaderContainer}>
+          <ThemedText type={'contentTitle'}>UNI.CON</ThemedText>
+          <Pressable onPress={() => router.push('/notification')}>
+            <Ionicons
+              name='notifications-outline'
+              size={25}
+            />
+          </Pressable>
+        </ThemedView>
         <ThemedView style={styles.titleContentContainer}>
           <ThemedText type={'university'} style={{marginBottom:15}}>{university}</ThemedText>
           <ThemedText type={'contentSubTitle'} style={{ marginBottom:5 }}>Currently, they are chatting about..</ThemedText>

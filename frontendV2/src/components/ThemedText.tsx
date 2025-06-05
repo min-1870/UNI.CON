@@ -16,6 +16,10 @@ export type ThemedTextProps = TextProps & {
     | 'articlePoints'
     | 'articleDate'
     | 'articleButton'
+    | 'notificationTitle'
+    | 'notificationTitleBold'
+    | 'notificationBody'
+    | 'notificationButton'
     | 'link'
     | 'error'
     | 'summaryPoints'
@@ -143,6 +147,38 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 12,
+        color: feed_unchecked_color,
+        fontFamily: 'textMedium',
+      }
+    }) 
+  : type === 'notificationTitle' ?
+    StyleSheet.create({
+      text: {
+        fontSize: 12,
+        color: defaultTextColor,
+        fontFamily: 'textRegular',
+      }
+    }) 
+  : type === 'notificationTitleBold' ?
+    StyleSheet.create({
+      text: {
+        fontSize: 12,
+        color: defaultTextColor,
+        fontFamily: 'textMedium',
+      }
+    }) 
+  : type === 'notificationBody' ?
+    StyleSheet.create({
+      text: {
+        fontSize: 10,
+        color: feed_unchecked_color,
+        fontFamily: 'textRegular',
+      }
+    }) 
+  : type === 'notificationButton' ?
+    StyleSheet.create({
+      text: {
+        fontSize: 10,
         color: feed_unchecked_color,
         fontFamily: 'textMedium',
       }
