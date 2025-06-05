@@ -67,7 +67,7 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
     container: {
       flex: 1,
       color: background_color,
-      borderRadius: 30,
+      borderRadius: 20,
       padding: 16, 
       shadowColor: 'rgba(0, 0, 0, 1)',
       shadowOffset: { width: 0, height: 3 },
@@ -133,7 +133,12 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
         </View>
 
         <ThemedText type='articleTitle'>{article.title}</ThemedText>
-        <ThemedText type='articleBody'>{article.body}</ThemedText>
+        <ThemedText type='articleBody'>
+          {article.body.length > 200 && type == 'default' 
+            ? article.body.slice(0, 200) + ' ... read more'
+            : article.body
+          }
+        </ThemedText>
         <View style={styles.tagContainer}>
           {article.tag.length > 0 && article.tag
             .map((tag: string, i: number) => (
