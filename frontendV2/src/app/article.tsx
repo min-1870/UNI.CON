@@ -316,6 +316,49 @@ export default function ArticlePage() {
       setError(response?.data?.detail || "An error occurred");
     }
   };
+  
+  const handleDeleteComment = async (commentId: string, parent_commentId: string | null) => {
+    const response = await fetchAPI(
+      URLs.COMMENT(String(commentId) + '/'), {
+      method: 'DELETE',
+      token: true,
+      body: {}
+    });
+    if (!response.error) {
+      parent_commentId ?
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(parent_commentId)
+              ? { ...comment,
+                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
+                    String(nestedComment.id) === String(commentId)
+                      ? { ...nestedComment,
+                          body: '[DELETED CONTENT]',
+                          deleted: true
+                        }
+                      : nestedComment
+                  ),
+                }
+              : comment
+          )
+        )
+        :
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment,
+                  body: '[DELETED CONTENT]',
+                  deleted: true
+                }
+              : comment
+          )
+        )
+      setFocusedComment(null)
+      setNewComment('');
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -362,6 +405,7 @@ export default function ArticlePage() {
                 focusingComment={setFocusedComment}
                 isReplying={setIsReply}
                 handleLike={likeComment}
+                handleDelete={handleDeleteComment}
                 handleNestedComment={fetchNestedComments}
                 uid={uid}
               />

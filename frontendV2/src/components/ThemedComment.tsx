@@ -10,12 +10,13 @@ type CommentProps = {
   focusingComment?: any;
   isReplying?: any;
   handleLike?: any;
+  handleDelete?: any;
   handleNestedComment?: any;
   uid?: any;
   isChild?: boolean;
 };
 
-export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, handleLike, uid, isChild}: CommentProps) {
+export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, handleDelete, handleLike, uid, isChild}: CommentProps) {
 
   const default_text_color = useThemeColor({}, 'default_text_color');
   const time_color = useThemeColor({}, 'default_placeholder_color');
@@ -107,7 +108,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
         </ThemedText>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
           <ThemedText type='articleDate' style={{fontSize:9}}>
-            {comment_data.edited ? null : 'edited'}
+            {comment_data.deleted ? 'deleted' : comment_data.edited ? 'edited' : null}
           </ThemedText>
         </View>
       </View>
@@ -116,7 +117,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
 
         
         <View style={styles.button}>
-          {comment_data.parent_comment ? null : (
+          {!comment_data.parent_comment &&(
               <>
                 <Pressable onPress={() => {
                   if (focusingComment) {
@@ -136,7 +137,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
                 </Pressable>
               </>
           )}
-          {comment_data.user != uid ? null : (
+          {(comment_data.user == uid && !comment_data.deleted) ? (
               <>
                 <Pressable onPress={() => {
                   if (focusingComment) {
@@ -155,7 +156,20 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
                   </ThemedText>
                 </Pressable>
               </>
-          )}
+          ):null}
+          {(comment_data.user == uid && !comment_data.deleted) ? (
+              <>
+                <Pressable onPress={() => {
+                  if (handleDelete) {
+                    handleDelete(comment_data.id, comment_data.parent_comment);
+                  }
+                }}>
+                  <ThemedText type='articleButton' >
+                    Delete
+                  </ThemedText>
+                </Pressable>
+              </>
+          ):null}
         </View>
         <View style={styles.button}>
           <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
@@ -195,7 +209,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
     <FlatList
       data={comment_data.nested_comments}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <ThemedComment comment_data={item} focusingComment={focusingComment} handleLike={handleLike} isChild={true} uid={uid}/>}
+      renderItem={({ item }) => <ThemedComment comment_data={item} focusingComment={focusingComment} handleLike={handleLike} handleDelete={handleDelete} isChild={true} uid={uid}/>}
       showsVerticalScrollIndicator={false}
       scrollEnabled={false} 
       ListHeaderComponent={renderHeader}      
