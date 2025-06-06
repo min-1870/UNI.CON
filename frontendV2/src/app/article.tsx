@@ -46,9 +46,10 @@ export default function ArticlePage() {
       },
       headerTintColor: text_color,
       headerTitleAlign: 'center',
+      headerTitle: 'Article',
       headerRight: () => (
         <>
-          {article && uid !== null && article.user == uid && 
+          {article && uid !== null && article.user == uid && !article.deleted && 
             <Pressable>
               <ThemedText
                 type={'default'} 

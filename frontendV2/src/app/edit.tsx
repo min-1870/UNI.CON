@@ -184,22 +184,13 @@ export default function ArticleEditPage() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
-      backgroundColor: default_card_background_color, // navbar background
-      shadowColor: 'transparent', // remove iOS bottom border
-      elevation: 0, // remove Android shadow
-      borderWidth: 0, 
+        backgroundColor: default_card_background_color, // navbar background
+        shadowColor: 'transparent', // remove iOS bottom border
+        elevation: 0, // remove Android shadow
+        borderWidth: 0, 
       },
+      headerTitle: 'Edit',
       headerTintColor: default_text_color,
-      headerLeft: () => (
-        <Ionicons 
-          name="chevron-back" 
-          size={24} 
-          color={default_text_color}
-          // onPress={() => router.push(`/index`)}
-          onPress={() => router.push(`/article?id=${articleId}`)}
-          style={{ marginLeft: 20 }}
-        />
-      ),
       headerRight: () => (
         <Pressable onPress={() => {
               if (

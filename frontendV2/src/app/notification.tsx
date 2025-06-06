@@ -1,12 +1,15 @@
 import { StyleSheet, FlatList } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedNotification from '@/components/ThemedNotification';
-import React, { useState, useEffect, useRef  } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
-
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { TabParamList } from './(tabs)/_layout';
+import { useThemeColor } from '@/hooks/useThemeColor';
 export default function NotificationPage() {
 
   const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
@@ -19,7 +22,26 @@ export default function NotificationPage() {
   const fetchedNewNotificationPage = useRef(null);
   const fetchedOldNotificationPage = useRef(null);
 
-  console.log("NotificationPage rendered");
+  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
+  const place_holder_color = useThemeColor({}, 'default_placeholder_color');
+  const default_text_color = useThemeColor({}, 'default_text_color');
+
+
+  const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
+    useLayoutEffect(() => {
+      navigation.setOptions({
+        headerStyle: {
+          backgroundColor: default_card_background_color, // navbar background
+          shadowColor: 'transparent', // remove iOS bottom border
+          elevation: 0, // remove Android shadow
+          borderWidth: 0, 
+        },
+        headerTitle: 'Notification',
+        headerTintColor: default_text_color,
+        headerTitleAlign: 'center',
+      });
+    }, []);
+
   useEffect(() => {
     fetchNotification(true);
     fetchNotification(false);

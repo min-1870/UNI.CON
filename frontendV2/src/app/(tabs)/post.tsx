@@ -8,7 +8,7 @@ import ThemedView from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import type { TabParamList } from './_layout';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import URLs from "@/constants/Urls";
 import {
   View,
@@ -96,14 +96,15 @@ export default function NewArticlePage() {
       },
       headerTintColor: default_text_color,
       headerLeft: () => (
-        <Ionicons 
-          name="chevron-back" 
+        <Feather 
+          name="arrow-left" 
           size={24} 
           color={default_text_color}
           onPress={() => navigation.navigate('home')}
           style={{ marginLeft: 20 }}
         />
       ),
+
       headerRight: () => (
         <ThemedText
           type={'default'} 
