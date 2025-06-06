@@ -7,12 +7,15 @@ import { AntDesign } from '@expo/vector-icons';
 
 type CommentProps = {
   comment_data: any;
-  handleReply?: any;
+  focusingComment?: any;
+  isReplying?: any;
   handleLike?: any;
   handleNestedComment?: any;
+  uid?: any;
+  isChild?: boolean;
 };
 
-export default function ThemedComment({ comment_data, handleReply, handleNestedComment, handleLike}: CommentProps) {
+export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, handleLike, uid, isChild}: CommentProps) {
 
   const default_text_color = useThemeColor({}, 'default_text_color');
   const time_color = useThemeColor({}, 'default_placeholder_color');
@@ -65,6 +68,7 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
       fontSize: 17,
     },
     button_container: {
+      display: 'flex',
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: 10,
@@ -74,10 +78,25 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
       flexDirection: 'row',
       justifyContent: 'center',
     },
+    buttonBegin: {
+      display: 'flex',
+      flex:1,
+      gap: 10,
+      justifyContent:'flex-start',
+      flexDirection: 'row',
+    },
+    buttonEnd: {
+      display: 'flex',
+      flex:1,
+      gap: 10,
+      justifyContent:'flex-end',
+      flexDirection: 'row',
+    },
+
     button: {
       display: 'flex',
-      gap: 4,
-      alignItems: 'flex-end',
+      gap: 5,
+      alignItems: 'center',
       flexDirection: 'row',
     },
   });
@@ -105,27 +124,63 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
       <View style={styles.button_container}>
 
         
-        {comment_data.parent_comment ? null : (
-            <>
-              <Pressable onPress={() => handleReply && handleReply(comment_data.id)} >
-                <ThemedText type='articleButton' >
-                  Reply
-                </ThemedText>
-              </Pressable>
-            </>
-        )}
+        <View style={styles.buttonBegin}>
+          {comment_data.parent_comment ? null : (
+              <>
+                <Pressable onPress={() => {
+                  if (focusingComment) {
+                    if (isChild) {
+                      focusingComment({parent:comment_data.parent_comment, child:comment_data.id});
+                    } else {
+                      focusingComment({parent:comment_data.id, child:null});
+                    }
+                  }
+                  if (isReplying) {
+                    isReplying(true);
+                  }
+                }}>
+                  <ThemedText type='articleButton' >
+                    Reply
+                  </ThemedText>
+                </Pressable>
+              </>
+          )}
+          {comment_data.user != uid ? null : (
+              <>
+                <Pressable onPress={() => {
+                  if (focusingComment) {
+                    if (isChild) {
+                      focusingComment({parent:comment_data.parent_comment, child:comment_data.id});
+                    } else {
+                      focusingComment({parent:comment_data.id, child:null});
+                    }
+                  }
+                  if (isReplying) {
+                    isReplying(false);
+                  }
+                }}>
+                  <ThemedText type='articleButton' >
+                    Edit
+                  </ThemedText>
+                </Pressable>
+              </>
+          )}
+        </View>
+        <View style={styles.buttonEnd}>
+          <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
+            
+            <AntDesign
+              name={comment_data.like_status ? 'heart' : 'hearto'} 
+              size={15}
+              color={button_color} 
+            />
+            <ThemedText type='articleButton'>
+              {comment_data.likes_count}
+            </ThemedText>
+          </Pressable> 
+        </View>
 
-        <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
-          
-          <AntDesign
-            name={comment_data.like_status ? 'heart' : 'hearto'} // different glyphs if you prefer
-            size={15}
-            color={button_color} // use a color from your theme
-          />
-          <ThemedText type='articleButton'>
-            {comment_data.likes_count}
-          </ThemedText>
-        </Pressable> 
+
 
       </View>
       <View style={styles.view_replies_button_container}>
@@ -149,7 +204,7 @@ export default function ThemedComment({ comment_data, handleReply, handleNestedC
     <FlatList
       data={comment_data.nested_comments}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <ThemedComment comment_data={item} handleLike={handleLike}/>}
+      renderItem={({ item }) => <ThemedComment comment_data={item} focusingComment={focusingComment} handleLike={handleLike} isChild={true} uid={uid}/>}
       showsVerticalScrollIndicator={false}
       scrollEnabled={false} 
       ListHeaderComponent={renderHeader}      

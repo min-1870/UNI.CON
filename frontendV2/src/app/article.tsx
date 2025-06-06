@@ -11,10 +11,11 @@ import URLs from "@/constants/Urls";
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { Animated } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Feather } from '@expo/vector-icons';
 import { useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
+
 export default function ArticlePage() {
   const route = useRoute<RouteProp<{ params: { id: string } }>>();
   const articleId = route.params?.id;
@@ -33,7 +34,10 @@ export default function ArticlePage() {
   const [error, setError] = useState(false);
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
   const [newComment, setNewComment] = useState('');
-  const [focusedComment, setFocusedComment] = useState<number | null>(null);
+  const [orgComment, setOrgComment] = useState('');
+  const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
+  const [isReply, setIsReply] = useState<boolean>(false);
+
   const navigation = useNavigation();
   const [uid, setUid] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -67,6 +71,29 @@ export default function ArticlePage() {
       ),
     });
   }, [navigation, article, uid, loading]);
+
+  
+
+  useEffect(() => {
+    let body = '';
+    if (focusedComment) {
+      const parentComment = comments.find(
+        comment => String(comment.id) === String(focusedComment.parent)
+      );
+      body = parentComment?.body;
+
+      if (parentComment && parentComment.nested_comments && focusedComment.child) {
+        const childComment = parentComment.nested_comments.find(
+          (nestedComment: { id: string }) => String(nestedComment.id) === String(focusedComment.child)
+        );
+        body = childComment?.body;
+      }
+    }
+    setOrgComment(body);
+    isReply 
+    ? setNewComment('')
+    : setNewComment(body);
+  }, [focusedComment]);
 
   useEffect(() => {
     fetchArticle();
@@ -223,7 +250,7 @@ export default function ArticlePage() {
       token: true,
       body: {
         article: articleId,
-        parent_comment: focusedComment,
+        parent_comment: focusedComment?.parent,
         body: newComment,
       }
     });
@@ -231,14 +258,59 @@ export default function ArticlePage() {
 
        setComments((prevComments) => 
         prevComments.map((comment) =>
-          String(comment.id) === String(focusedComment)
+          String(comment.id) === String(focusedComment?.parent)
             ? { ...comment, showReplies: false, nested_comments: [] }
             : comment
         )
       );
-      if (focusedComment !== null) {
-        fetchNestedComments(focusedComment.toString());
+      if (focusedComment?.parent !== null) {
+        fetchNestedComments(focusedComment?.parent.toString());
       }
+      setNewComment('');
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+    }
+  };  
+  
+  const handleEditComment = async () => {
+    const response = await fetchAPI(
+      URLs.COMMENT(
+        String(focusedComment?.child ? focusedComment?.child : focusedComment?.parent) + '/'
+      ), {
+      method: 'PATCH',
+      token: true,
+      body: {
+        body: newComment,
+      }
+    });
+    if (!response.error) {
+      focusedComment?.child ?
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(focusedComment.parent)
+              ? { ...comment,
+                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
+                    String(nestedComment.id) === String(focusedComment.child)
+                      ? { ...nestedComment,
+                          body: newComment
+                        }
+                      : nestedComment
+                  ),
+                }
+              : comment
+          )
+        )
+        :
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(focusedComment?.parent)
+              ? { ...comment,
+                  body: newComment
+                }
+              : comment
+          )
+        )
+      setFocusedComment(null)
       setNewComment('');
     } else {
       setError(response?.data?.detail || "An error occurred");
@@ -287,9 +359,11 @@ export default function ArticlePage() {
               renderItem={({ item }) => (
               <ThemedComment
                 comment_data={item}
-                handleReply={setFocusedComment}
+                focusingComment={setFocusedComment}
+                isReplying={setIsReply}
                 handleLike={likeComment}
                 handleNestedComment={fetchNestedComments}
+                uid={uid}
               />
               )}
               contentContainerStyle={styles.feedContainer}
@@ -309,14 +383,20 @@ export default function ArticlePage() {
           style={styles.focusedCommentContainer}
           >
           <ThemedText>
-            You are replying to {
-              comments.find((comment) => Number(comment.id) === focusedComment)?.body}
+            {isReply ? 'You are replying to ' : 'You are editing to '}
+            {
+              orgComment
+            }
           </ThemedText>
           <ThemedButton
             type={'feedChecked'}
             onPress={() => setFocusedComment(null)}
           >
-          <ThemedText type={'feedChecked'}>X</ThemedText>
+          <Feather
+            name='x'
+            size={13}
+            color={'#000'}
+          />
           </ThemedButton>
         </ThemedView>
       )}
@@ -331,7 +411,7 @@ export default function ArticlePage() {
         />
         <ThemedButton
           type={'feedChecked'}
-          onPress={focusedComment ? handleReplyComment : handleSendComment}
+          onPress={focusedComment ? isReply ? handleReplyComment : handleEditComment : handleSendComment}
         >
           <AntDesign
             name='arrowright'
