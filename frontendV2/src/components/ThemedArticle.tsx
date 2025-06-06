@@ -137,6 +137,11 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
           <ThemedText type='articleDate'>
             {moment(article.created_at).fromNow()}
           </ThemedText>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+           <ThemedText type='articleDate' >
+             {article.edited ? null : 'edited'}
+           </ThemedText>
+          </View>
         </View>
 
         <ThemedText type='articleTitle'>{article.title}</ThemedText>

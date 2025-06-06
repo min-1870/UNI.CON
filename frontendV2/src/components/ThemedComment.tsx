@@ -78,24 +78,10 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
       flexDirection: 'row',
       justifyContent: 'center',
     },
-    buttonBegin: {
-      display: 'flex',
-      flex:1,
-      gap: 10,
-      justifyContent:'flex-start',
-      flexDirection: 'row',
-    },
-    buttonEnd: {
-      display: 'flex',
-      flex:1,
-      gap: 10,
-      justifyContent:'flex-end',
-      flexDirection: 'row',
-    },
 
     button: {
       display: 'flex',
-      gap: 5,
+      gap: 7,
       alignItems: 'center',
       flexDirection: 'row',
     },
@@ -119,12 +105,17 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
         <ThemedText type='articleDate' style={{fontSize:9}}>
           {moment(comment_data.created_at).fromNow()}
         </ThemedText>
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <ThemedText type='articleDate' style={{fontSize:9}}>
+            {comment_data.edited ? null : 'edited'}
+          </ThemedText>
+        </View>
       </View>
       <ThemedText type='articleBody'> {comment_data.body} </ThemedText>
       <View style={styles.button_container}>
 
         
-        <View style={styles.buttonBegin}>
+        <View style={styles.button}>
           {comment_data.parent_comment ? null : (
               <>
                 <Pressable onPress={() => {
@@ -166,7 +157,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
               </>
           )}
         </View>
-        <View style={styles.buttonEnd}>
+        <View style={styles.button}>
           <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
             
             <AntDesign
