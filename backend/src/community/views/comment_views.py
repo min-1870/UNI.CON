@@ -55,14 +55,14 @@ class CommentViewSet(viewsets.ModelViewSet):
                     0,
                     comment_instance.parent_comment.user,
                     Comment,
-                    comment_instance.id
+                    comment_instance.article.id
                 )
         else:
             add_notification(
                 0,
                 comment_instance.article.user,
                 Article,
-                comment_instance.id
+                comment_instance.article.id
             )
         response_data = add_comment(comment_instance, user_instance)
 
@@ -159,7 +159,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 1,
                 comment_instance.user,
                 Comment,
-                comment_instance.id
+                comment_instance.article.id
             )
 
         return Response({"detail":"The comment has been liked by user."}, status=status.HTTP_200_OK)
