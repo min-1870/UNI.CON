@@ -65,7 +65,7 @@ def get_school_id_from_email(email):
 
 
 def annotate_user(user_instance, params=None):
-    university_colors = list(School.objects.values("color", "initial").distinct())
+    university_colors = {item["initial"]: item["color"] for item in School.objects.values("color", "initial").distinct()}
     university = user_instance.school.name
     initial = user_instance.school.initial
     color = user_instance.school.color

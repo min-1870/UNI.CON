@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedText from '@/components/ThemedText';
+import ThemedTag from '@/components/ThemedTag';
 import moment from 'moment';
 
 import { AntDesign } from '@expo/vector-icons';
@@ -93,9 +94,7 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
     <View style={comment_data.parent_comment ? styles.nested_container : styles.container}>
       <View style={styles.info_container}>
           {comment_data.unicon || (
-            <ThemedText type='articleAuthor' style={{fontSize:12}}>
-              {comment_data.user_school.toUpperCase()}
-            </ThemedText>
+            <ThemedTag type='uni' text={comment_data.user_school.toUpperCase()}/>
           )}
         <ThemedText type='articleAuthor' style={{fontSize:12}}>
           {comment_data.user_temp_name}

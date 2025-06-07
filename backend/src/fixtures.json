@@ -4,7 +4,7 @@
       "pk": 1,
       "fields": {
         "name": "University of New South Wales",
-        "color": "#FFA500",
+        "color": "#FFD52D",
         "initial": "unsw",
         "email_identifier": "unsw"
       }
@@ -43,7 +43,7 @@
       "model": "account.school",
       "pk": 5,
       "fields": {
-        "name": "RMIT University",
+        "name": "Royal Melbourne Institute of Technology",
         "color": "#e5251a",
         "initial": "rmit",
         "email_identifier": "rmit"

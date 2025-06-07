@@ -1,9 +1,11 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Pressable, Text, StyleSheet, View, type ButtonProps } from 'react-native';
+import React, { useState, useEffect, useRef  } from "react";
 import { ReactNode } from 'react';
+import {fetchAPI, getData, setData} from "@/components/Utils";
 import { useFonts } from 'expo-font';
 type TagProps = {
-    text: String;
+    text: string;
     type: 'default'|'ranked'|'bigRanked'|'uni';
   };
   
@@ -15,13 +17,29 @@ export default function ThemedTag({
   
     const [fontsLoaded] = useFonts({
       textRegular: require('../assets/fonts/SF-Pro-Text-Regular.otf'),
+      textBold: require('../assets/fonts/SF-Pro-Text-Bold.otf'),
     });
     const background_color = useThemeColor({}, 'default_tag_background_color');
     const textColor = useThemeColor({}, 'default_text_color');
     const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
     const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
-    
+    const uniTextColor = useThemeColor({}, 'uniTagTextColor');
+    const [uniColor, setUniColor] = useState<string | null>(null);
 
+    
+  useEffect(() => {
+    const fetchColor = async () => {
+      const ColorsRaw = await getData('university_colors');
+      let Colors;
+      try {
+        Colors = ColorsRaw ? JSON.parse(ColorsRaw) : null;
+      } catch (e) {
+        Colors = null;
+      }
+      setUniColor(Colors[text.toLowerCase()])
+    };
+    fetchColor();
+  }, []);
   const styles = type === 'bigRanked' ?
     StyleSheet.create({
         tag: {
@@ -55,16 +73,21 @@ export default function ThemedTag({
     : type === 'uni' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: background_color,
+        backgroundColor: uniColor ? uniColor : background_color,
         borderRadius: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        marginRight: 8,
-        marginBottom: 8,
+        paddingHorizontal: 5,
+        paddingVertical: 3,
+
+        shadowColor: uniColor ? uniColor : background_color,
+        shadowRadius: 20,
+        shadowOpacity: 1,
+        backdropFilter: 'blur(10px)', // For web platforms
+        elevation: 10, // For Android shadow
         },
         Text: {
-        fontSize: 14,
-        color: textColor,
+        fontSize: 8,
+        color: uniTextColor,
+        fontFamily: 'textBold',
         },
     })
     : StyleSheet.create({ //default tag

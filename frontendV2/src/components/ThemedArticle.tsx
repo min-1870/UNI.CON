@@ -124,9 +124,7 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
             {article.unicon && (
-              <ThemedText type='articleAuthor'>
-              {article.user_school.toUpperCase()}
-              </ThemedText>
+              <ThemedTag type='uni' text={article.user_school.toUpperCase()}/>
             )}
           <ThemedText type='articleAuthor'>
             {article.user_temp_name}

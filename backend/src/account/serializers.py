@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     points = serializers.IntegerField(read_only=True)
     refresh = serializers.CharField(read_only=True)
     access = serializers.CharField(read_only=True)
-    university_colors = serializers.ListField(read_only=True)
+    university_colors = serializers.DictField(read_only=True)
     university = serializers.CharField(read_only=True)
     class Meta:
         model = User

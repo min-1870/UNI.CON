@@ -19,6 +19,7 @@ const custom_colors = {
     //Tags
     rankedTagBackgroundColor: '#E2F7E3',
     rankedTagTextColor: '#3CC94F',
+    uniTagTextColor: '#ffffff',
 
     //
 

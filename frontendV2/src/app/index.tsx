@@ -39,7 +39,7 @@ export default function LoginPage() {
       setData('access', response.data.access);
       setData('email', response.data.email);
       setData('points', response.data.points);
-      setData('university_colors', response.data.university_colors);
+      setData('university_colors', JSON.stringify(response.data.university_colors));
       setData('university', response.data.university);
       setData('refresh', response.data.refresh);
       setData('color', response.data.color);
