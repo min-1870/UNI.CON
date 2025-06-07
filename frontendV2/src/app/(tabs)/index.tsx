@@ -13,6 +13,7 @@ import { Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import ThemedTag from '@/components/ThemedTag';
+
 export default function HomePage() {
 
   const contentOpacity = useRef(new Animated.Value(0)).current;

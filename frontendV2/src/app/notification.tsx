@@ -10,8 +10,9 @@ import URLs from "@/constants/Urls";
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { TabParamList } from './(tabs)/_layout';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { Animated } from 'react-native';
 export default function NotificationPage() {
-
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
   const [newNotifications, setNewNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
   const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
@@ -27,14 +28,33 @@ export default function NotificationPage() {
   const default_text_color = useThemeColor({}, 'default_text_color');
 
 
+  
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.setValue(0);
+    } else {
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
+
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
     useLayoutEffect(() => {
       navigation.setOptions({
         headerStyle: {
-          backgroundColor: default_card_background_color, // navbar background
-          shadowColor: 'transparent', // remove iOS bottom border
-          elevation: 0, // remove Android shadow
-          borderWidth: 0, 
+          backgroundColor: default_card_background_color, 
+          // Android
+          elevation: 0,
+          // iOS
+          shadowColor: 'transparent',
+          shadowOpacity: 0,
+          // web
+          borderBottomWidth: 0,
+          borderBottomColor: 'transparent',
+          boxShadow: 'none',
         },
         headerTitle: 'Notification',
         headerTintColor: default_text_color,
@@ -112,36 +132,40 @@ export default function NotificationPage() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="contentTitle">Recent</ThemedText>
-      <FlatList
-        data={newNotifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-        contentContainerStyle={styles.feedContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
-        }
-        onEndReachedThreshold={0.5}
-        onEndReached={() => {
-          fetchMoreNotification(true);
-        }}
-      />
-      <ThemedText type="contentTitle">Older</ThemedText>
-      <FlatList
-        data={oldNotifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-        contentContainerStyle={styles.feedContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
-        }
-        onEndReachedThreshold={0.5}
-        onEndReached={() => {
-          fetchMoreNotification(false);
-        }}
-      />
+      {loading ? null : (
+        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+          <ThemedText type="contentTitle">Recent</ThemedText>
+          <FlatList
+            data={newNotifications}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
+            contentContainerStyle={styles.feedContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+            }
+            onEndReachedThreshold={0.5}
+            onEndReached={() => {
+              fetchMoreNotification(true);
+            }}
+          />
+          <ThemedText type="contentTitle">Older</ThemedText>
+          <FlatList
+            data={oldNotifications}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
+            contentContainerStyle={styles.feedContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+            }
+            onEndReachedThreshold={0.5}
+            onEndReached={() => {
+              fetchMoreNotification(false);
+            }}
+          />
+        </Animated.View>
+      )}
     </ThemedView>
   );
 }
