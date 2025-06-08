@@ -37,7 +37,7 @@ export default function ArticlePage() {
   const [orgComment, setOrgComment] = useState('');
   const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
   const [isReply, setIsReply] = useState<boolean>(false);
-
+  const fetchedCommentPage = useRef(null);
   const navigation = useNavigation();
   const [uid, setUid] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -126,11 +126,33 @@ export default function ArticlePage() {
     if (!response.error) {
       setArticle(response.data?.results?.article || null);
       setComments(response.data?.results?.comments || []);
+      setNextCommentPage(response.data?.next)
       setHeaderContent(<ThemedArticle type={'detail'} article_data={response.data?.results?.article} />);
+      fetchedCommentPage.current = null
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
     setLoading(false);
+  };
+
+  const fetchMoreComments = async () => {
+
+    if (!nextCommentPage || nextCommentPage == fetchedCommentPage.current) return;
+    
+    const response = await fetchAPI(nextCommentPage, {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      setComments(prevComments => [
+        ...prevComments,
+        ...(response.data?.results?.comments)
+      ]);
+      fetchedCommentPage.current = nextCommentPage;
+      setNextCommentPage(response.data?.next)
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+    }
   };
 
   const handleSendComment = async () => {
@@ -232,6 +254,7 @@ export default function ArticlePage() {
             String(comment.id) === String(commentId)
               ? { ...comment,
                   nested_comments: response.data.results.comments,
+                  next: response.data.next,
                   showReplies: true,
                 }
               : comment
@@ -240,6 +263,34 @@ export default function ArticlePage() {
       } else {
         setError(response?.data?.detail || "An error occurred");
       }
+    }
+  };
+
+  const fetchMoreNestedComments = async (commentId: string) => {
+    
+    const response = await fetchAPI(
+      comments.find(
+        comment => String(comment.id) === String(commentId)
+      )?.next, {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          String(comment.id) === String(commentId)
+            ? { ...comment,
+                nested_comments: [
+                  ...comment.nested_comments,
+                  ...response.data.results.comments
+                ],
+                next: response.data.next
+              }
+            : comment
+        )
+      );
+    } else {
+      setError(response?.data?.detail || "An error occurred");
     }
   };
 
@@ -407,6 +458,7 @@ export default function ArticlePage() {
                 handleLike={likeComment}
                 handleDelete={handleDeleteComment}
                 handleNestedComment={fetchNestedComments}
+                fetchMoreNestedComment={fetchMoreNestedComments}
                 uid={uid}
               />
               )}
@@ -418,6 +470,11 @@ export default function ArticlePage() {
                 </ThemedView>
               }
               ListHeaderComponent={() => <>{headerContent}</>}
+              
+              onEndReachedThreshold={0.5}
+              onEndReached={() => {
+                fetchMoreComments();
+              }}
             />
             </Animated.View>
         )}

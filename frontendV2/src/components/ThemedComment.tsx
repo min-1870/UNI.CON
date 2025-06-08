@@ -13,11 +13,12 @@ type CommentProps = {
   handleLike?: any;
   handleDelete?: any;
   handleNestedComment?: any;
+  fetchMoreNestedComment?: any;
   uid?: any;
   isChild?: boolean;
 };
 
-export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, handleDelete, handleLike, uid, isChild}: CommentProps) {
+export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, fetchMoreNestedComment, handleDelete, handleLike, uid, isChild}: CommentProps) {
 
   const default_text_color = useThemeColor({}, 'default_text_color');
   const time_color = useThemeColor({}, 'default_placeholder_color');
@@ -204,6 +205,15 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
     </View>
 
   );
+
+  const renderFooter = () => (
+    <View>
+      {comment_data.showReplies && comment_data.next &&
+      <Pressable onPress={() => fetchMoreNestedComment(comment_data.id)} > 
+        <ThemedText type='articleButton' >Load More</ThemedText>
+      </Pressable>}
+    </View>
+  );
   return (
     <FlatList
       data={comment_data.nested_comments}
@@ -211,7 +221,8 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
       renderItem={({ item }) => <ThemedComment comment_data={item} focusingComment={focusingComment} handleLike={handleLike} handleDelete={handleDelete} isChild={true} uid={uid}/>}
       showsVerticalScrollIndicator={false}
       scrollEnabled={false} 
-      ListHeaderComponent={renderHeader}      
+      ListHeaderComponent={renderHeader}
+      ListFooterComponent={renderFooter}
     />
   );
 };
