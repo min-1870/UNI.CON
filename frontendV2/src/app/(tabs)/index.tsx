@@ -1,31 +1,20 @@
+import { ArticleType, InitialDataType } from '@/constants/types';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
+import {fetchAPI, getData, setData} from "@/components/Utils";
+import React, { useState, useEffect, useRef  } from "react";
+import ThemedArticle from '@/components/ThemedArticle';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import ThemedButton from '@/components/ThemedButton';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import ThemedButton from '@/components/ThemedButton';
-import ThemedArticle from '@/components/ThemedArticle';
-import React, { useState, useEffect, useRef  } from "react";
-import {fetchAPI, getData, setData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
-import { router } from 'expo-router';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { Animated } from 'react-native';
-
-import { Ionicons } from '@expo/vector-icons';
-
 import ThemedTag from '@/components/ThemedTag';
+import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
+import { Animated } from 'react-native';
+import { router } from 'expo-router';
+import URLs from "@/constants/Urls";
 
 export default function HomePage() {
-
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
-  const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [university, setUniversity] = useState('');
-  const [tags, setTags] = useState([]);
-  const fetchedArticlePage = useRef(null);
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
   const apiEndpoints = {
     all: URLs.TIME_SORTED_ARTICLES,
@@ -33,15 +22,21 @@ export default function HomePage() {
     recommend: URLs.PREFERENCE_SORTED_ARTICLES,
   };
 
+  const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
+  const [initialData, setInitialData] = useState<InitialDataType|null>(null);
+  const [articles, setArticles] = useState<ArticleType[]>([]);
+  const [nextArticlePage, setNextArticlePage] = useState(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [tags, setTags] = useState<[]>([]);
+
+  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const fetchedArticlePage = useRef(null);
+
   useEffect(() => {
     fetchArticles();
     fetchTrendingTags();
-    const fetchSchool = async () => {
-      const storedUniversity = await getData('university');
-      setUniversity(storedUniversity||"");
-    };
-    fetchSchool();
-    setError(false);
+    fetchInitialData();
   }, [sortOption]);
   
   useEffect(() => {
@@ -56,6 +51,11 @@ export default function HomePage() {
     }
   }, [loading]);
 
+  const fetchInitialData = async () => {
+    const storedInitialData = await getData('initialData');
+    storedInitialData && setInitialData(JSON.parse(storedInitialData));
+  };
+
   const fetchTrendingTags = async () => {
     setLoading(true);
     const response = await fetchAPI(URLs.TRENDING_TAGS, {
@@ -66,7 +66,10 @@ export default function HomePage() {
       setTags(response.data?.tags)
       setData('trending_tags', Array.isArray(response.data?.tags) ? response.data.tags : []);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     setLoading(false);
   };
@@ -79,18 +82,19 @@ export default function HomePage() {
     });
     if (!response.error) {
       setArticles(response.data?.results?.articles || null);
-      console.log(response.data)
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
-    setLoading(false);
     fetchedArticlePage.current = null;
+    setLoading(false);
   };
 
   const fetchMoreArticles = async () => {
     if (!nextArticlePage || nextArticlePage == fetchedArticlePage.current) return;
-    
     const response = await fetchAPI(nextArticlePage, {
       method: 'GET',
       token: true,
@@ -100,11 +104,13 @@ export default function HomePage() {
         ...prevArticles,
         ...(response.data?.results?.articles || []),
       ]);
-      console.log(response.data)
       fetchedArticlePage.current = nextArticlePage;
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     
   };
@@ -165,7 +171,7 @@ export default function HomePage() {
           </Pressable>
         </ThemedView>
         <ThemedView style={styles.titleContentContainer}>
-          <ThemedText type={'university'} style={{marginBottom:15}}>{university}</ThemedText>
+          <ThemedText type={'university'} style={{marginBottom:15}}>{initialData?.university}</ThemedText>
           <ThemedText type={'contentSubTitle'} style={{ marginBottom:5 }}>Currently, they are chatting about..</ThemedText>
           <ThemedView style={styles.trendingTagsContainers}>
             {tags.slice(0, 3).map((tag, i) => (
@@ -202,11 +208,10 @@ export default function HomePage() {
     <ThemedView style={styles.container}>
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedArticle article_data={item} />}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
             contentContainerStyle={styles.feedContainer}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}

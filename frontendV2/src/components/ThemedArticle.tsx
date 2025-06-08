@@ -1,25 +1,30 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+
+import { ArticleType, InitialDataType } from '@/constants/types';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ThemedTag from '@/components/ThemedTag';
-import ThemedText from '@/components/ThemedText';
-import React,  { useState } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
+import ThemedText from '@/components/ThemedText';
+import ThemedTag from '@/components/ThemedTag';
+import React,  { useState } from "react";
+import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import moment from 'moment';
-import { router } from 'expo-router';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
 
 type ThemedArticleProps = {
-  article_data: any;
+  articleData: any;
+  initialData?: InitialDataType|null;
   type?: string;
 };
 
-export default function ThemedArticle({ article_data, type='default' }: ThemedArticleProps) {
-  const background_color = useThemeColor({}, 'default_card_background_color');
+export default function ThemedArticle({ articleData, initialData, type='default' }: ThemedArticleProps) {
+  
   const view_background_color = useThemeColor({}, 'default_view_card_background_color');
+  const background_color = useThemeColor({}, 'default_card_background_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
   const [trending_tags, setTrendingTags] = useState<string[]>([]);
+  const [article, setArticleState] = useState<ArticleType>(articleData);
   
   React.useEffect(() => {
     const fetchTrendingTags = async () => {
@@ -29,27 +34,24 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
     fetchTrendingTags();
   }, []);
 
-  const [article, setArticleState] = useState(article_data);
-
   const handleLike = async () => {
-    console.log(123);
-    console.log(article);
-      const url = article.like_status
-          ? URLs.ARTICLE_UNLIKE(article.id)
-          : URLs.ARTICLE_LIKE(article.id);
-      const response_data = await fetchAPI(url, {method: 'POST'})
-      if (response_data) {
-          setArticleState((prevState: any) => ({
-            ...prevState,
-            like_status: !prevState.like_status,
-            likes_count: prevState.likes_count + (prevState.like_status ? -1 : 1),
-          }));
-      }
+    const url = article.like_status
+        ? URLs.ARTICLE_UNLIKE(String(article.id))
+        : URLs.ARTICLE_LIKE(String(article.id));
+    const response_data = await fetchAPI(url, {method: 'POST'})
+    if (response_data) {
+        setArticleState((prevState: any) => ({
+          ...prevState,
+          like_status: !prevState.like_status,
+          likes_count: prevState.likes_count + (prevState.like_status ? -1 : 1),
+        }));
+    }
   };
+
   const handleSave = async () => {
       const url = article.save_status
-      ? URLs.ARTICLE_UNSAVE(article.id)
-      : URLs.ARTICLE_SAVE(article.id);
+      ? URLs.ARTICLE_UNSAVE(String(article.id))
+      : URLs.ARTICLE_SAVE(String(article.id));
       
       const data = await fetchAPI(url, {method: 'POST'})
       if (data) {
@@ -117,14 +119,13 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
       flexDirection: 'row',
     },
   });
-
   return (
     
     <View style={[styles.container]}>
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
             {article.unicon && (
-              <ThemedTag type='uni' text={article.user_school.toUpperCase()}/>
+              <ThemedTag initialData={initialData} type='uni' text={article.user_school.toUpperCase()}/>
             )}
           <ThemedText type='articleAuthor'>
             {article.user_temp_name}

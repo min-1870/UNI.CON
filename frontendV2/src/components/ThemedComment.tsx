@@ -1,24 +1,25 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import { CommentType, InitialDataType } from '@/constants/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
+import { AntDesign } from '@expo/vector-icons';
 import moment from 'moment';
 
-import { AntDesign } from '@expo/vector-icons';
-
 type CommentProps = {
-  comment_data: any;
-  focusingComment?: any;
+  commentData: CommentType;
+  setFocusedComment?: any;
   isReplying?: any;
-  handleLike?: any;
-  handleDelete?: any;
-  handleNestedComment?: any;
+  likeComment?: any;
+  deleteComment?: any;
+  fetchNestedComments?: any;
   fetchMoreNestedComment?: any;
-  uid?: any;
   isChild?: boolean;
+  isUnicon?: boolean;
+  initialData?: InitialDataType;
 };
 
-export default function ThemedComment({ comment_data, focusingComment, isReplying, handleNestedComment, fetchMoreNestedComment, handleDelete, handleLike, uid, isChild}: CommentProps) {
+export default function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
 
   const default_text_color = useThemeColor({}, 'default_text_color');
   const time_color = useThemeColor({}, 'default_placeholder_color');
@@ -37,8 +38,14 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
       paddingVertical: 10,
       paddingHorizontal: 40,
       marginLeft: 40,
-      marginTop: 20,
       gap: 10,
+    },
+    load_more: {
+      flex: 1,
+      paddingVertical: 20,
+      paddingHorizontal: 40,
+      marginLeft: 40,
+      alignSelf: 'center'
     },
     info_container: {
       flexDirection: 'row',
@@ -89,98 +96,99 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
       flexDirection: 'row',
     },
   });
-
   
   const renderHeader = () => (
-    <View style={comment_data.parent_comment ? styles.nested_container : styles.container}>
+    <View style={commentData.parent_comment ? styles.nested_container : styles.container}>
       <View style={styles.info_container}>
-          {comment_data.unicon || (
-            <ThemedTag type='uni' text={comment_data.user_school.toUpperCase()}/>
+          {isUnicon && (
+            <ThemedTag initialData={initialData} type='uni' text={commentData.user_school.toUpperCase()}/>
           )}
         <ThemedText type='articleAuthor' style={{fontSize:12}}>
-          {comment_data.user_temp_name}
+          {commentData.user_temp_name}
         </ThemedText>
         <ThemedText type='articlePoints' style={{fontSize:9}}>
-          {comment_data.user_static_points}
+          {commentData.user_static_points}
         </ThemedText>
         <ThemedText type='articleDate' style={{fontSize:9}}>
-          {moment(comment_data.created_at).fromNow()}
+          {moment(commentData.created_at).fromNow()}
         </ThemedText>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
           <ThemedText type='articleDate' style={{fontSize:9}}>
-            {comment_data.deleted ? 'deleted' : comment_data.edited ? 'edited' : null}
+            {commentData.deleted ? 'deleted' : commentData.edited ? 'edited' : null}
           </ThemedText>
         </View>
       </View>
-      <ThemedText type='articleBody'> {comment_data.body} </ThemedText>
+      <ThemedText type='articleBody'> {commentData.body} </ThemedText>
       <View style={styles.button_container}>
-
+        {initialData && (
+            
+          <View style={styles.button}>
+            {!commentData.parent_comment &&(
+                <>
+                  <Pressable onPress={() => {
+                    if (setFocusedComment) {
+                      if (isChild) {
+                        setFocusedComment({parent:commentData.parent_comment, child:commentData.id});
+                      } else {
+                        setFocusedComment({parent:commentData.id, child:null});
+                      }
+                    }
+                    if (isReplying) {
+                      isReplying(true);
+                    }
+                  }}>
+                    <ThemedText type='articleButton' >
+                      Reply
+                    </ThemedText>
+                  </Pressable>
+                </>
+            )}
+            {(commentData.user == initialData.id && !commentData.deleted) ? (
+                <>
+                  <Pressable onPress={() => {
+                    if (setFocusedComment) {
+                      if (isChild) {
+                        setFocusedComment({parent:commentData.parent_comment, child:commentData.id});
+                      } else {
+                        setFocusedComment({parent:commentData.id, child:null});
+                      }
+                    }
+                    if (isReplying) {
+                      isReplying(false);
+                    }
+                  }}>
+                    <ThemedText type='articleButton' >
+                      Edit
+                    </ThemedText>
+                  </Pressable>
+                </>
+            ):null}
+            {(commentData.user == initialData.id && !commentData.deleted) ? (
+                <>
+                  <Pressable onPress={() => {
+                    if (deleteComment) {
+                      deleteComment(commentData.id, commentData.parent_comment);
+                    }
+                  }}>
+                    <ThemedText type='articleButton' >
+                      Delete
+                    </ThemedText>
+                  </Pressable>
+                </>
+            ):null}
+          </View>
+        )}
         
         <View style={styles.button}>
-          {!comment_data.parent_comment &&(
-              <>
-                <Pressable onPress={() => {
-                  if (focusingComment) {
-                    if (isChild) {
-                      focusingComment({parent:comment_data.parent_comment, child:comment_data.id});
-                    } else {
-                      focusingComment({parent:comment_data.id, child:null});
-                    }
-                  }
-                  if (isReplying) {
-                    isReplying(true);
-                  }
-                }}>
-                  <ThemedText type='articleButton' >
-                    Reply
-                  </ThemedText>
-                </Pressable>
-              </>
-          )}
-          {(comment_data.user == uid && !comment_data.deleted) ? (
-              <>
-                <Pressable onPress={() => {
-                  if (focusingComment) {
-                    if (isChild) {
-                      focusingComment({parent:comment_data.parent_comment, child:comment_data.id});
-                    } else {
-                      focusingComment({parent:comment_data.id, child:null});
-                    }
-                  }
-                  if (isReplying) {
-                    isReplying(false);
-                  }
-                }}>
-                  <ThemedText type='articleButton' >
-                    Edit
-                  </ThemedText>
-                </Pressable>
-              </>
-          ):null}
-          {(comment_data.user == uid && !comment_data.deleted) ? (
-              <>
-                <Pressable onPress={() => {
-                  if (handleDelete) {
-                    handleDelete(comment_data.id, comment_data.parent_comment);
-                  }
-                }}>
-                  <ThemedText type='articleButton' >
-                    Delete
-                  </ThemedText>
-                </Pressable>
-              </>
-          ):null}
-        </View>
-        <View style={styles.button}>
-          <Pressable style={[styles.button]} onPress={() => handleLike && handleLike(comment_data.id, comment_data.parent_comment)} >
+          <Pressable style={[styles.button]} onPress={() => likeComment && likeComment(commentData.id, commentData.parent_comment)} >
             
             <AntDesign
-              name={comment_data.like_status ? 'heart' : 'hearto'} 
+              name={commentData.like_status ? 'heart' : 'hearto'} 
               size={15}
               color={button_color} 
             />
             <ThemedText type='articleButton'>
-              {comment_data.likes_count}
+              {commentData.likes_count}
             </ThemedText>
           </Pressable> 
         </View>
@@ -189,12 +197,12 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
 
       </View>
       <View style={styles.view_replies_button_container}>
-        {comment_data.parent_comment ? null : (
+        {commentData.parent_comment ? null : (
             <>
-              {comment_data.comments_count == 0 ? null : (
-                <Pressable onPress={() => handleNestedComment(comment_data.id)} > 
+              {commentData.comments_count == 0 ? null : (
+                <Pressable onPress={() => fetchNestedComments(commentData.id)} > 
                   <ThemedText type='articleButton'>
-                    {comment_data.showReplies ? 'Hide Replies..' : `Show ${comment_data.comments_count} Replies`}
+                    {commentData.showReplies ? 'Hide Replies..' : `Show ${commentData.comments_count} Replies`}
                     
                   </ThemedText>
                 </Pressable>
@@ -207,18 +215,28 @@ export default function ThemedComment({ comment_data, focusingComment, isReplyin
   );
 
   const renderFooter = () => (
-    <View>
-      {comment_data.showReplies && comment_data.next &&
-      <Pressable onPress={() => fetchMoreNestedComment(comment_data.id)} > 
+    <View >
+      {commentData.showReplies && commentData.next &&
+      <Pressable style={styles.load_more} onPress={() => fetchMoreNestedComment(commentData.id)} > 
         <ThemedText type='articleButton' >Load More</ThemedText>
       </Pressable>}
     </View>
   );
   return (
     <FlatList
-      data={comment_data.nested_comments}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <ThemedComment comment_data={item} focusingComment={focusingComment} handleLike={handleLike} handleDelete={handleDelete} isChild={true} uid={uid}/>}
+      data={commentData.nested_comments}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => 
+        <ThemedComment
+          initialData={initialData}
+          commentData={item}
+          setFocusedComment={setFocusedComment}
+          likeComment={likeComment}
+          deleteComment={deleteComment}
+          isUnicon={isUnicon}
+          isChild={true}
+          isReplying={isReplying}
+        />}
       showsVerticalScrollIndicator={false}
       scrollEnabled={false} 
       ListHeaderComponent={renderHeader}

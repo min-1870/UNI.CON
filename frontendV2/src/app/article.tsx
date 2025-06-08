@@ -1,45 +1,46 @@
+import { ArticleType, CommentType, InitialDataType } from '@/constants/types';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
-import ThemedText from '@/components/ThemedText';
-import ThemedView from '@/components/ThemedView';
-import ThemedButton from '@/components/ThemedButton';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigation } from '@react-navigation/native';
+import { AntDesign, Feather } from '@expo/vector-icons';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedComment from '@/components/ThemedComment';
-import ThemedInput from '@/components/ThemedInput';
-import React, { useState, useEffect, useRef } from "react";
-import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
-import { useRoute, RouteProp } from '@react-navigation/native';
-import { Animated } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { AntDesign, Feather } from '@expo/vector-icons';
+import ThemedButton from '@/components/ThemedButton';
+import {fetchAPI, getData} from "@/components/Utils";
+import ThemedInput from '@/components/ThemedInput';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import Toast from 'react-native-toast-message';
 import { useLayoutEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { Animated } from 'react-native';
 import { router } from 'expo-router';
+import URLs from "@/constants/Urls";
 
 export default function ArticlePage() {
-  const route = useRoute<RouteProp<{ params: { id: string } }>>();
-  const articleId = route.params?.id;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const background_color = useThemeColor({}, 'default_card_background_color');
-  const text_color = useThemeColor({}, 'default_text_color');
-  const [nextCommentPage, setNextCommentPage] = useState(null);
-  type Article = {
-    id: string;
-    user: number;
-    [key: string]: any;
-  };
-  const [article, setArticle] = useState<Article | null>(null);
-  const [comments, setComments] = useState<{ id: string; user: number; [key: string]: any }[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+
+  const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
+  const [initialData, setInitialData] = useState<InitialDataType>();
+  const [article, setArticle] = useState<ArticleType | null>(null);
+  const [nextCommentPage, setNextCommentPage] = useState(null);
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [isReply, setIsReply] = useState<boolean>(false);
   const [newComment, setNewComment] = useState('');
   const [orgComment, setOrgComment] = useState('');
-  const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
-  const [isReply, setIsReply] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
+
+  const background_color = useThemeColor({}, 'default_card_background_color');
+  const text_color = useThemeColor({}, 'default_text_color');
+
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const fetchedCommentPage = useRef(null);
+
   const navigation = useNavigation();
-  const [uid, setUid] = useState<number | null>(null);
+  const route = useRoute<RouteProp<{ params: { id: string } }>>();
+  const articleId = route.params?.id;
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
@@ -53,7 +54,8 @@ export default function ArticlePage() {
       headerTitle: 'Article',
       headerRight: () => (
         <>
-          {article && uid !== null && article.user == uid && !article.deleted && 
+        {initialData && 
+          (article && initialData.id !== null && article.user == initialData.id && !article.deleted && 
             <Pressable>
               <ThemedText
                 type={'default'} 
@@ -66,13 +68,13 @@ export default function ArticlePage() {
                 Edit
               </ThemedText>
             </Pressable>
-          }
+          )
+        }
         </>
       ),
     });
-  }, [navigation, article, uid, loading]);
+  }, [navigation, article, initialData, loading]);
 
-  
 
   useEffect(() => {
     let body = '';
@@ -80,29 +82,29 @@ export default function ArticlePage() {
       const parentComment = comments.find(
         comment => String(comment.id) === String(focusedComment.parent)
       );
-      body = parentComment?.body;
+      
+      body = parentComment?.body ?? '';
 
       if (parentComment && parentComment.nested_comments && focusedComment.child) {
         const childComment = parentComment.nested_comments.find(
-          (nestedComment: { id: string }) => String(nestedComment.id) === String(focusedComment.child)
+          (nestedComment) => String(nestedComment.id) === String(focusedComment.child)
         );
-        body = childComment?.body;
+        body = childComment?.body ?? '';
       }
     }
     setOrgComment(body);
     isReply 
     ? setNewComment('')
     : setNewComment(body);
-  }, [focusedComment]);
+  }, [focusedComment, isReply]);
 
   useEffect(() => {
-    fetchArticle();
-    const fetchSchool = async () => {
-      const storedUid = await getData('id');
-      setUid(Number(storedUid)||null)
-    };
-    fetchSchool();
+    fetchInitialData();
   }, []);
+  
+  useEffect(() => {
+    fetchArticle();
+  }, [initialData]);
   
   useEffect(() => {
     if (loading) {
@@ -116,6 +118,11 @@ export default function ArticlePage() {
     }
   }, [loading]);
 
+  const fetchInitialData = async () => {
+    const storedInitialData = await getData('initialData');
+    storedInitialData && setInitialData(JSON.parse(storedInitialData));
+  };
+
   const fetchArticle = async () => {
     setLoading(true);
     const response = await fetchAPI(
@@ -127,10 +134,14 @@ export default function ArticlePage() {
       setArticle(response.data?.results?.article || null);
       setComments(response.data?.results?.comments || []);
       setNextCommentPage(response.data?.next)
-      setHeaderContent(<ThemedArticle type={'detail'} article_data={response.data?.results?.article} />);
+      initialData &&
+      setHeaderContent(<ThemedArticle initialData={initialData} type={'detail'} articleData={response.data?.results?.article} />);
       fetchedCommentPage.current = null
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     setLoading(false);
   };
@@ -151,11 +162,85 @@ export default function ArticlePage() {
       fetchedCommentPage.current = nextCommentPage;
       setNextCommentPage(response.data?.next)
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
   };
 
-  const handleSendComment = async () => {
+  const fetchNestedComments = async (commentId: string) => {
+    let comment = comments.find((comment) => String(comment.id) === String(commentId))
+    if (comment?.showReplies) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          String(comment.id) === String(commentId)
+            ? { ...comment, showReplies: false, nested_comments: [] }
+            : comment
+        )
+      );
+      return;
+    }else{
+      const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
+      if (!response.error) {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment,
+                  nested_comments: response.data.results.comments,
+                  next: response.data.next,
+                  showReplies: true,
+                }
+              : comment
+          )
+        );
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+        });
+      }
+    }
+  };
+
+  const fetchMoreNestedComments = async (commentId: string) => {
+    
+    const nextUrl = comments.find(
+      comment => String(comment.id) === String(commentId)
+    )?.next;
+
+    if (!nextUrl) {
+      return;
+    }
+
+    const response = await fetchAPI(
+      nextUrl, {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          String(comment.id) === String(commentId)
+            ? { ...comment,
+                nested_comments: [
+                  ...comment.nested_comments,
+                  ...response.data.results.comments
+                ],
+                next: response.data.next
+              }
+            : comment
+        )
+      );
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
+    }
+  };
+
+  const sendComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(), {
       method: 'POST',
@@ -180,121 +265,14 @@ export default function ArticlePage() {
       ]);
       setNewComment('');
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
   }; 
 
-  const likeComment = async (commentId: string, parent_commentId: string | null) => {
-    let url = '';
-    if (parent_commentId) {
-      url = comments.find((comment) => comment.id === parent_commentId)?.nested_comments.find((nestedComment: { id: string; }) => nestedComment.id === commentId)?.like_status
-        ? URLs.COMMENT_LIKE(commentId)  
-        : URLs.COMMENT_UNLIKE(commentId);
-    }
-    else {
-      url = comments.find((comment) => comment.id === commentId)?.like_status
-        ? URLs.COMMENT_UNLIKE(commentId)  
-        : URLs.COMMENT_LIKE(commentId);
-    };
-    const response = await fetchAPI(url, { method: 'POST', token: true });
-    if (!response.error) {
-      if (parent_commentId) {
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            String(comment.id) === String(parent_commentId)
-              ? { ...comment,
-                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
-                    String(nestedComment.id) === String(commentId)
-                      ? { ...nestedComment,
-                          like_status: !nestedComment.like_status,
-                          likes_count: nestedComment.likes_count + (nestedComment.like_status ? -1 : 1),
-                        }
-                      : nestedComment
-                  ),
-                }
-              : comment
-          )
-        );
-      }
-      else{
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            String(comment.id) === String(commentId)
-              ? { ...comment,
-                  like_status: !comment.like_status,
-                  likes_count: comment.likes_count + (comment.like_status ? -1 : 1),
-                }
-              : comment
-          )
-        );
-      }
-    } else {
-      setError(response?.data?.detail || "An error occurred");
-      console.log(response);
-    }
-  };
-
-  const fetchNestedComments = async (commentId: string) => {
-    let comment = comments.find((comment) => comment.id === commentId)
-    if (comment?.showReplies) {
-      console.log("Hide replies")
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === commentId
-            ? { ...comment, showReplies: false, nested_comments: [] }
-            : comment
-        )
-      );
-      return;
-    }else{
-      const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
-      if (!response.error) {
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            String(comment.id) === String(commentId)
-              ? { ...comment,
-                  nested_comments: response.data.results.comments,
-                  next: response.data.next,
-                  showReplies: true,
-                }
-              : comment
-          )
-        );
-      } else {
-        setError(response?.data?.detail || "An error occurred");
-      }
-    }
-  };
-
-  const fetchMoreNestedComments = async (commentId: string) => {
-    
-    const response = await fetchAPI(
-      comments.find(
-        comment => String(comment.id) === String(commentId)
-      )?.next, {
-      method: 'GET',
-      token: true,
-    });
-    if (!response.error) {
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          String(comment.id) === String(commentId)
-            ? { ...comment,
-                nested_comments: [
-                  ...comment.nested_comments,
-                  ...response.data.results.comments
-                ],
-                next: response.data.next
-              }
-            : comment
-        )
-      );
-    } else {
-      setError(response?.data?.detail || "An error occurred");
-    }
-  };
-
-  const handleReplyComment = async () => {
+  const replyComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(), {
       method: 'POST',
@@ -319,11 +297,14 @@ export default function ArticlePage() {
       }
       setNewComment('');
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
   };  
   
-  const handleEditComment = async () => {
+  const editComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(
         String(focusedComment?.child ? focusedComment?.child : focusedComment?.parent) + '/'
@@ -340,10 +321,11 @@ export default function ArticlePage() {
           prevComments.map((comment) =>
             String(comment.id) === String(focusedComment.parent)
               ? { ...comment,
-                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
+                  nested_comments: comment.nested_comments.map((nestedComment: CommentType) =>
                     String(nestedComment.id) === String(focusedComment.child)
                       ? { ...nestedComment,
-                          body: newComment
+                          body: newComment,
+                          edited: true
                         }
                       : nestedComment
                   ),
@@ -356,7 +338,8 @@ export default function ArticlePage() {
           prevComments.map((comment) =>
             String(comment.id) === String(focusedComment?.parent)
               ? { ...comment,
-                  body: newComment
+                  body: newComment,
+                  edited: true
                 }
               : comment
           )
@@ -364,11 +347,14 @@ export default function ArticlePage() {
       setFocusedComment(null)
       setNewComment('');
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
   };
   
-  const handleDeleteComment = async (commentId: string, parent_commentId: string | null) => {
+  const deleteComment = async (commentId: string, parent_commentId: string | null) => {
     const response = await fetchAPI(
       URLs.COMMENT(String(commentId) + '/'), {
       method: 'DELETE',
@@ -381,7 +367,7 @@ export default function ArticlePage() {
           prevComments.map((comment) =>
             String(comment.id) === String(parent_commentId)
               ? { ...comment,
-                  nested_comments: comment.nested_comments.map((nestedComment: { id: string, like_status: boolean, likes_count: number;}) =>
+                  nested_comments: comment.nested_comments.map((nestedComment: CommentType) =>
                     String(nestedComment.id) === String(commentId)
                       ? { ...nestedComment,
                           body: '[DELETED CONTENT]',
@@ -407,7 +393,67 @@ export default function ArticlePage() {
       setFocusedComment(null)
       setNewComment('');
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
+    }
+  };
+
+  const likeComment = async (commentId: string, parent_commentId: string | null) => {
+    let url = '';
+    if (parent_commentId) {
+      url = comments.find((comment) => 
+        String(comment.id) === String(parent_commentId)
+      )?.nested_comments.find(
+        (nestedComment: CommentType) => 
+        String(nestedComment.id) === String(commentId)
+      )?.like_status
+        ? URLs.COMMENT_UNLIKE(commentId)  
+        : URLs.COMMENT_LIKE(commentId);
+    }
+    else {
+      url = comments.find((comment) => String(comment.id) === String(commentId))?.like_status
+        ? URLs.COMMENT_UNLIKE(commentId)  
+        : URLs.COMMENT_LIKE(commentId);
+    };
+    const response = await fetchAPI(url, { method: 'POST', token: true });
+    if (!response.error) {
+      if (parent_commentId) {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(parent_commentId)
+              ? { ...comment,
+                  nested_comments: comment.nested_comments.map((nestedComment: CommentType) =>
+                    String(nestedComment.id) === String(commentId)
+                      ? { ...nestedComment,
+                          like_status: !nestedComment.like_status,
+                          likes_count: nestedComment.likes_count + (nestedComment.like_status ? -1 : 1),
+                        }
+                      : nestedComment
+                  ),
+                }
+              : comment
+          )
+        );
+      }
+      else{
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment,
+                  like_status: !comment.like_status,
+                  likes_count: comment.likes_count + (comment.like_status ? -1 : 1),
+                }
+              : comment
+          )
+        );
+      }
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
   };
 
@@ -446,36 +492,36 @@ export default function ArticlePage() {
       <ThemedView style={styles.container}>
         {loading ? null : (
             <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-            {error && <ThemedText type="error">{error}</ThemedText>}
-            <FlatList
-              data={comments}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-              <ThemedComment
-                comment_data={item}
-                focusingComment={setFocusedComment}
-                isReplying={setIsReply}
-                handleLike={likeComment}
-                handleDelete={handleDeleteComment}
-                handleNestedComment={fetchNestedComments}
-                fetchMoreNestedComment={fetchMoreNestedComments}
-                uid={uid}
+              <FlatList
+                data={comments}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={({ item }) => (
+                <ThemedComment
+                  commentData={item}
+                  setFocusedComment={setFocusedComment}
+                  isReplying={setIsReply}
+                  isUnicon={article?.unicon}
+                  likeComment={likeComment}
+                  deleteComment={deleteComment}
+                  fetchNestedComments={fetchNestedComments}
+                  fetchMoreNestedComment={fetchMoreNestedComments}
+                  initialData={initialData}
+                />
+                )}
+                contentContainerStyle={styles.feedContainer}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <ThemedView style={styles.NCF}>
+                    <ThemedText type='contentPlaceholder'>No comments found.</ThemedText>
+                  </ThemedView>
+                }
+                ListHeaderComponent={() => <>{headerContent}</>}
+                
+                onEndReachedThreshold={0.5}
+                onEndReached={() => {
+                  fetchMoreComments();
+                }}
               />
-              )}
-              contentContainerStyle={styles.feedContainer}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <ThemedView style={styles.NCF}>
-                  <ThemedText type='contentPlaceholder'>No comments found.</ThemedText>
-                </ThemedView>
-              }
-              ListHeaderComponent={() => <>{headerContent}</>}
-              
-              onEndReachedThreshold={0.5}
-              onEndReached={() => {
-                fetchMoreComments();
-              }}
-            />
             </Animated.View>
         )}
       </ThemedView>
@@ -512,7 +558,7 @@ export default function ArticlePage() {
         />
         <ThemedButton
           type={'feedChecked'}
-          onPress={focusedComment ? isReply ? handleReplyComment : handleEditComment : handleSendComment}
+          onPress={focusedComment ? isReply ? replyComment : editComment : sendComment}
         >
           <AntDesign
             name='arrowright'

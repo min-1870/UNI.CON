@@ -35,6 +35,7 @@ export default function LoginPage() {
     });
 
     if (!response.error) {
+      setData('initialData', JSON.stringify(response.data))
       setData('id', response.data.id);
       setData('access', response.data.access);
       setData('email', response.data.email);

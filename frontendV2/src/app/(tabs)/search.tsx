@@ -1,27 +1,29 @@
+import { ArticleType, InitialDataType } from '@/constants/types';
+import React, { useState, useEffect, useRef  } from "react";
+import ThemedArticle from '@/components/ThemedArticle';
+import {fetchAPI, getData} from "@/components/Utils";
+import ThemedButton from '@/components/ThemedButton';
 import { StyleSheet, FlatList } from 'react-native';
+import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import ThemedButton from '@/components/ThemedButton';
-import ThemedArticle from '@/components/ThemedArticle';
-import React, { useState, useEffect, useRef  } from "react";
-import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
-import ThemedInput from '@/components/ThemedInput';
+import Toast from 'react-native-toast-message';
 import { Animated } from 'react-native';
+import URLs from "@/constants/Urls";
 
 export default function SearchPage() {
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
+  const [articles, setArticles] = useState<ArticleType[]>([]);
+  const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [school, setSchool] = useState('');
   const fetchedArticlePage = useRef(null);
   const [searchContent, setSearchContent] = useState('');
 
   useEffect(() => {
     fetchArticles();
+    fetchInitialData();
   }, []);
 
   
@@ -36,6 +38,11 @@ export default function SearchPage() {
       }).start();
     }
   }, [loading]);
+
+  const fetchInitialData = async () => {
+    const storedInitialData = await getData('initialData');
+    storedInitialData && setInitialData(JSON.parse(storedInitialData));
+  };
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -53,7 +60,10 @@ export default function SearchPage() {
       console.log(response.data)
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     setLoading(false);
     fetchedArticlePage.current = null;
@@ -75,7 +85,10 @@ export default function SearchPage() {
       fetchedArticlePage.current = nextArticlePage;
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     
   };
@@ -106,11 +119,10 @@ export default function SearchPage() {
       </ThemedView>
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedArticle article_data={item} />}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
             contentContainerStyle={styles.feedContainer}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}

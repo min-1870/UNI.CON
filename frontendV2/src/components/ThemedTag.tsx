@@ -1,45 +1,30 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Pressable, Text, StyleSheet, View, type ButtonProps } from 'react-native';
-import React, { useState, useEffect, useRef  } from "react";
-import { ReactNode } from 'react';
-import {fetchAPI, getData, setData} from "@/components/Utils";
+import { Text, StyleSheet, View } from 'react-native';
+import { InitialDataType } from '@/constants/types';
 import { useFonts } from 'expo-font';
+import React from "react";
+
 type TagProps = {
     text: string;
     type: 'default'|'ranked'|'bigRanked'|'uni';
+    initialData?: InitialDataType|null;
   };
-  
-
 export default function ThemedTag({
   text='',
   type ='default',
+  initialData,
 }: TagProps) {
   
-    const [fontsLoaded] = useFonts({
-      textRegular: require('../assets/fonts/SF-Pro-Text-Regular.otf'),
-      textBold: require('../assets/fonts/SF-Pro-Text-Bold.otf'),
-    });
-    const background_color = useThemeColor({}, 'default_tag_background_color');
-    const textColor = useThemeColor({}, 'default_text_color');
-    const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
-    const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
-    const uniTextColor = useThemeColor({}, 'uniTagTextColor');
-    const [uniColor, setUniColor] = useState<string | null>(null);
+  const [fontsLoaded] = useFonts({
+    textRegular: require('../assets/fonts/SF-Pro-Text-Regular.otf'),
+    textBold: require('../assets/fonts/SF-Pro-Text-Bold.otf'),
+  });
+  const background_color = useThemeColor({}, 'default_tag_background_color');
+  const textColor = useThemeColor({}, 'default_text_color');
+  const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
+  const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
+  const uniTextColor = useThemeColor({}, 'uniTagTextColor');
 
-    
-  useEffect(() => {
-    const fetchColor = async () => {
-      const ColorsRaw = await getData('university_colors');
-      let Colors;
-      try {
-        Colors = ColorsRaw ? JSON.parse(ColorsRaw) : null;
-      } catch (e) {
-        Colors = null;
-      }
-      setUniColor(Colors[text.toLowerCase()])
-    };
-    fetchColor();
-  }, []);
   const styles = type === 'bigRanked' ?
     StyleSheet.create({
         tag: {
@@ -73,12 +58,12 @@ export default function ThemedTag({
     : type === 'uni' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: uniColor ? uniColor : background_color,
+        backgroundColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color,
         borderRadius: 16,
         paddingHorizontal: 5,
         paddingVertical: 3,
 
-        shadowColor: uniColor ? uniColor : background_color,
+        shadowColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color,
         shadowRadius: 20,
         shadowOpacity: 1,
         backdropFilter: 'blur(10px)', // For web platforms

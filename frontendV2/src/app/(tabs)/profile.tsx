@@ -1,3 +1,4 @@
+import { ArticleType, InitialDataType } from '@/constants/types';
 import React, { useState, useEffect, useRef  } from "react";
 import ThemedArticle from '@/components/ThemedArticle';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -7,22 +8,22 @@ import { StyleSheet, FlatList } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
+import Toast from 'react-native-toast-message';
+import { Animated } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
-import { Animated } from 'react-native';
 
 export default function ProfilePage() {
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
+  const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
+  const [articles, setArticles] = useState<ArticleType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [university, setUniversity] = useState('');
-  const [points, setPoints] = useState('');
-  const [email, setEmail] = useState('');
+
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const fetchedArticlePage = useRef(null);
+
+  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   
   const discovery = {
     authorizationEndpoint: URLs.authorizationEndpoint,
@@ -38,15 +39,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchArticles();
-    const fetchSchool = async () => {
-      const storedUniversity = await getData('university');
-      const storedEmail = await getData('email');
-      const storedPoints = await getData('points');
-      setUniversity(storedUniversity||"");
-      setEmail(storedEmail||"");
-      setPoints(storedPoints||'');
-    };
-    fetchSchool();
+    fetchInitialData();
   }, [sortOption]);
     
   useEffect(() => {
@@ -61,6 +54,12 @@ export default function ProfilePage() {
     }
   }, [loading]);
   
+  
+  const fetchInitialData = async () => {
+    const storedInitialData = await getData('initialData');
+    storedInitialData && setInitialData(JSON.parse(storedInitialData));
+  };
+
   const fetchArticles = async () => {
     setLoading(true);
     const response = await fetchAPI(apiEndpoints[sortOption], {
@@ -72,7 +71,10 @@ export default function ProfilePage() {
       console.log(response.data)
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     setLoading(false);
     fetchedArticlePage.current = null;
@@ -94,7 +96,10 @@ export default function ProfilePage() {
       fetchedArticlePage.current = nextArticlePage;
       setNextArticlePage(response.data?.next || null);
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     
   };
@@ -110,7 +115,10 @@ export default function ProfilePage() {
       });
 
       if (response.error) {
-        setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
         return;
       }
 
@@ -143,7 +151,10 @@ export default function ProfilePage() {
         });
 
         if (response.error) {
-          setError(response?.data?.detail || "An error occurred");
+          Toast.show({
+            type: 'success',
+            text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+          });
           return;
         }
 
@@ -214,7 +225,7 @@ export default function ProfilePage() {
         <ThemedView style={styles.credibilityScoreContainer}>
           <ThemedText type={'contentTitle'}>Credibility Score</ThemedText>
           <ThemedView style={styles.csRowContainer}>
-          <ThemedText type={'summaryPoints'}>{points}</ThemedText>
+          <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
           <ThemedText type={'contentSubTitle'}>Points</ThemedText>
           </ThemedView>
         </ThemedView>
@@ -223,11 +234,11 @@ export default function ProfilePage() {
           <ThemedView style={styles.rowsContainer}>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>University</ThemedText>
-              <ThemedText type={'articleBody'}>{university}</ThemedText>
+              <ThemedText type={'articleBody'}>{initialData?.university}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Student Email</ThemedText>
-              <ThemedText type={'articleBody'}>{email}</ThemedText>
+              <ThemedText type={'articleBody'}>{initialData?.email}</ThemedText>
             </ThemedView>
             <ThemedView style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Google Account</ThemedText>
@@ -272,11 +283,10 @@ export default function ProfilePage() {
     <ThemedView style={styles.container}>
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          {error || <ThemedText type="error">{error}</ThemedText>}
           <FlatList
             data={articles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedArticle article_data={item} />}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
             contentContainerStyle={styles.feedContainer}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}

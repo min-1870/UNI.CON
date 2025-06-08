@@ -1,33 +1,30 @@
-import { StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect, useRef  } from "react";
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import ThemedNotification from '@/components/ThemedNotification';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import type { TabParamList } from './(tabs)/_layout';
+import { StyleSheet, FlatList } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import ThemedButton from '@/components/ThemedButton';
-import ThemedNotification from '@/components/ThemedNotification';
-import React, { useState, useEffect, useLayoutEffect, useRef  } from "react";
-import {fetchAPI, getData} from "@/components/Utils";
-import URLs from "@/constants/Urls";
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { TabParamList } from './(tabs)/_layout';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import Toast from 'react-native-toast-message';
+import {fetchAPI} from "@/components/Utils";
 import { Animated } from 'react-native';
+import URLs from "@/constants/Urls";
+
 export default function NotificationPage() {
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
   const [newNotifications, setNewNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
-  const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
   const [oldNotifications, setOldNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
+  const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
+  const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [school, setSchool] = useState('');
-  const fetchedNewNotificationPage = useRef(null);
-  const fetchedOldNotificationPage = useRef(null);
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const place_holder_color = useThemeColor({}, 'default_placeholder_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
 
-
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const fetchedNewNotificationPage = useRef(null);
+  const fetchedOldNotificationPage = useRef(null);
   
   useEffect(() => {
     if (loading) {
@@ -84,7 +81,10 @@ export default function NotificationPage() {
         setNextOldNotificationPage(response.data?.next || null);
       }
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     setLoading(false);
     if (isNew) {
@@ -125,7 +125,10 @@ export default function NotificationPage() {
         setNextOldNotificationPage(response.data?.next || null);
       }
     } else {
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
     }
     
   };
@@ -181,5 +184,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     gap: 20,
+    alignSelf: 'center',
   },
 });
