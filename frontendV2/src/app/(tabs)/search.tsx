@@ -8,6 +8,7 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
+import { ImageBackground } from "react-native";
 import { Animated } from 'react-native';
 import URLs from "@/constants/Urls";
 
@@ -93,14 +94,36 @@ export default function SearchPage() {
     
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      gap: 20,
+    },
+    headerContainer: {margin:15},
+    searchBarContainer: {
+      
+    },
+    tagsContainer: {
+      
+    },
+    resultsContainer: {
+      
+    },
+    feedContainer: {
+      alignItems: 'stretch',
+      gap: 20,
+    },
+  });
 
   const renderHeader = () => (
     <>
-      <ThemedView style={styles.tagsContainer}>
-        <ThemedText type={'contentTitle'}>Trending</ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.resultsContainer}>
-        <ThemedText type={'contentTitle'}>Results</ThemedText>
+      <ThemedView style={styles.headerContainer}>
+        <ThemedView style={styles.tagsContainer}>
+          <ThemedText type={'contentTitle'}>Trending</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.resultsContainer}>
+          <ThemedText type={'contentTitle'}>Results</ThemedText>
+        </ThemedView>
       </ThemedView>
     </>
   );
@@ -137,21 +160,3 @@ export default function SearchPage() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    gap: 20,
-  },
-  searchBarContainer: {
-  },
-  tagsContainer: {
-  },
-  resultsContainer: {
-  },
-  feedContainer: {
-    alignItems: 'stretch',
-    gap: 20,
-  },
-});

@@ -8,6 +8,7 @@ import { StyleSheet, FlatList } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
+import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
@@ -172,28 +173,40 @@ export default function ProfilePage() {
     },
     titleContainer: {
       gap: 20,
-      marginBottom: 20,
+      margin: 15,
+      backgroundColor: "transparent",
     },
     credibilityScoreContainer: {
       gap: 10,
+      backgroundColor: "transparent",
+    },
+    csRowContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 10,
+      alignItems: 'flex-end',
+      margin: 15,
+      backgroundColor: "transparent",
     },
     summaryContainer: {
       gap: 10,
+      backgroundColor: "transparent",
     },
     rowsContainer: {
       gap: 10,
-      marginLeft: 20,
+      margin: 15,
+      backgroundColor: "transparent",
     },
     rowContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      backgroundColor: "transparent",
     },
     buttonContainer: {
       flexDirection: 'row',
-      // alignSelf: 'flex-start',
-      // gap: 10,
-      justifyContent: 'space-between',
+      alignSelf: 'flex-start',
+      // justifyContent: 'space-between',
       padding: 3,
       borderRadius: 50,
       backgroundColor: default_card_background_color,
@@ -204,29 +217,28 @@ export default function ProfilePage() {
       shadowOpacity: 0.08,
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
+      marginHorizontal: 15
     },
     feedContainer: {
-      margin: 20,
       alignItems: 'stretch',
       gap: 20,
-    },
-    csRowContainer: {
-      display: 'flex',
-      flexDirection: 'row',
-      gap: 10,
-      alignItems: 'flex-end',
-      marginLeft: 20,
     },
   });
 
   const renderHeader = () => (
     <>
+          <ImageBackground
+            source={require("../../assets/images/indexBg.png")}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          >
+          </ImageBackground>
       <ThemedView style={styles.titleContainer}>
         <ThemedView style={styles.credibilityScoreContainer}>
           <ThemedText type={'contentTitle'}>Credibility Score</ThemedText>
           <ThemedView style={styles.csRowContainer}>
-          <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
-          <ThemedText type={'contentSubTitle'}>Points</ThemedText>
+            <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
+            <ThemedText type={'contentSubTitle'}>Points</ThemedText>
           </ThemedView>
         </ThemedView>
         <ThemedView style={styles.summaryContainer}>

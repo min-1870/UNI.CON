@@ -77,6 +77,7 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       borderRadius: 20,
       borderTopRightRadius: type=='detail' ? 0 : 20,
       borderTopLeftRadius: type=='detail' ? 0 : 20,
+      marginHorizontal: type=='detail' ? 0 : 15,
       padding: 16, 
       shadowColor: 'rgba(0, 0, 0, 1)',
       shadowOffset: { width: 0, height: 3 },
@@ -94,12 +95,8 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       gap: 5,
       marginBottom: 14,
     },
-    body: {
-      color: default_text_color,
-      fontWeight: '400',
-      fontSize: 17,
-      textAlign: 'justify',
-      marginBottom: 3,
+    content: {
+      gap: 5
     },
     tagContainer:{
       flexDirection: 'row',
@@ -142,23 +139,24 @@ export default function ThemedArticle({ articleData, initialData, type='default'
            </ThemedText>
           </View>
         </View>
-
-        <ThemedText type='articleTitle'>{article.title}</ThemedText>
-        <ThemedText type='articleBody'>
-          {article.body.length > 200 && type == 'default' 
-            ? article.body.slice(0, 200) + ' ... read more'
-            : article.body
-          }
-        </ThemedText>
-        <View style={styles.tagContainer}>
-          {article.tag.length > 0 && article.tag
-            .map((tag: string, i: number) => (
-              <ThemedTag
-                text={tag}
-                type={trending_tags.includes(tag) ? 'ranked' : 'default'}
-                key={i}
-              />
-          ))}
+        <View style={styles.content}>
+          <ThemedText type='articleTitle'>{article.title}</ThemedText>
+          <ThemedText type='articleBody'>
+            {article.body.length > 200 && type == 'default' 
+              ? article.body.slice(0, 200) + ' ... read more'
+              : article.body
+            }
+          </ThemedText>
+          <View style={styles.tagContainer}>
+            {article.tag.length > 0 && article.tag
+              .map((tag: string, i: number) => (
+                <ThemedTag
+                  text={tag}
+                  type={trending_tags.includes(tag) ? 'ranked' : 'default'}
+                  key={i}
+                />
+            ))}
+          </View>
         </View>
       </Pressable>
       <View style={[styles.buttonContainer]}>

@@ -9,6 +9,7 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import Toast from 'react-native-toast-message';
+import { ImageBackground } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
@@ -118,27 +119,34 @@ export default function HomePage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      position: "relative", 
     },
     titleContainer: {
-      marginTop: 15,
+      // marginTop: 15,
+      margin: 15,
+      backgroundColor: "transparent"
     },
     titleHeaderContainer:{
       display: 'flex',
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignContent: 'center'
+      alignContent: 'center',
+      backgroundColor: "transparent"
     },
     titleContentContainer:{
       marginHorizontal: 15,
-      marginVertical: 30
+      marginVertical: 30,
+      backgroundColor: "transparent"
     },
     trendingTagsContainers:{
       flexDirection: 'row',
       alignSelf: 'flex-start',
+      backgroundColor: "transparent"
     },
     buttonContainer: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
+      marginHorizontal: 15,
       gap: 10,
       padding: 3,
       borderRadius: 50,
@@ -153,13 +161,19 @@ export default function HomePage() {
     },
     feedContainer: {
       alignItems: 'stretch',
-      marginHorizontal: 15,
+      // marginHorizontal: 15,
       gap: 20,
     },
   });
 
   const renderHeader = () => (
     <>
+      <ImageBackground
+        source={require("../../assets/images/indexBg.png")}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      >
+      </ImageBackground>
       <ThemedView style={styles.titleContainer}>
         <ThemedView style={styles.titleHeaderContainer}>
           <ThemedText type={'contentTitle'}>UNI.CON</ThemedText>
@@ -211,7 +225,10 @@ export default function HomePage() {
           <FlatList
             data={articles}
             keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
+            renderItem={({ item }) => <ThemedArticle 
+              initialData={initialData} 
+              articleData={item}
+            />}
             contentContainerStyle={styles.feedContainer}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
