@@ -4,7 +4,7 @@ import ThemedNotification from '@/components/ThemedNotification';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import type { TabParamList } from './(tabs)/_layout';
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
@@ -96,10 +96,13 @@ export default function NotificationPage() {
 
 
   const fetchMoreNotification = async (isNew = false) => {
-    if (!nextNewNotificationPage || nextNewNotificationPage == fetchedNewNotificationPage.current) return;
-    if (!nextOldNotificationPage || nextOldNotificationPage == fetchedOldNotificationPage.current) return;
-    
+    if (isNew){
+      if (!nextNewNotificationPage || nextNewNotificationPage == fetchedNewNotificationPage.current) return;
+    }else{
+      if (!nextOldNotificationPage || nextOldNotificationPage == fetchedOldNotificationPage.current) return; 
+    }
     const nextPage = isNew ? nextNewNotificationPage : nextOldNotificationPage;
+    
     if (!nextPage) {
       return;
     }

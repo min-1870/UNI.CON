@@ -18,6 +18,7 @@ from django.db import transaction
 from django.db import models
 from django_redis import get_redis_connection
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 redis_conn = get_redis_connection("default")
 
@@ -27,6 +28,16 @@ def to_unix_ms(dt):
     timestamp in milliseconds.
     """
     if dt:
+        # If dt is a string, try to parse it
+        if isinstance(dt, str):
+            try:
+                parsed_dt = parse_datetime(dt)
+                if parsed_dt is not None:
+                    dt = parsed_dt
+                else:
+                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
+            except Exception:
+                dt = timezone.now()
         if timezone.is_naive(dt):
             dt = dt.replace(tzinfo=timezone.utc)
         return int(dt.timestamp() * 1000)
@@ -36,14 +47,11 @@ def to_unix_ms(dt):
 def get_paginated_notifications(request, new=True):
     try:
         requested_page = int(request.query_params.get("page", 1))
-        dt = request.query_params.get("dt", None)
-        
-        if timezone.is_naive(dt):
-            dt = dt.replace(tzinfo=timezone.utc)
-        dt = int(dt.timestamp() * 1000)
+        dt = to_unix_ms(request.query_params.get("dt", None))
     except Exception:
         requested_page = 1
-        dt = int(timezone.now().timestamp() * 1000)
+        dt = to_unix_ms(None)
+        
     user_instance = request.user
 
     cache_key = NOTIFICATION_IDS_CACHE_KEY(user_instance.id, new)
@@ -169,7 +177,9 @@ def get_paginated_notifications(request, new=True):
         next_page = None
     else:
         url = request.build_absolute_uri()
-        next_page = f"{url.split('?')[0]}?page={requested_page + 1}"
+        next_page = f"{url.split('?')[0]}?page={requested_page + 1}%dt={
+            to_unix_ms(list(results.values())[-1]['created_at'])
+        }"
     return {
         "next": next_page,
         "results": {"notifications": results.values()},
