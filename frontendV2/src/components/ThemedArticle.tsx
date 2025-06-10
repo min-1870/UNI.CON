@@ -10,6 +10,7 @@ import React,  { useState } from "react";
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import moment from 'moment';
+import Markdown from 'react-native-markdown-display'
 
 type ThemedArticleProps = {
   articleData: any;
@@ -116,6 +117,12 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       flexDirection: 'row',
     },
   });
+  const markdownString = null
+// const markdownString = `
+// This is a **Markdown** example:
+// ![](https://indicators-everywhere.s3.ap-southeast-2.amazonaws.com/graphs/MU_OBV_14_2025-06-09.png)
+//   `
+
   return (
     
     <View style={[styles.container]}>
@@ -142,10 +149,27 @@ export default function ThemedArticle({ articleData, initialData, type='default'
         <View style={styles.content}>
           <ThemedText type='articleTitle'>{article.title}</ThemedText>
           <ThemedText type='articleBody'>
-            {article.body.length > 200 && type == 'default' 
+          <Markdown
+            rules={{
+              image: (node, children, parent, styles) => {
+                // Remove key from props before passing to the component
+                const { key, ...props } = node;
+                return (
+                  <img
+                    key={node.key}
+                    src={node.attributes.src}
+                    alt={node.attributes.alt}
+                    style={{ maxWidth: '100%', borderRadius: 8 }}
+                  />
+                );
+              },
+            }}
+          >
+            {markdownString ? markdownString : (article.body.length > 200 && type == 'default' 
               ? article.body.slice(0, 200) + ' ... read more'
               : article.body
-            }
+            )}
+          </Markdown>
           </ThemedText>
           <View style={styles.tagContainer}>
             {article.tag.length > 0 && article.tag
