@@ -1,40 +1,127 @@
 import {View, NativeSyntheticEvent, TextInputKeyPressEventData,} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import {  CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
-import { ImagePickerResult } from 'expo-image-picker'
 import { useThemeColor } from '@/hooks/useThemeColor';
+import type { TabParamList } from '../(tabs)/_layout';
+import { ImagePickerResult } from 'expo-image-picker';
 import ThemedButton from '@/components/ThemedButton';
+import { useRoute } from '@react-navigation/native';
 import ThemedView from '@/components/ThemedView';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
 import Toast from 'react-native-toast-message';
-import type { TabParamList } from './_layout';
 import ThemedTag from '@/components/ThemedTag';
 import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 
-export default function NewArticlePage() {
-  
-  const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
-  const [title, setTitle] = useState('');
-  const [bodies,  setBodies]  = useState<string[]>([""]);
-  const [imgResults,  setImgResults]  = useState<ImagePickerResult[]>([]);
-  const [inputHeights, setInputHeights] = useState<number[]>([]);
-  const [unicon, setUnicon] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [raw, setRaw] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [ratios, setRatios] = useState<number[]>([]);
+export default function EditArticlePage() {
 
+  // const [imgResultsOrLinks,  setImgResultsOrLinks]  = useState<(ImagePickerResult | string)[]>([]);
+  const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
+  const [imgResults,  setImgResults]  = useState<(ImagePickerResult|string)[]>([]);
+  const [inputHeights, setInputHeights] = useState<number[]>([]);
+  const [bodies,  setBodies]  = useState<string[]>([""]);
+  const [ratios, setRatios] = useState<number[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [unicon, setUnicon] = useState(false);
+  const [title, setTitle] = useState('');
+  const [raw, setRaw] = useState('');
+  
+  
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const place_holder_color = useThemeColor({}, 'default_placeholder_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
-  
-  const handlePost = async () => {
+  const articleId = (useRoute().params as { id: string }).id;
+
+  function parseMarkdownImages(raw: string): {
+    bodies: string[];
+    imgUris: string[];
+  } {  
+    const imgRegex = new RegExp(
+      `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
+      'g'
+    );
+    const bodies: string[] = [];
+    const imgUris: string[] = [];
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+
+    while ((m = imgRegex.exec(raw)) !== null) {
+      bodies.push(raw.slice(lastIndex, m.index).trim());
+      imgUris.push(m[1]);
+      lastIndex = m.index + m[0].length;
+    }
+    bodies.push(raw.slice(lastIndex).trimStart());
+
+    return { bodies, imgUris };
+  }
+
+  const fetchArticle = async () => {
+    setLoading(true);
+    const response = await fetchAPI(
+      URLs.ARTICLE(String(articleId)), {
+      method: 'GET',
+      token: true,
+    });
+    if (!response.error) {
+      const { bodies, imgUris } = parseMarkdownImages(response.data.results.article.body);
+      setBodies(bodies);
+      setImgResults(imgUris);
+      setTitle(response.data.results.article.title);
+      setUnicon(response.data?.results?.article?.unicon);
+      setTags(response.data.results.article.tag);
+      setInputHeights(prev => {
+      const newHeights = [...prev];
+        bodies.forEach((body, idx) => {
+          newHeights[idx] = ((body.match(/\n/g) || []).length + 1) * 30;
+        });
+        return newHeights;
+      });
+
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: `Hi, ${response.data.detail}!`,
+      });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchArticle();
+  }, [articleId]);
+
+  useEffect(() => {
+    Promise.all(
+      imgResults.map(
+        img =>
+          new Promise<number>(resolve => {
+            let uri: string | undefined;
+            if (typeof img === 'string') {
+              uri = img;
+            } else if (img && 'assets' in img && img.assets && img.assets[0]?.uri) {
+              uri = img.assets[0].uri;
+            }
+            if (uri) {
+              Image.getSize(
+                uri,
+                (w, h) => resolve(w / h),
+                () => resolve(16 / 9) // fallback
+              );
+            } else {
+              resolve(16 / 9); // fallback if no uri
+            }
+          })
+      )
+    ).then(setRatios);
+  }, [imgResults]);
+
+  const handleUpdate = async () => {
     setLoading(true);
     if (!title || !bodies) {
       Toast.show({
@@ -46,7 +133,9 @@ export default function NewArticlePage() {
     }
     
     const uploadedImageUrls = await Promise.all(
-      imgResults.slice(0, bodies.length - 1).map(img => handleUploadImgs(img))
+      imgResults
+        .slice(0, bodies.length - 1)
+        .map(img => (typeof img !== 'string' ? handleUploadImgs(img) : img))
     );
 
     let body_raw = '';
@@ -59,11 +148,10 @@ export default function NewArticlePage() {
         }
       }
     });
-
     const response = await fetchAPI(
-      URLs.ARTICLE(), 
+      URLs.ARTICLE(String(articleId) + '/'), 
       {
-        method: 'POST',
+        method: 'PATCH',
         token: true,
         body: { 
           title: title, 
@@ -88,7 +176,7 @@ export default function NewArticlePage() {
             { name: '(tabs)' }, 
             { 
               name: 'article/[id]',
-              params: { id: String(response.data.id) },
+              params: { id: String(articleId) },
             },
           ],
         })
@@ -162,6 +250,8 @@ export default function NewArticlePage() {
       borderWidth: 0, 
       },
       headerTintColor: default_text_color,
+      headerTitleAlign: 'center',
+      headerTitle: 'Edit Article',
       headerLeft: () => (
         <Feather 
           name="arrow-left" 
@@ -170,52 +260,29 @@ export default function NewArticlePage() {
           onPress={() => {
             setTitle('');
             setBodies(['']);
-            setImgResults([])
-            setInputHeights([])
+            setImgResults([]);
+            setInputHeights([]);
             setUnicon(false);
             setRaw('');
             setTags([]);
-            navigation.navigate('home');
+            navigation.goBack();
           }}
           style={{ marginLeft: 20 }}
         />
       ),
-
       headerRight: () => (
         <ThemedText
           type={'default'} 
-          onPress={handlePost} 
+          onPress={handleUpdate} 
           disabled={loading}
           style={{ marginRight: 30 }}
         >
-          Post
+          Update
         </ThemedText>
       ),
-      headerTitleAlign: 'center',
     });
-  }, [navigation, handlePost, loading]);
+  }, [navigation, handleUpdate, loading]);
 
-  useEffect(() => {
-    Promise.all(
-      imgResults.map(
-        img =>
-          new Promise<number>(resolve => {
-            const uri = img && 'assets' in img && img.assets && img.assets[0]?.uri
-              ? img.assets[0].uri
-              : undefined;
-            if (uri) {
-              Image.getSize(
-                uri,
-                (w, h) => resolve(w / h),
-                () => resolve(16 / 9) // fallback
-              );
-            } else {
-              resolve(16 / 9); // fallback if no uri
-            }
-          })
-      )
-    ).then(setRatios);
-  }, [imgResults]);
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -306,6 +373,7 @@ export default function NewArticlePage() {
       shadowOpacity: 0.08,
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
+
     },
     textAreasContainer:{
       display: 'flex',
@@ -410,13 +478,22 @@ export default function NewArticlePage() {
                       }
                     }}
                 />
-                {imgResults[idx]?.assets && imgResults[idx].assets[0]?.uri && (
+                {imgResults[idx] && typeof imgResults[idx] === 'string' ? (
                   <Pressable onPress={() => handleRemoveImg(idx)}>
                     <Image
-                      source={{ uri: imgResults[idx].assets![0].uri }}
+                      source={{ uri: imgResults[idx] }}
                       style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
                     />
                   </Pressable>
+                ) : (
+                  typeof imgResults[idx] !== 'string' && imgResults[idx]?.assets && imgResults[idx].assets[0]?.uri && (
+                    <Pressable onPress={() => handleRemoveImg(idx)}>
+                      <Image
+                        source={{ uri: imgResults[idx].assets![0].uri }}
+                        style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
+                      />
+                    </Pressable>
+                  )
                 )}
               </React.Fragment>
             );
@@ -468,4 +545,3 @@ export default function NewArticlePage() {
     </ScrollView>
   );
 }
-

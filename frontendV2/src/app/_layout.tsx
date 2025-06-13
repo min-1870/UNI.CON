@@ -46,12 +46,13 @@ export default function RootLayout() {
         <Stack.Screen name="tnc" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="feed" />
-        <Stack.Screen name="article" options={{ headerShown: true }} />
-        <Stack.Screen name="edit" options={{ headerShown: true }} />
+        <Stack.Screen name="edit/[id]" options={{ headerShown: true }} />
         <Stack.Screen name="notification" options={{ headerShown: true }} />
         <Stack.Screen name="newPassword" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
-        <Stack.Screen name="registerComplete" />
+        <Stack.Screen name="registerComplete" />      
+        <Stack.Screen name="article/[id]" options={{ headerShown: true }}
+      />
       </Stack>
       <Toast />
       <StatusBar style="auto" />

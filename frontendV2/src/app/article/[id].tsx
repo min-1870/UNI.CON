@@ -17,9 +17,9 @@ import { useLayoutEffect } from 'react';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
+// import { useNavigationState } from '@react-navigation/native';
 
 export default function ArticlePage() {
-
   const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
   const [initialData, setInitialData] = useState<InitialDataType>();
@@ -38,9 +38,9 @@ export default function ArticlePage() {
   const fetchedCommentPage = useRef(null);
 
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<{ params: { id: string } }>>();
-  const articleId = route.params?.id;
-
+  const articleId = (useRoute().params as { id: string }).id;
+  
+  // console.log(useNavigationState(state => state.routes.map(r => r.name)))
   useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
@@ -51,7 +51,7 @@ export default function ArticlePage() {
       },
       headerTintColor: text_color,
       headerTitleAlign: 'center',
-      headerTitle: 'Article',
+      headerTitle: 'Article',    
       headerRight: () => (
         <>
         {initialData && 
@@ -60,7 +60,10 @@ export default function ArticlePage() {
               <ThemedText
                 type={'default'} 
                 onPress={()=>{
-                    router.push(`/edit?id=${article.id}`);
+                  router.push({
+                    pathname: '/edit/[id]',
+                    params: { id: String(article.id) }, 
+                  });
                 }} 
                 disabled={loading}
                 style={{ marginRight: 30 }}

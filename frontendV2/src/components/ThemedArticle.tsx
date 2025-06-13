@@ -1,16 +1,17 @@
 
 import { ArticleType, InitialDataType } from '@/constants/types';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
-import React,  { useState } from "react";
+import React,  { useState, useEffect  } from "react";
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import moment from 'moment';
 import Markdown from 'react-native-markdown-display'
+import { Image } from 'react-native';
 
 type ThemedArticleProps = {
   articleData: any;
@@ -25,14 +26,58 @@ export default function ThemedArticle({ articleData, initialData, type='default'
   const default_text_color = useThemeColor({}, 'default_text_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
   const [trending_tags, setTrendingTags] = useState<string[]>([]);
+  const [bodies, setBodies] = useState<string[]>(['']);
+  const [imgUris, setImgUris] = useState<string[]>(['']);
   const [article, setArticleState] = useState<ArticleType>(articleData);
-  
-  React.useEffect(() => {
-    const fetchTrendingTags = async () => {
-      const tags = await getData('trending_tags');
-      setTrendingTags(Array.isArray(tags) ? tags : []);
-    };
+  const [ratios, setRatios] = useState<number[]>([]);
+
+  function parseMarkdownImages(raw: string): {
+    bodies: string[];
+    imgUris: string[];
+  } {  
+    const imgRegex = new RegExp(
+      `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
+      'g'
+    );
+    const bodies: string[] = [];
+    const imgUris: string[] = [];
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+
+    while ((m = imgRegex.exec(raw)) !== null) {
+      bodies.push(raw.slice(lastIndex, m.index));
+      imgUris.push(m[1]);
+      lastIndex = m.index + m[0].length;
+    }
+    bodies.push(raw.slice(lastIndex));
+
+    return { bodies, imgUris };
+  }
+
+  const fetchTrendingTags = async () => {
+    const tags = await getData('trending_tags');
+    setTrendingTags(Array.isArray(tags) ? tags : []);
+  };
+
+  useEffect(() => {
+    const rawMarkdown = article.body; // or wherever it comes from
+    const { bodies, imgUris } = parseMarkdownImages(rawMarkdown);
+    setBodies(bodies);
+    setImgUris(imgUris);
     fetchTrendingTags();
+    Promise.all(
+      imgUris.map(
+        uri =>
+          new Promise<number>(resolve =>
+            Image.getSize(
+              uri,
+              (w, h) => resolve(w / h),
+              () => resolve(16 / 9) // fallback
+            )
+          )
+      )
+    ).then(setRatios);
+
   }, []);
 
   const handleLike = async () => {
@@ -68,7 +113,10 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       ...prevState,
       view_status: true,
     }));
-    router.push(`/article?id=${article.id}`);
+    router.push({
+      pathname: '/article/[id]',
+      params: { id: String(article.id) }, 
+    });
   }
 
   const styles = StyleSheet.create({
@@ -116,13 +164,18 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       alignItems: 'flex-end',
       flexDirection: 'row',
     },
+    body: {
+      backgroundColor: default_text_color,
+      width:'100%'
+    },
+    img: {
+      width: '100%',
+      borderRadius: 20,
+      marginVertical: 10,
+      maxHeight: 1000,
+    }
   });
-  const markdownString = null
-// const markdownString = `
-// This is a **Markdown** example:
-// ![](https://indicators-everywhere.s3.ap-southeast-2.amazonaws.com/graphs/MU_OBV_14_2025-06-09.png)
-//   `
-
+  
   return (
     
     <View style={[styles.container]}>
@@ -142,35 +195,64 @@ export default function ThemedArticle({ articleData, initialData, type='default'
           </ThemedText>
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
            <ThemedText type='articleDate' >
-             {article.deleted? 'deleted' : article.edited ? null : 'edited'}
+             {article.deleted? 'deleted' : article.edited ? 'edited' : null}
            </ThemedText>
           </View>
         </View>
         <View style={styles.content}>
           <ThemedText type='articleTitle'>{article.title}</ThemedText>
-          <ThemedText type='articleBody'>
-          <Markdown
-            rules={{
-              image: (node, children, parent, styles) => {
-                // Remove key from props before passing to the component
-                const { key, ...props } = node;
-                return (
-                  <img
-                    key={node.key}
-                    src={node.attributes.src}
-                    alt={node.attributes.alt}
-                    style={{ maxWidth: '100%', borderRadius: 8 }}
-                  />
-                );
-              },
-            }}
-          >
-            {markdownString ? markdownString : (article.body.length > 200 && type == 'default' 
-              ? article.body.slice(0, 200) + ' ... read more'
-              : article.body
+            {type === 'default' ? (
+              <React.Fragment>
+                <ThemedText type="articleBody">
+                  <Markdown>
+                    {bodies[0].length > 200 
+                      ? bodies[0].slice(0, 200).trimEnd() + ' ... read more'
+                      : bodies.length > 1 
+                      ? bodies[0].trimEnd() + ' ... read more'
+                      : bodies[0]
+                    }
+                  </Markdown>
+                </ThemedText>
+                {imgUris[0] && (
+                  <View style={{ paddingHorizontal: 10 }}>
+                    <Image
+                      source={{
+                        uri: imgUris[0],
+                        cache: 'force-cache',
+                      }}
+                      style={{
+                        width: '100%',
+                        aspectRatio: ratios[0] || 16 / 9,
+                        borderRadius: 20,
+                        marginVertical: 10,
+                        maxHeight: 1000,
+                      }}
+                    />
+                  </View>
+                )}
+              </React.Fragment>
+            ) : (
+              bodies.map((bodyText, idx) => (
+                <React.Fragment key={idx}>
+                  <ThemedText type="articleBody">
+                    <Markdown>
+                      {bodyText}
+                    </Markdown>
+                  </ThemedText>
+                  {imgUris[idx] && (
+                    <View style={{ paddingHorizontal: 10 }}>
+                      <Image
+                        source={{
+                          uri: imgUris[idx],
+                          cache: 'force-cache',
+                        }}
+                        style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
+                      />
+                    </View>
+                  )}
+                </React.Fragment>
+              ))
             )}
-          </Markdown>
-          </ThemedText>
           <View style={styles.tagContainer}>
             {article.tag.length > 0 && article.tag
               .map((tag: string, i: number) => (
@@ -186,9 +268,9 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       <View style={[styles.buttonContainer]}>
         <Pressable onPress={handleLike} style={[styles.button]}>
           <AntDesign
-            name={article.like_status ? 'heart' : 'hearto'} // different glyphs if you prefer
+            name={article.like_status ? 'heart' : 'hearto'}
             size={15}
-            color={button_color} // use a color from your theme
+            color={button_color}
           />
           <ThemedText type='articleButton'>
             {article.likes_count}
@@ -196,9 +278,9 @@ export default function ThemedArticle({ articleData, initialData, type='default'
         </Pressable>
         <View style={[styles.button]}>
           <AntDesign
-            name={'message1'} // different glyphs if you prefer
+            name={'message1'}
             size={15}
-            color={button_color} // use a color from your theme
+            color={button_color}
           />
           <ThemedText type='articleButton'>
             {article.comments_count}
@@ -206,9 +288,9 @@ export default function ThemedArticle({ articleData, initialData, type='default'
         </View>
         <View style={[styles.button]}>
           <AntDesign
-            name={'eyeo'} // different glyphs if you prefer
+            name={'eyeo'}
             size={15}
-            color={button_color} // use a color from your theme
+            color={button_color}
           />
           <ThemedText type='articleButton'>
             {article.views_count}
@@ -216,9 +298,9 @@ export default function ThemedArticle({ articleData, initialData, type='default'
         </View>
         <Pressable onPress={handleSave} style={[styles.button]}>
           <FontAwesome
-            name={article.save_status ? 'bookmark' : 'bookmark-o'} // different glyphs if you prefer
+            name={article.save_status ? 'bookmark' : 'bookmark-o'}
             size={15}
-            color={button_color} // use a color from your theme
+            color={button_color}
           />
         </Pressable>
       </View>

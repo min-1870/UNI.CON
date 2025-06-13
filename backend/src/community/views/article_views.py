@@ -29,10 +29,13 @@ from django.db.models import Case, When, F, Q, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
+from django.http import JsonResponse
 from django.core.cache import cache
-from django.urls import resolve
 from django.db import transaction
-
+from django.urls import resolve
+from urllib.parse import quote
+from decouple import config
+import boto3   
 
 class ArticleViewSet(viewsets.ModelViewSet):
 
@@ -446,3 +449,36 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
         
         return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def get_s3_upload_url(self, request, *args, **kwargs):
+        
+        file_name = request.query_params.get('file_name')
+        file_type = request.query_params.get('file_type')
+        
+        if not file_name or not file_type:
+            return JsonResponse({'error': 'missing file_name or file_type'}, status=400)
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=config("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=config("AWS_SECRET_ACCESS_KEY"),
+            region_name=config("AWS_S3_REGION_NAME"),
+        )
+
+        # generate presigned PUT URL
+        url = s3.generate_presigned_url(
+            ClientMethod='put_object',
+            Params={
+                'Bucket': config("AWS_STORAGE_BUCKET_NAME"),
+                'Key': file_name,
+                'ContentType': file_type,
+                # 'ACL': 'public-read',
+            },
+            ExpiresIn=3600  
+        )
+        file_name = quote(file_name, safe='')
+        return Response({
+            'uploadUrl': url,
+            'publicUrl': f"https://{config("AWS_STORAGE_BUCKET_NAME")}.s3.{config("AWS_S3_REGION_NAME")}.amazonaws.com/{file_name}"
+        }, status=status.HTTP_200_OK)

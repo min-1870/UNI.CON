@@ -35,8 +35,12 @@ const URLS = {
     // Tags
     TRENDING_TAGS: `${domain}/community/article/trending_tags`,
 
+    // Bucket
+    BUCKET: 'https://unicon-img.s3.ap-southeast-2.amazonaws.com',
+
     // CRUDE Article
     ARTICLE: (articleId: string = '') => `${domain}/community/article/${articleId}`,
+    ARTICLE_IMG: (param: string = '') => `${domain}/community/article/get_s3_upload_url/${param}`,
     ARTICLE_LIKE: (articleId: string) => `${domain}/community/article/${articleId}/like/`,
     ARTICLE_UNLIKE: (articleId: string) => `${domain}/community/article/${articleId}/unlike/`,
     ARTICLE_SAVE: (articleId: string) => `${domain}/community/article/${articleId}/save/`,

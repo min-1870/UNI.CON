@@ -63,7 +63,6 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${access}` }),
   };
-
   const request = async () => {
       try {
           const response = await axios({

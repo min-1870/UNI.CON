@@ -19,7 +19,10 @@ export default function ThemedNotification({ notification_data, type='default' }
   }, []);
 
   const handleViewDetail = () => {
-    router.push(`/article?id=${notification_data.object_id}`);
+    router.push({
+      pathname: '/article/[id]',
+      params: { id: String(notification_data.object_id) }, 
+    });
   }
 
   const styles = StyleSheet.create({
