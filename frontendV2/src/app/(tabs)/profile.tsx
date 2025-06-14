@@ -260,6 +260,11 @@ export default function ProfilePage() {
               <ThemedText type={'contentSubTitle'}>Update Password</ThemedText>
               <ThemedText onPress={() => router.push(`/newPassword`)} type={'articleBody'}>(Click for Update)</ThemedText>
             </ThemedView>
+            <ThemedView style={styles.rowContainer}>
+              <ThemedText type={'contentSubTitle'}>Logout</ThemedText>
+              <ThemedText onPress={() => router.push(`/`)} type={'articleBody'}>(Click for Update)</ThemedText>
+              
+            </ThemedView>
           </ThemedView>
         </ThemedView>
       </ThemedView>
@@ -301,7 +306,7 @@ export default function ProfilePage() {
             renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
             contentContainerStyle={styles.feedContainer}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
+            ListEmptyComponent={<ThemedText type='contentPlaceholder'>No articles found.</ThemedText>}
             ListHeaderComponent={renderHeader}
             onEndReachedThreshold={0.5}
             onEndReached={() => {

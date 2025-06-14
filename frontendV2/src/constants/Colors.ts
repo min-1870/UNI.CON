@@ -4,9 +4,11 @@
  */
 
 const custom_colors = {
+    UNICON_BACKGROUND: '#81ef90',
+    UNICON_CONTENT: '#2c9669',
 
     default_brand_color: '#81ef90',
-    default_card_background_color:  '#f7f7f7',
+    default_card_background_color:  '#fafafa', //#f7f7f7
     default_view_card_background_color:  '#ececec',
     default_title_color: '#232835',
     default_text_color: '#474854',

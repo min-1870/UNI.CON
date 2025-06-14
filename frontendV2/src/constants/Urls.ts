@@ -8,6 +8,8 @@ if (DEBUG) {
 const URLS = {
     // Authentication
     LOGIN: `${domain}/account/user/login/`,
+    REGISTER: `${domain}/account/user/`,
+    VALIDATE: `${domain}/account/user/validate/`,
     GOOGLE_LOGIN: `${domain}/account/user/googlelogin/`,
     authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenEndpoint:         'https://oauth2.googleapis.com/token',

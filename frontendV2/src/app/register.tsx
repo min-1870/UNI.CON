@@ -7,7 +7,9 @@ import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { fetchAPI, setData } from "@/components/Utils";
+import URLs from "@/constants/Urls";
 function getPasswordStrength(password: string): {
   length: boolean;
   upper: boolean;
@@ -21,7 +23,6 @@ function getPasswordStrength(password: string): {
 }
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,14 +33,17 @@ export default function RegisterPage() {
   const [passwordStrength, setPasswordStrength] = useState({ length: false, upper: false, lower: false });
 
   
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
+  const cardBackgroundColor = useThemeColor({}, 'default_card_background_color');
 
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(password));
   }, [password]);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
 
       Toast.show({
         type: 'error',
@@ -88,43 +92,132 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    setTimeout(() => {
+    const response = await fetchAPI(URLs.REGISTER, {
+      method: 'POST',
+      token: false,
+      body: { email, password },
+    });
+
+    if (!response.error) {
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
       setLoading(false);
-      router.push({
-        pathname: '/validation',
-        params: {
-          email: email.trim().toLowerCase(),
-        },
+      setData('initialData', JSON.stringify(response.data))
+      setData('access', response.data.access);
+      setData('refresh', response.data.refresh);
+      router.push("/validation");
+    } else {
+      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail}`,
+        text2: "Try again.",
       });
-    }, 1500);
+    }
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setLoading(false);
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: backgroundColor,
+      padding: 20,
+    },
+    card: {
+      width: '100%',
+      padding: 24,
+      backgroundColor: cardBackgroundColor,
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+      elevation: 10,
+      gap: 30,
+    },
+    badge: {
+      alignSelf: 'center',
+      backgroundColor: '#d1fae5',
+      color: '#059669',
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    inputRows: {
+      gap: 20,
+    },
+    inputRow: {
+      gap: 5,
+    },
+    footers:{
+      marginTop: 20,
+    },
+    footerText: {
+      textAlign: 'center',
+      color: '#6b7280',
+    },
+    link: {
+      color: '#059669',
+      fontWeight: '600',
+    },
+    divider: {
+      borderBottomColor: '#e5e7eb', // Tailwind gray-200
+      borderBottomWidth: 1,
+      marginVertical: 16,
+    },
+    inputWrapper: {
+      position: 'relative',
+    },
+    eyeIcon: {
+      position: 'absolute',
+      right: 12,
+      top: '30%',
+      transform: [{ translateY: -10 }],
+      padding: 4,
+    },
+    nicknameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    atSymbol: {
+      fontSize: 16,
+      marginRight: 4,
+      color: '#6b7280',
+    },
+    nicknameInput: {
+      flex: 1,
+    },
+  });
   
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
-        <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="title" style={styles.title}>Create Account</ThemedText>
-        <ThemedText style={styles.subtitle}>Join our university community</ThemedText>
 
-        {/* <ThemedText>User Name</ThemedText>
-        {/* <View style={styles.inputWrapper}>
+
+        <View>
+          <ThemedText style={styles.badge}>UNI.CON</ThemedText>
+          <ThemedText type="university" >Create Account</ThemedText>
+          <ThemedText type="contentSubTitle">Join our university community</ThemedText>
+        </View>
+
+        <View style={styles.inputRows}>
+        <View style={styles.inputRow}>
+          <ThemedText>University Email</ThemedText>
           <ThemedInput
-            value={`@${name}`}
-            onChangeText={(text) => setName(text.replace(/^@/, ''))}
-            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            type="auth"
           />
-        </View> */} 
-
-        <ThemedText>University Email</ThemedText>
-        <ThemedInput
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        
-
-        <View style={{ marginTop: 4, marginBottom: 12 }}>
           <ThemedText style={{ fontSize: 12, color: /\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email) ? '#10b981' : '#ef4444', marginLeft: 5, marginRight: 5 }}>
             {/\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email)
               ? '✔️ You can create an account.'
@@ -132,24 +225,24 @@ export default function RegisterPage() {
           </ThemedText>
         </View>
 
-        <ThemedText>Password</ThemedText>
-        <View style={styles.inputWrapper}>
-          <ThemedInput
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            style={styles.input}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
-            <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
-          </TouchableOpacity>
-        </View>
 
-        <View style={{ marginBottom: 8 }}>
-          <View style={{ height: 6, borderRadius: 3, backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
+        <View style={styles.inputRow}>
+          <ThemedText>Password</ThemedText>
+          <View style={styles.inputWrapper}>
+            <ThemedInput
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              type="auth"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
+            </TouchableOpacity>
+          </View>
+          <View style={{ marginTop:6, height: 6, borderRadius: 3, backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
             <View style={{
               width: `${(Object.values(passwordStrength).filter(Boolean).length / 3) * 100}%`,
               height: '100%',
@@ -169,129 +262,42 @@ export default function RegisterPage() {
           </View>
         </View>
 
-        <ThemedText>Confirm Password</ThemedText>
-        <View style={styles.inputWrapper}>
-          <ThemedInput
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
-            style={styles.input}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={styles.eyeIcon}
-          >
-            <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
-          </TouchableOpacity>
+
+        <View style={styles.inputRow}>
+          <ThemedText>Confirm Password</ThemedText>
+          <View style={styles.inputWrapper}>
+            <ThemedInput
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+                  type="auth"
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
+            </TouchableOpacity>
+          </View>
+        </View>
         </View>
 
-        {error ? <ThemedText type="error">{error}</ThemedText> : null}
 
-        <ThemedButton onPress={handleRegister} disabled={loading}>
-          {loading ? 'Creating Account...' : 'Next'}
-        </ThemedButton>
-        <View style={styles.divider} />
-        <ThemedText style={styles.footerText}>
-          Already have an account? <Link href="/" style={styles.link}>Sign in</Link>
-        </ThemedText>
+
+        <View style={styles.footers}>
+          <ThemedButton type='auth' onPress={handleRegister} disabled={loading}>
+            <ThemedText>{loading ? 'Creating Account...' : 'Next'}</ThemedText>
+          </ThemedButton>
+
+          <View style={styles.divider} />
+          <ThemedText style={styles.footerText}>
+            Already have an account? <Link href="/" style={styles.link}>Sign in</Link>
+          </ThemedText>
+        </View>
+
+
+
       </ThemedView>
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    padding: 24,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  badge: {
-    alignSelf: 'center',
-    backgroundColor: '#d1fae5',
-    color: '#059669',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  title: {
-    alignSelf: 'center',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    alignSelf: 'center',
-    color: '#6b7280',
-    marginBottom: 20,
-  },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 6,
-  },
-  footerText: {
-    marginTop: 16,
-    textAlign: 'center',
-    color: '#6b7280',
-  },
-  link: {
-    color: '#059669',
-    fontWeight: '600',
-  },
-  divider: {
-    borderBottomColor: '#e5e7eb', // Tailwind gray-200
-    borderBottomWidth: 1,
-    marginVertical: 16,
-  },
-  inputWrapper: {
-    position: 'relative',
-    marginBottom: 16,
-    borderRadius: 25
-  },
-  
-  input: {
-    backgroundColor: '#f3f4f6', // Tailwind gray-100
-    borderRadius: 25,
-    height: 48,
-    fontSize: 16,
-    color: '#111827', // Tailwind gray-900
-    paddingHorizontal: 16,
-    paddingRight: 40, // 👈 makes room for the eye icon
-    
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-    top: '40%',
-    transform: [{ translateY: -10 }],
-    padding: 4,
-  },
-  nicknameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  atSymbol: {
-    fontSize: 16,
-    marginRight: 4,
-    color: '#6b7280',
-  },
-  nicknameInput: {
-    flex: 1,
-  },
-});

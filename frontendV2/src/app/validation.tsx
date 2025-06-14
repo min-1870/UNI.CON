@@ -8,6 +8,8 @@ import ThemedButton from '@/components/ThemedButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
+import { fetchAPI, setData } from "@/components/Utils";
+import URLs from "@/constants/Urls";
 export default function EmailVerificationPage() {
   const { email } = useLocalSearchParams();
   const router = useRouter();
@@ -25,18 +27,6 @@ export default function EmailVerificationPage() {
   useEffect(() => {
     handleInitialSend();
   }, []);
-
-  const handleKodeGeneration = (length: number = 6): string => {
-    const charset = 'ABCDEFGH!@#$IJ@#$LMNOPQRST@$#&*(%UVWXYZabcdefgh$#@$ijklmnopqrstuvwxyz*($#0123456789';
-    const timestamp = Math.floor(new Date().getTime() / 1000).toString();
-    const combinedCharset = charset + timestamp; // Include timestamp in the charset to make it unique
-
-    let token = '';
-    for (let i = 0; i < length; i++) {
-      token += combinedCharset[Math.floor(Math.random() * combinedCharset.length)];
-    }
-    return token;
-  };
 
   const handleChange = (text: string, index: number) => {
     if (/^\d$/.test(text) || text === '') {
@@ -65,12 +55,17 @@ export default function EmailVerificationPage() {
     }
   };
 
-  const handleVerify = (entered?: string) => {
+  const handleVerify = async (entered?: string) => {
     const finalCode = entered || code.join('');
     setLoading(true);
-
+    const response = await fetchAPI(URLs.VALIDATE, {
+      method: 'POST',
+      token: true,
+      body: { validation_code: finalCode },
+    });
+    
     setTimeout(() => {
-      if (finalCode === '123456') {
+      if (!response.error) {
         Toast.show({
           type: 'success',
           text1: 'Code verified! 🎉',
@@ -80,19 +75,19 @@ export default function EmailVerificationPage() {
         setLoading(true);
         setTimeout(() => {
           setLoading(false);
-          router.push('/tnc'); // Update this path as needed
+          router.push('/(tabs)');
         }, 1500);
       } else {
         setLoading(false);
         Toast.show({
           type: 'error',
-          text1: 'Code is incorrect. 🙁',
+          text1: response?.data?.detail || 'Verification failed',
           text2: 'Please try again.',
         });
         setCode(['', '', '', '', '', '']);
         inputs.current[0]?.focus();
       }
-    }, 1000); // simulate 1s loading delay
+    }, 1000);
   };
 
   const handleResend = () => {
@@ -110,7 +105,7 @@ export default function EmailVerificationPage() {
         <View style={styles.iconCircle}>
           <Ionicons name="mail" size={24} color="white" />
         </View>
-        <ThemedText type="title" style={styles.title}>Email Verification</ThemedText>
+        <ThemedText type="university" >Email Verification</ThemedText>
         <ThemedText style={styles.subtitle}>We have sent you an email to {email} </ThemedText>
         <ThemedText style={styles.subtitle}>It will include 6-digits verification code. <br></br>
         This code will be valid for 7 minutes.</ThemedText>
@@ -124,7 +119,6 @@ export default function EmailVerificationPage() {
               value={code[i]}
               onChangeText={(text) => handleChange(text, i)}
               onKeyPress={(e) => handleKeyPress(e, i)}
-              ref={el => inputs.current[i] = el}
               autoFocus={i === 0}
               textAlign="center"
               editable={!validated}

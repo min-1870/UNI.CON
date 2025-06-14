@@ -6,13 +6,26 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import {
+  View,
+  StyleSheet,
+  useWindowDimensions,
+  Platform,
+} from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const { width } = useWindowDimensions();
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  
+  const maxContentWidth = 500;
+  const containerWidth =
+    Platform.OS === 'web' ? Math.min(width, maxContentWidth) : width;
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -20,7 +33,6 @@ export default function RootLayout() {
       'DMSerifDisplay-Italic': require('../assets/fonts/DMSerifDisplay-Italic.ttf'),
       'Roboto-Regular': require('../assets/fonts/Roboto-VariableFont_wdth,wght.ttf'),
   });
-  const user = true;
 
   useEffect(() => {
     if (loaded) {
@@ -32,30 +44,44 @@ export default function RootLayout() {
     return null;
   }
 
+  const styles = StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    outer: {
+      flex: 1,
+      alignSelf: 'center',
+      width: containerWidth,
+    },
+  });
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack
-        screenOptions={{
-          animation: 'default',
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="validation" />
-        <Stack.Screen name="tnc" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="feed" />
-        <Stack.Screen name="edit/[id]" options={{ headerShown: true }} />
-        <Stack.Screen name="notification" options={{ headerShown: true }} />
-        <Stack.Screen name="newPassword" options={{ headerShown: true }} />
-        <Stack.Screen name="+not-found" />
-        <Stack.Screen name="registerComplete" />      
-        <Stack.Screen name="article/[id]" options={{ headerShown: true }}
-      />
-      </Stack>
-      <Toast />
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={styles.screen}>
+      <View style={styles.outer}>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack
+            screenOptions={{
+              animation: 'default',
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="validation" />
+            <Stack.Screen name="tnc" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="feed" />
+            <Stack.Screen name="edit/[id]" options={{ headerShown: true }} />
+            <Stack.Screen name="notification" options={{ headerShown: true }} />
+            <Stack.Screen name="newPassword" options={{ headerShown: true }} />
+            <Stack.Screen name="+not-found" />
+            <Stack.Screen name="registerComplete" />      
+            <Stack.Screen name="article/[id]" options={{ headerShown: true }} />
+          </Stack>
+          <Toast />
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </View>
+    </View>
   );
 }

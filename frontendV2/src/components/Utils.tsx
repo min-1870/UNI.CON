@@ -35,7 +35,7 @@ const removeData = async (key:string) => {
 
 const fetchNewAccessToken = async () => {
     
-    const refreshToken = getData('refresh');
+    const refreshToken = await getData('refresh');
 
     try {
         const response = await axios.post(
@@ -56,23 +56,22 @@ const fetchNewAccessToken = async () => {
     }
 };
 
-type fetchAPIPProm = {error: boolean; data?: any };
+type fetchAPIPProm = { error: boolean; data?: any; status?: number };
 const fetchAPI = async (url: string, { token = true, method = "GET", body = {} } = {}): Promise<fetchAPIPProm> => {
-  const access = await getData('access');
-  const headers = {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${access}` }),
-  };
+
   const request = async () => {
       try {
           const response = await axios({
               method,
               url,
-              headers,
-              ...(method !== "GET" && { data: body }), // Only add body for non-GET requests
+              headers: { 
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${await getData('access')}` } : {})
+              },
+              ...(method !== "GET" ? { data: body } : {}), // Only add body for non-GET requests
           });
           // console.log(response.data)
-          return { error: false, data: response.data };
+            return { status: response.status, error: false, data: response.data };
       } catch (error) {
           throw error; // Throw to be caught in the outer try-catch
       }
@@ -87,6 +86,7 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
       } catch (error: unknown) {
           const err = error as any; // Explicitly cast error to any
           return {
+              status: err.response?.status, 
               error: true,
               data: err.response?.data || "An error occurred",
           };

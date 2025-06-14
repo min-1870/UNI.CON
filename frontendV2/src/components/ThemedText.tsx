@@ -194,7 +194,6 @@ export default function ThemedText({
   : type === 'link' ?
     StyleSheet.create({
       text: {
-        lineHeight: 30,
         fontSize: 12,
         color: '#0a7ea4',
       }

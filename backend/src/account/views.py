@@ -82,7 +82,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Update the necessary properties
         with transaction.atomic():
-            user_instance.update(is_validated=True)
+            user_instance.is_validated = True
+            user_instance.save()
 
         user_instance = annotate_user(user_instance)
         serializer = self.get_serializer(user_instance)
