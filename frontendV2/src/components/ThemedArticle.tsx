@@ -19,7 +19,7 @@ type ThemedArticleProps = {
   type?: string;
 };
 
-export default function ThemedArticle({ articleData, initialData, type='default' }: ThemedArticleProps) {
+function ThemedArticle({ articleData, initialData, type='default' }: ThemedArticleProps) {
   
   const view_background_color = useThemeColor({}, 'default_view_card_background_color');
   const background_color = useThemeColor({}, 'default_card_background_color');
@@ -306,3 +306,16 @@ export default function ThemedArticle({ articleData, initialData, type='default'
     </View>
   );
 };
+
+
+export default React.memo(
+  ThemedArticle,
+  (prevProps, nextProps) =>
+    prevProps.type === nextProps.type &&
+    prevProps.initialData === nextProps.initialData &&
+    prevProps.articleData.id === nextProps.articleData.id &&
+    prevProps.articleData.view_status === nextProps.articleData.view_status &&
+    prevProps.articleData.like_status === nextProps.articleData.like_status &&
+    prevProps.articleData.likes_count === nextProps.articleData.likes_count &&
+    prevProps.articleData.save_status === nextProps.articleData.save_status
+);

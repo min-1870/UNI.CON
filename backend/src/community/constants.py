@@ -21,10 +21,14 @@ NOTIFICATION_GROUP_KV = {
 
 EMAIL_NOTIFICATIONS_THRESHOLD = 5
 
+ARTICLE_IDS_CACHE_KEY = (
+    lambda identifier: f"{identifier}_ARTICLE_IDS"
+)
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )
-ARTICLES_CACHE_KEY = (
+
+ARTICLES_CACHE_KEY = ( #OLD
     lambda school_id, view_name, identifier="": f"SCHOOL_{school_id}_VIEW_{view_name}_IDF_{identifier}"
 )
 ARTICLES_LIKE_CACHE_KEY = (

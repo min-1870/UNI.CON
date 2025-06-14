@@ -3,9 +3,11 @@ from .article_helpers import (
     update_user_viewed_article_cache,
     update_user_saved_article_cache,
     update_user_liked_article_cache,
-    get_paginated_articles,
-    get_serialized_article,
+    update_user_posted_article_cache,
+    update_recent_article_cache,
     update_article,
+    new_get_paginated_articles,
+    get_serialized_article
 )
 
 from .comment_helpers import (

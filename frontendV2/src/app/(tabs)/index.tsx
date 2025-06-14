@@ -29,6 +29,8 @@ export default function HomePage() {
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [tags, setTags] = useState<[]>([]);
+  const isFetchingMore = useRef(false);
+
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -77,11 +79,13 @@ export default function HomePage() {
   
   const fetchArticles = async () => {
     setLoading(true);
+    fetchedArticlePage.current = null;   
     const response = await fetchAPI(apiEndpoints[sortOption], {
       method: 'GET',
       token: true,
     });
     if (!response.error) {
+      
       setArticles(response.data?.results?.articles || null);
       setNextArticlePage(response.data?.next || null);
     } else {
@@ -90,12 +94,18 @@ export default function HomePage() {
         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
-    fetchedArticlePage.current = null;
     setLoading(false);
   };
 
   const fetchMoreArticles = async () => {
-    if (!nextArticlePage || nextArticlePage == fetchedArticlePage.current) return;
+    if (
+      !nextArticlePage ||
+      nextArticlePage === fetchedArticlePage.current ||
+      isFetchingMore.current
+    ) {
+      return;
+    }
+    isFetchingMore.current = true;    
     const response = await fetchAPI(nextArticlePage, {
       method: 'GET',
       token: true,
@@ -114,6 +124,7 @@ export default function HomePage() {
       });
     }
     
+    isFetchingMore.current = false;
   };
 
   const styles = StyleSheet.create({
@@ -122,7 +133,6 @@ export default function HomePage() {
       position: "relative", 
     },
     titleContainer: {
-      // marginTop: 15,
       margin: 15,
       backgroundColor: "transparent"
     },
@@ -237,6 +247,10 @@ export default function HomePage() {
             onEndReached={() => {
               fetchMoreArticles();
             }}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
+            windowSize={9}
+            removeClippedSubviews={true}
           />
         </Animated.View>
       )}

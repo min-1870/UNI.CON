@@ -5,7 +5,9 @@ from community.constants import (
     ARTICLES_CACHE_KEY,
     ARTICLES_LIKE_CACHE_KEY,
     ARTICLES_VIEW_CACHE_KEY,
-    ARTICLES_SAVE_CACHE_KEY
+    ARTICLES_SAVE_CACHE_KEY,
+
+    ARTICLE_IDS_CACHE_KEY
 )
 from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleView, ArticleSave, Comment
 from django.db.models import OuterRef, Subquery, F, Func, Value
@@ -17,120 +19,159 @@ from account.models import User
 from django.urls import resolve
 from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
+from django_redis import get_redis_connection
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
+from django.db.models import Case, When
 
+redis_conn = get_redis_connection("default")
 
-def get_paginated_articles(request, queryset, cache_key=None):
-    # Construct the cache key if it is not provided
-    if cache_key is None:
-        view_name = resolve(request.path).view_name
-        school = request.user.school.id
-        cache_key = ARTICLES_CACHE_KEY(school, view_name)
-
-    # Cache the all article ids for the school
-    all_article_ids = cache.get(cache_key, None)
-    if all_article_ids is None:
-        all_article_ids = list(queryset.values_list("id", flat=True))
-        cache.set(cache_key, all_article_ids, CACHE_TIMEOUT)
-
-    # Calculate the number of articles created
-    articles_count = len(all_article_ids)
-    try:
-        user_specific_articles_count = int(
-            request.query_params.get("count", articles_count)
-        )
-    except Exception:
-        user_specific_articles_count = articles_count
-    new_articles_count = articles_count - user_specific_articles_count
-
-    # Slice for the portion of the key based on the page
-    try:
-        page_number = int(request.query_params.get("page", 1))
-    except Exception:
-        page_number = 1
-    start_index = (page_number - 1) * PAGINATOR_SIZE + new_articles_count
-    end_index = min(articles_count, start_index + PAGINATOR_SIZE + new_articles_count)
-    page_article_ids = all_article_ids[start_index:end_index]
-
-    serialized_annotated_articles = get_serialized_articles(
-        request.user, page_article_ids, queryset
-    )
-
-    # Construct the response data with necessary pagination attributes
-    url = request.build_absolute_uri()
-    if end_index < articles_count:
-        next_page = (
-            f"{url.split('?')[0]}?"
-            f"page={page_number + 1}&"
-            f"count={user_specific_articles_count}"
-        )
+def to_unix_ms(dt):
+    """
+    Convert a Django DateTimeField (aware or naive) to an integer
+    timestamp in milliseconds.
+    """
+    if dt:
+        # If dt is a string, try to parse it
+        if isinstance(dt, str):
+            try:
+                parsed_dt = parse_datetime(dt)
+                if parsed_dt is not None:
+                    dt = parsed_dt
+                else:
+                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
+            except Exception:
+                dt = timezone.now()
+        if timezone.is_naive(dt):
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp() * 1000)
     else:
-        next_page = None
-    return {
-        "count": user_specific_articles_count,
-        "next": next_page,
-        "results": {"articles": serialized_annotated_articles},
-    }
+        return int(timezone.now().timestamp() * 1000)
+    
+def new_get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_vector=None):
 
+    user_instance = request.user
+    cache_key = ARTICLE_IDS_CACHE_KEY(cache_key)
+    requested_page = int(request.query_params.get("page", 1))
 
-def get_serialized_articles(user_instance, article_ids, queryset):
-    # Bulk cache the articles in the page
-    missing_ids = []
-    serialized_annotated_articles = []
-    serialized_annotated_articles_cache = cache.get_many(
-        [ARTICLE_CACHE_KEY(pk) for pk in article_ids]
+    if sort_by == 'embedding_result':
+        if not redis_conn.exists(cache_key):
+            # Fetch Ids of the article based on the similarity
+            ids = search_similar_embeddings(
+                get_faiss_index(), embedding_vector, len(queryset)
+            )
+
+            # Fetch the article based on the fetched id while maintaining the order
+            order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            queryset = queryset.filter(pk__in=ids).order_by(order)
+            score = len(queryset)
+        else:
+            # Fetch the article based on the cached ids
+            ids = redis_conn.zrevrange(cache_key, 0, -1)
+            queryset = queryset.filter(pk__in=ids)
+            score = len(queryset)
+
+    elif sort_by == 'engagement_score':
+        score = request.query_params.get("score", int(queryset.order_by("-engagement_score").first().engagement_score))
+
+    else:
+        dt = request.query_params.get("dt", to_unix_ms(None))
+
+    
+    # Check if the zset exists in Redis
+    if not redis_conn.exists(cache_key):
+        if sort_by == 'created_at':
+            articles = queryset.values_list(
+                "id", "created_at"
+            )
+        elif sort_by == 'engagement_score':
+            articles = queryset.values_list(
+                "id", "engagement_score"
+            )
+        elif sort_by == 'embedding_result':
+            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
+            
+        mapping = {}
+        for nid, value in articles:
+            if sort_by == 'created_at':
+                value = to_unix_ms(value)
+            mapping[str(nid)] = value
+
+        if mapping:
+            redis_conn.zadd(cache_key, mapping)
+            redis_conn.expire(cache_key, 60 * 24 * 60 * 60)
+
+    # Fetch new notification IDs from the cache
+    raw_with_scores  = redis_conn.zrevrangebyscore(
+        cache_key,
+        max=dt if sort_by == 'created_at' else score,
+        min=0,
+        start= (requested_page - 1) * PAGINATOR_SIZE,
+        num= PAGINATOR_SIZE,
+        withscores=True 
     )
-    for pk in article_ids:
-        cache_key = ARTICLE_CACHE_KEY(pk)
-        serialized_annotated_article = serialized_annotated_articles_cache.get(
-            cache_key, None
+    mapping = {member.decode(): int(score) for member, score in raw_with_scores }
+    id_list = list(mapping.keys())
+
+    # Bulk get notifications from cache
+    cache_keys = [ARTICLE_CACHE_KEY(nid) for nid in id_list]
+    cached = cache.get_many(cache_keys)
+
+    # Build the results dictionary
+    results = {}
+    missing_ids = []
+    for nid in id_list:
+        key = ARTICLE_CACHE_KEY(nid)
+        serialized_article = cached.get(key)
+        if serialized_article is None:
+            missing_ids.append(nid)
+            results[nid] = None
+        else:
+            results[nid] = serialized_article
+
+    missing_annotated_article_queryset = {}
+    if len(missing_ids) > 0:
+        # Query all of the missing article ids
+        missing_annotated_article_queryset = queryset.filter(pk__in=missing_ids).annotate(
+            user_school=Subquery(
+                User.objects.filter(id=OuterRef("user")).values("school__initial")[:1]
+            ),
+            user_temp_name=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef("pk"), user=OuterRef("user")
+                ).values("user_temp_name")[:1]
+            ),
+            user_static_points=Subquery(
+                ArticleUser.objects.filter(
+                    article=OuterRef("pk"), user=OuterRef("user")
+                ).values("user_static_points")[:1]
+            ),
+            tag=Coalesce(
+                Subquery(
+                    ArticleTag.objects.filter(
+                        article=OuterRef('pk')
+                    ).values(
+                        'article'
+                    ).annotate(
+                        tag_list=ArrayAgg('tag__name', distinct=True)
+                    ).values('tag_list')[:1]
+                ), Value([])
+            ),
         )
 
-        # Collect the missing article ids
-        if serialized_annotated_article is None:
-            missing_ids.append(pk)
-            serialized_annotated_articles.append(pk)
-        else:
-            serialized_annotated_articles.append(serialized_annotated_article)
+        # Serialized the missing articles
+        missing_serialized_annotated_articles = ArticleResponseSerializer(
+            missing_annotated_article_queryset, many=True
+        ).data
 
-    # Query all of the missing article ids
-    missing_annotated_article_queryset = queryset.filter(pk__in=missing_ids).annotate(
-        user_school=Subquery(
-            User.objects.filter(id=OuterRef("user")).values("school__initial")[:1]
-        ),
-        user_temp_name=Subquery(
-            ArticleUser.objects.filter(
-                article=OuterRef("pk"), user=OuterRef("user")
-            ).values("user_temp_name")[:1]
-        ),
-        user_static_points=Subquery(
-            ArticleUser.objects.filter(
-                article=OuterRef("pk"), user=OuterRef("user")
-            ).values("user_static_points")[:1]
-        ),
-        tag=Coalesce(
-            Subquery(
-                ArticleTag.objects.filter(
-                    article=OuterRef('pk')
-                ).values(
-                    'article'
-                ).annotate(
-                    tag_list=ArrayAgg('tag__name', distinct=True)
-                ).values('tag_list')[:1]
-            ), Value([])
-        ),
-    )
+        # Set annotated article cache in bulk
+        missing_serialized_annotated_articles = {
+            ARTICLE_CACHE_KEY(article["id"]): article
+            for article in missing_serialized_annotated_articles
+        }
+        cache.set_many(missing_serialized_annotated_articles, timeout=CACHE_TIMEOUT)
 
-    # Serialized the missing articles
-    missing_serialized_annotated_articles = ArticleResponseSerializer(
-        missing_annotated_article_queryset, many=True
-    ).data
-
-    # Set annotated article cache in bulk
-    missing_serialized_annotated_articles = {
-        ARTICLE_CACHE_KEY(article["id"]): article
-        for article in missing_serialized_annotated_articles
-    }
-    cache.set_many(missing_serialized_annotated_articles, timeout=CACHE_TIMEOUT)
 
     # Cache user like status in bulk
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
@@ -162,34 +203,39 @@ def get_serialized_articles(user_instance, article_ids, queryset):
         user_saved_articles = {pk: True for pk in user_saved_articles}
         cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
 
-    # Insert the articles and attach user specific data while maintain the order
-    for i, pk_or_article in enumerate(serialized_annotated_articles):
-
-        # For missed articles only
-        if isinstance(pk_or_article, int):
-
-            # Insert the missed article to the result
-            serialized_annotated_articles[i] = missing_serialized_annotated_articles.get(
-                ARTICLE_CACHE_KEY(pk_or_article)
-            )
-
+    # Insert the missing articles and attach user specific data while maintain the order
+    for nid in id_list:
+        if results[nid] is None:
+            results[nid] = missing_serialized_annotated_articles.get(ARTICLE_CACHE_KEY(nid), None)
+        
         # Attach user specific data
-        like_status = user_liked_articles.get(
-            serialized_annotated_articles[i]["id"], False
+        results[nid]["like_status"] = user_liked_articles.get(
+            results[nid]["id"], False
         )
-        serialized_annotated_articles[i]["like_status"] = like_status
-
-        view_status = user_viewed_articles.get(
-            serialized_annotated_articles[i]["id"], False
+        # Attach user specific data
+        results[nid]["view_status"] = user_viewed_articles.get(
+            results[nid]["id"], False
         )
-        serialized_annotated_articles[i]["view_status"] = view_status
-
-        save_status = user_saved_articles.get(
-            serialized_annotated_articles[i]["id"], False
+        # Attach user specific data
+        results[nid]["save_status"] = user_saved_articles.get(
+            results[nid]["id"], False
         )
-        serialized_annotated_articles[i]["save_status"] = save_status
-
-    return serialized_annotated_articles
+    
+    if len(results.items()) < PAGINATOR_SIZE:
+        next_page = None
+    else:
+        url = request.build_absolute_uri()
+        if sort_by == 'embedding_result':
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
+        elif sort_by == 'created_at':
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
+        else:
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
+    # print(results)
+    return {
+        "next": next_page,
+        "results": {"articles": results.values()},
+    }
 
 
 def get_serialized_article(request, article_instance):
@@ -270,25 +316,28 @@ def update_article(article_instance, updated_fields=None):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
+
 def update_user_liked_article_cache(request, article_instance, like_status):
 
     user_instance = request.user
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
-
-    if user_liked_articles is None:
-        # Fetch all the liked articles for the user
-        user_liked_articles = ArticleLike.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True)
-        user_liked_articles = {pk: True for pk in user_liked_articles}
-    else:
+    if user_liked_articles:
         # Update the cache
         user_liked_articles[article_instance.id] = like_status
-    cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
+        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
     
-    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-liked-articles", request.user.id)
-    cache.set(cache_key, list(user_liked_articles.keys()), CACHE_TIMEOUT)
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-liked-articles")
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(article_instance.id)):
+            if like_status:
+                # If the article is liked, add it to the cache
+                redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
+        else:
+            if not like_status:
+                # If the article is unliked, remove it from the cache
+                redis_conn.zrem(cache_key, str(article_instance.id))
 
 def update_user_saved_article_cache(request, article_instance, save_status):
 
@@ -296,49 +345,53 @@ def update_user_saved_article_cache(request, article_instance, save_status):
     cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
 
-    if user_saved_articles is None:
-        # Fetch all the saved articles for the user
-        user_saved_articles = ArticleSave.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True)
-        user_saved_articles = {pk: True for pk in user_saved_articles}
-    else:
+    if user_saved_articles:
         # Update the cache
         user_saved_articles[article_instance.id] = save_status
-    cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
+        cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
     
-    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-saved-articles", request.user.id)
-    cache.set(cache_key, list(user_saved_articles.keys()), CACHE_TIMEOUT)
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-saved-articles")
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(article_instance.id)):
+            if save_status:
+                # If the article is saved, add it to the cache
+                redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
+        else:
+            if not save_status:
+                # If the article is unsaved, remove it from the cache
+                redis_conn.zrem(cache_key, str(article_instance.id))
 
 def update_user_viewed_article_cache(request, article_instance):
 
     user_instance = request.user
     cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
     user_viewed_articles = cache.get(cache_key, None)
-
-    if user_viewed_articles is None:
-        # Fetch all the viewed articles for the user
-        user_viewed_articles = ArticleView.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True)
-        user_viewed_articles = {pk: True for pk in user_viewed_articles}
-    else:
+    if user_viewed_articles:
         # Update the cache
         user_viewed_articles[article_instance.id] = True
-    cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
+        cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
 def update_user_commented_article_cache(request, article_instance):
+    
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-commented-articles")
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(article_instance.id)):
+            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
 
-    user_instance = request.user
-    cache_key = ARTICLES_CACHE_KEY(request.user.school.id, "article-commented-articles", request.user.id)
-    user_commented_articles_ids = cache.get(cache_key, None)
+def update_user_posted_article_cache(request, article_instance):
+    
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-posted-articles")
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(article_instance.id)):
+            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
 
-    if user_commented_articles_ids is None:
-        # Fetch all the commented articles for the user
-        user_commented_articles_ids = list(Comment.objects.filter(
-            user=user_instance
-        ).values_list("article", flat=True))
-    else:
-        # Update the cache
-        user_commented_articles_ids.append(article_instance.id)
-    cache.set(cache_key, user_commented_articles_ids, CACHE_TIMEOUT)
+def update_recent_article_cache(request, article_instance):
+    
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-list")
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(article_instance.id)):
+            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})

@@ -4,33 +4,32 @@ from community.utils import (
     update_user_viewed_article_cache,
     update_user_saved_article_cache,
     update_user_liked_article_cache,
-    search_similar_embeddings,
+    update_user_posted_article_cache,
+    update_recent_article_cache,
     update_preference_vector,
     add_embedding_to_faiss,
     get_faiss_index,
     get_embedding,
-    get_paginated_articles,
     get_serialized_article,
     update_article,
     get_paginated_comments,
     get_paginated_notifications,
     add_notification,
+    new_get_paginated_articles,
+
 )
 from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
-    ARTICLES_CACHE_KEY,
-    CACHE_TIMEOUT,
 )
 from community.models import Article, ArticleLike, Tag, ArticleTag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
-from django.db.models import Case, When, F, Q, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
+from django.db.models import F, Q, Count
 from django.http import JsonResponse
-from django.core.cache import cache
 from django.db import transaction
 from django.urls import resolve
 from urllib.parse import quote
@@ -85,11 +84,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article_instance.tag = []
 
         # Add article id to the cache
-        cache_key = ARTICLES_CACHE_KEY(user_instance.school.id, "article-list")
-        article_ids = cache.get(cache_key)
-        if article_ids:
-            article_ids.insert(0, article_instance.id)
-            cache.set(cache_key, article_ids, CACHE_TIMEOUT)
+        update_user_posted_article_cache(request, article_instance)
+        update_recent_article_cache(request, article_instance)
 
         # Add extra properties for the response
         user_temp_name, user_static_points = get_set_temp_name_static_points(
@@ -106,10 +102,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
 
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset(),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset(),
+            sort_by="created_at",
+            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -117,33 +114,24 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def hot(self, request):
 
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset().order_by("-engagement_score"),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset(),
+            sort_by="engagement_score",
+            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def preference(self, request):
-        user_instance = request.user
 
-        # Fetch Ids of the article based on the similarity
-        ids = search_similar_embeddings(
-            get_faiss_index(), user_instance.embedding_vector, len(self.get_queryset())
-        )
-
-        # Fetch the article based on the fetched id while maintaining the order
-        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
-
-        response_data = get_paginated_articles(
-            request,
-            queryset,
-            ARTICLES_CACHE_KEY(
-                user_instance.school.id, resolve(request.path).view_name, user_instance.id
-            ),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset(),
+            sort_by="embedding_result",
+            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
+            embedding_vector=request.user.embedding_vector
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -158,69 +146,60 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get embedding vectors for the search keywords
-        embedding_vector = get_embedding(search_content)
-
-        # Fetch Ids of the article based on the similarity
-        ids = search_similar_embeddings(
-            get_faiss_index(), embedding_vector, len(self.get_queryset())
-        )
-
-        # Fetch the article based on the fetched id while maintaining the order
-        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        queryset = self.get_queryset().filter(pk__in=ids).order_by(order)
-
-        user_instance = request.user
-        response_data = get_paginated_articles(
-            request,
-            queryset,
-            ARTICLES_CACHE_KEY(
-                user_instance.school.id, resolve(request.path).view_name, search_content
-            ),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset(),
+            sort_by="embedding_result",
+            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name + "_" + search_content,
+            embedding_vector=get_embedding(search_content)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
-    def posted_articles(self, request, *args, **kwargs):        
-        
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset().filter(user=request.user),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+    def posted_articles(self, request, *args, **kwargs):
+
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset().filter(user=request.user),
+            sort_by="created_at",
+            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
-    def commented_articles(self, request, *args, **kwargs):            
+    def commented_articles(self, request, *args, **kwargs):
 
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset().filter(comment__user=request.user).distinct(),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset().filter(comment__user=request.user).distinct(),
+            sort_by="created_at",
+            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
-    def saved_articles(self, request, *args, **kwargs):            
+    def saved_articles(self, request, *args, **kwargs):
 
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset().filter(articlesave__user=request.user),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset().filter(articlesave__user=request.user),
+            sort_by="created_at",
+            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
-    def liked_articles(self, request, *args, **kwargs):            
-        
-        response_data = get_paginated_articles(
-            request,
-            self.get_queryset().filter(articlelike__user=request.user),
-            ARTICLES_CACHE_KEY(request.user.school.id, resolve(request.path).view_name, request.user.id),
+    def liked_articles(self, request, *args, **kwargs):
+
+        response_data = new_get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset().filter(articlelike__user=request.user),
+            sort_by="created_at",
+            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
