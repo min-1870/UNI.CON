@@ -77,8 +77,7 @@ export default function ThemedArticle({ articleData, initialData, type='default'
           )
       )
     ).then(setRatios);
-
-  }, []);
+  }, [articleData]);
 
   const handleLike = async () => {
     const url = article.like_status
@@ -128,9 +127,9 @@ export default function ThemedArticle({ articleData, initialData, type='default'
       borderTopLeftRadius: type=='detail' ? 0 : 20,
       marginHorizontal: type=='detail' ? 0 : 15,
       padding: 16, 
+
       shadowColor: 'rgba(0, 0, 0, 1)',
       shadowOffset: { width: 0, height: 3 },
-      
       shadowRadius: 13,
       shadowOpacity: 0.08,
       backdropFilter: 'blur(10px)', // For web platforms

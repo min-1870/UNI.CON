@@ -1,6 +1,7 @@
 import { ArticleType, CommentType, InitialDataType } from '@/constants/types';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
+import OverflowMenu from '@/components/ThemedOverflowMenu';
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign, Feather } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ export default function ArticlePage() {
   const [nextCommentPage, setNextCommentPage] = useState(null);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [isReply, setIsReply] = useState<boolean>(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [orgComment, setOrgComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,33 +54,66 @@ export default function ArticlePage() {
       headerTintColor: text_color,
       headerTitleAlign: 'center',
       headerTitle: 'Article',    
-      headerRight: () => (
-        <>
-        {initialData && 
-          (article && initialData.id !== null && article.user == initialData.id && !article.deleted && 
-            <Pressable>
-              <ThemedText
-                type={'default'} 
-                onPress={()=>{
-                  router.push({
-                    pathname: '/edit/[id]',
-                    params: { id: String(article.id) }, 
-                  });
-                }} 
-                disabled={loading}
-                style={{ marginRight: 30 }}
-              >
-                Edit
-              </ThemedText>
-            </Pressable>
-          )
-        }
-        </>
-      ),
+            headerRight: () =>
+        initialData &&
+        article &&
+        initialData.id === article.user &&
+        !article.deleted ? (
+          <Feather
+            name="more-vertical"
+            size={24}
+            color={text_color}
+            style={{ marginRight: 16 }}
+            onPress={() => setMenuVisible(true)}
+          />
+        ) : null,
     });
   }, [navigation, article, initialData, loading]);
 
-
+  const handleDelete = async () => {
+    if (!article || !article.title || !article.body) {
+      Toast.show({
+        type: 'error',
+        text1: 'Title and body cannot be empty!',
+      });
+      return;
+    }
+    setLoading(true);
+    const response = await fetchAPI(
+      URLs.ARTICLE(String(articleId)),
+      {
+        method: 'DELETE',
+        token: true,
+        body: {},
+      }
+    );
+    if (!response.error) {
+        setHeaderContent(
+          <ThemedArticle
+            initialData={initialData}
+            type={'detail'}
+            articleData={{
+              ...article,
+              title: '[DELETED ARTICLE]',
+              body: '[DELETED CONTENT]',
+              tag: [],
+              deleted: true,
+          }}
+        />
+      );
+      Toast.show({
+        type: 'success',
+        text1: `Hi, ${response.data?.detail || "Article deleted!"}`,
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      });
+    }
+    setLoading(false);
+  };
+  
   useEffect(() => {
     let body = '';
     if (focusedComment) {
@@ -570,6 +605,27 @@ export default function ArticlePage() {
           />
         </ThemedButton>
       </ThemedView>
+            <OverflowMenu
+        visible={menuVisible}
+        onDismiss={() => setMenuVisible(false)}
+        options={[
+          { 
+            label: 'Edit', 
+            onPress: () => {
+              if (article) {
+                router.push({
+                  pathname: '/edit/[id]',
+                  params: { id: String(article.id) },
+                });
+              }
+            }
+          },
+          { 
+            label: 'Delete', 
+            onPress: handleDelete 
+          }
+        ]}
+      />
     </>
   );
 }
