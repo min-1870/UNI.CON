@@ -8,7 +8,7 @@ from community.constants import (
     ARTICLE_IDS_CACHE_KEY,
     LONG_CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleSave
+from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleSave, Tag
 from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
@@ -291,10 +291,10 @@ def get_serialized_article(request, article_instance):
 
     return serialized_annotated_article
 
-def update_article(article_instance, updated_fields=None):
+def update_article(article_instance, updated_fields={}):
 
-    if updated_fields is None:
-        updated_fields = {}
+    # Avoid the unnecessary attribute to be existed in the updated_fields
+    tag = updated_fields.pop('tag', None)
 
     # Start an atomic transaction for database updates
     with transaction.atomic():
@@ -302,12 +302,32 @@ def update_article(article_instance, updated_fields=None):
         Article.objects.filter(pk=article_instance.id).update(**updated_fields)
         update_article_engagement_score(article_instance)
         article_instance.refresh_from_db()
+
+        if 'tag' in updated_fields.keys():
+            # Delete initial tag relation
+            ArticleTag.objects.filter(article=article_instance).delete()
+
+            # Create new tag and connect the relation
+            tag_objs = []
+            for tag_name in updated_fields['tag']:
+                tag_obj, _ = Tag.objects.get_or_create(name=tag_name.lower().strip())
+                tag_objs.append(tag_obj)
+                ArticleTag.objects.create(article=article_instance, tag=tag_obj)
+
+            # Remove dangling tags (tags not connected to any articles)
+            Tag.objects.filter(articletag__isnull=True).delete()
     
     # Update the cache
     cache_key = ARTICLE_CACHE_KEY(article_instance.id)
     serialized_annotated_article = cache.get(cache_key, None)
 
     if serialized_annotated_article:
+        # Avoid the unnecessary attribute to be existed in the cache
+        updated_fields.pop('embedding_vector', None)
+
+        # Reattach if the tag are exist:
+        if tag: serialized_annotated_article['tag'] = tag
+
         for field in updated_fields.keys():
             serialized_annotated_article[field] = getattr(article_instance, field)
 

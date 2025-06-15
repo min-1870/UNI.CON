@@ -216,9 +216,18 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The title or body is empty."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        tags = request.data.get("tag", [])
+        embedding_vector = get_embedding(title + body + ','.join(tags))
 
         # Update the article instance & shared article attributes cache
-        updated_fields = {"title": title, "body": body, "edited": True}
+        updated_fields = {
+            "title": title,
+            "body": body,
+            "edited": True,
+            "tag": tags,
+            "embedding_vector": embedding_vector
+        }
         update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been updated by user."}, status=status.HTTP_200_OK)

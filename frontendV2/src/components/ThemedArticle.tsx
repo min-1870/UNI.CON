@@ -30,7 +30,6 @@ function ThemedArticle({ articleData, initialData, type='default' }: ThemedArtic
   const [imgUris, setImgUris] = useState<string[]>(['']);
   const [article, setArticleState] = useState<ArticleType>(articleData);
   const [ratios, setRatios] = useState<number[]>([]);
-
   function parseMarkdownImages(raw: string): {
     bodies: string[];
     imgUris: string[];
@@ -314,6 +313,7 @@ export default React.memo(
     prevProps.type === nextProps.type &&
     prevProps.initialData === nextProps.initialData &&
     prevProps.articleData.id === nextProps.articleData.id &&
+    prevProps.articleData.tag === nextProps.articleData.tag &&
     prevProps.articleData.view_status === nextProps.articleData.view_status &&
     prevProps.articleData.like_status === nextProps.articleData.like_status &&
     prevProps.articleData.likes_count === nextProps.articleData.likes_count &&
