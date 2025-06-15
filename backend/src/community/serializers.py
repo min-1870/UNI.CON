@@ -1,4 +1,4 @@
-from community.models import Article, Comment
+from community.models import Article, Comment, Tag, ArticleTag
 from community.utils import get_embedding
 from rest_framework import serializers
 from django.db import transaction
@@ -55,6 +55,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         user_instance = self.context["request"].user
         validated_data["user"] = user_instance
 
+        tags = validated_data["tag"]
         del validated_data["tag"]
 
         # Calculate and save the embedding vector
@@ -65,6 +66,17 @@ class ArticleSerializer(serializers.ModelSerializer):
         # Save the new article
         with transaction.atomic():
             article_instance = Article.objects.create(**validated_data)
+
+        # Link the foreign key for each tag if necessary
+        if len(tags) != 0:
+            with transaction.atomic():
+                for code in tags:
+                    tag_instance, _ = Tag.objects.get_or_create(
+                        name=code.lower().strip()
+                    )
+                    ArticleTag.objects.create(
+                        article=article_instance, tag=tag_instance
+                    )
 
         return article_instance
 

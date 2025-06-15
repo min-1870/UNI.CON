@@ -66,7 +66,7 @@ export default function HomePage() {
       token: true,
     });
     if (!response.error) {
-      setTags(response.data?.tags)
+      setTags(Array.isArray(response.data?.tags) ? response.data.tags.slice(0, 3) : [])
       setData('trending_tags', Array.isArray(response.data?.tags) ? response.data.tags : []);
     } else {
       Toast.show({

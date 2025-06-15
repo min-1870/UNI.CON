@@ -273,7 +273,7 @@ export default function NewArticlePage() {
 
   const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
     if (e.nativeEvent.key === ' ' || e.nativeEvent.key === ',') {
-      const word = raw.trim();
+      const word = raw.trim().toLocaleLowerCase();
       if (word.length > 0 && !tags.includes(word)) {
         setTags([...tags, word]);
       }

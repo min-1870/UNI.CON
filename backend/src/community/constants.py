@@ -1,4 +1,5 @@
 CACHE_TIMEOUT = 60 * 60 * 24
+LONG_CACHE_TIMEOUT = 60 * 24 * 60 * 60
 EMBEDDING_VECTOR_SIZE = 1536
 EMBEDDING_VECTOR_MODEL = "text-embedding-3-small"
 ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
@@ -19,6 +20,17 @@ NOTIFICATION_GROUP_KV = {
     1: "Like",
 }
 
+TRENDING_TAGS = (
+    lambda identifier: f"{identifier}_TRENDING_TAGS"
+)
+
+NOTIFICATION_IDS_CACHE_KEY = (
+    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
+)
+NOTIFICATION_CACHE_KEY = (
+    lambda notification_id: f"NOTIFICATION_{notification_id}"
+)
+
 EMAIL_NOTIFICATIONS_THRESHOLD = 5
 
 ARTICLE_IDS_CACHE_KEY = (
@@ -28,9 +40,6 @@ ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )
 
-ARTICLES_CACHE_KEY = ( #OLD
-    lambda school_id, view_name, identifier="": f"SCHOOL_{school_id}_VIEW_{view_name}_IDF_{identifier}"
-)
 ARTICLES_LIKE_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_LIKED-ARTICLES"
 )
@@ -47,12 +56,6 @@ COMMENTS_LIKE_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_LIKED-COMMENTS"
 )
 
-NOTIFICATION_IDS_CACHE_KEY = (
-    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
-)
-NOTIFICATION_CACHE_KEY = (
-    lambda notification_id: f"NOTIFICATION_{notification_id}"
-)
 
 DELETED_TITLE = "[DELETED ARTICLE]"
 DELETED_BODY = "[DELETED CONTENT]"

@@ -5,24 +5,26 @@ from community.utils import (
     update_user_saved_article_cache,
     update_user_liked_article_cache,
     update_user_posted_article_cache,
+    get_paginated_notifications,
     update_recent_article_cache,
     update_preference_vector,
-    add_embedding_to_faiss,
-    get_faiss_index,
-    get_embedding,
     get_serialized_article,
-    update_article,
+    add_embedding_to_faiss,
     get_paginated_comments,
-    get_paginated_notifications,
+    get_paginated_articles,
     add_notification,
-    new_get_paginated_articles,
+    get_faiss_index,
+    update_article,
+    get_embedding,
 
 )
 from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
+    TRENDING_TAGS,
+    CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleLike, Tag, ArticleTag, ArticleView, ArticleSave
+from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from rest_framework.response import Response
@@ -30,6 +32,7 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from django.db.models import F, Q, Count
 from django.http import JsonResponse
+from django.core.cache import cache
 from django.db import transaction
 from django.urls import resolve
 from urllib.parse import quote
@@ -67,42 +70,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article_instance.id,
         )
 
-        # Link the foreign key for each tag if necessary
-        tag = request.data.get("tag")
-        if len(tag) != 0:
-            with transaction.atomic():
-                for code in tag:
-                    tag_instance, _ = Tag.objects.get_or_create(
-                        name=code.upper().strip()
-                    )
-                    ArticleTag.objects.create(
-                        article=article_instance, tag=tag_instance
-                    )
-
-            article_instance.tag = [code.upper().strip() for code in tag]
-        else:
-            article_instance.tag = []
-
         # Add article id to the cache
         update_user_posted_article_cache(request, article_instance)
         update_recent_article_cache(request, article_instance)
 
         # Add extra properties for the response
-        user_temp_name, user_static_points = get_set_temp_name_static_points(
+        get_set_temp_name_static_points(
             article_instance, user_instance
         )
-        article_instance.user_temp_name = user_temp_name
-        article_instance.user_static_points = user_static_points
-        article_instance.user_school = user_instance.school
-        article_instance.like_status = False
 
-        # Custom response
-        article_response_data = ArticleResponseSerializer(article_instance).data
-        return Response(article_response_data, status=status.HTTP_201_CREATED)
+        return Response({"detail":"The article has been created.", 'id': article_instance.id}, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset(),
             sort_by="created_at",
@@ -114,7 +95,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def hot(self, request):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset(),
             sort_by="engagement_score",
@@ -126,7 +107,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def preference(self, request):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset(),
             sort_by="embedding_result",
@@ -146,7 +127,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset(),
             sort_by="embedding_result",
@@ -159,7 +140,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def posted_articles(self, request, *args, **kwargs):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset().filter(user=request.user),
             sort_by="created_at",
@@ -171,7 +152,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def commented_articles(self, request, *args, **kwargs):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset().filter(comment__user=request.user).distinct(),
             sort_by="created_at",
@@ -183,7 +164,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def saved_articles(self, request, *args, **kwargs):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset().filter(articlesave__user=request.user),
             sort_by="created_at",
@@ -195,7 +176,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def liked_articles(self, request, *args, **kwargs):
 
-        response_data = new_get_paginated_articles(
+        response_data = get_paginated_articles(
             request=request,
             queryset=self.get_queryset().filter(articlelike__user=request.user),
             sort_by="created_at",
@@ -392,22 +373,30 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
 
-    #TODO Implement caching to work as scheduler, and apply timeframe for fetching
+
     @action(detail=False, methods=["get"])
     def trending_tags(self, request, *args, **kwargs): 
 
-        tags = Tag.objects.filter(
-                articletag__article__user__school=request.user.school,
-                articletag__article__deleted=False
-            ).annotate(
-                use_count=Count('articletag')
-            ).order_by('-use_count')[:5]  
+        cached = cache.get(TRENDING_TAGS(request.user.school.id))
+        if True:#not cached:
+            tag_queryset = Tag.objects.filter(
+                    articletag__article__user__school=request.user.school,
+                    articletag__article__deleted=False
+                ).annotate(
+                    use_count=Count('articletag')
+                ).order_by('-use_count')[:5]
+            tags = [tag.name for tag in tag_queryset]
+            print(tags)
+            print('----------------')
+            all_tags = Tag.objects.filter(
+                articletag__article__user__school=request.user.school
+            ).values_list('name')
+            print(all_tags)
+            all_tags = Tag.objects.all().values_list('name', flat=True)
+            print(all_tags)
+            cache.set(TRENDING_TAGS(request.user.school.id), tags, CACHE_TIMEOUT)
 
-        tags_data = [tag.name for tag in tags]
-        if len(tags_data) < 5:
-            tags_data = ['Course','Study','Exam','CS','Uni']
-
-        return Response({"tags":tags_data}, status=status.HTTP_200_OK)
+        return Response({"tags":tags}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
     def new_notifications(self, request, *args, **kwargs):            

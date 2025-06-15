@@ -2,28 +2,26 @@ from community.constants import (
     CACHE_TIMEOUT,
     PAGINATOR_SIZE,
     ARTICLE_CACHE_KEY,
-    ARTICLES_CACHE_KEY,
     ARTICLES_LIKE_CACHE_KEY,
     ARTICLES_VIEW_CACHE_KEY,
     ARTICLES_SAVE_CACHE_KEY,
-
-    ARTICLE_IDS_CACHE_KEY
+    ARTICLE_IDS_CACHE_KEY,
+    LONG_CACHE_TIMEOUT,
 )
-from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleView, ArticleSave, Comment
-from django.db.models import OuterRef, Subquery, F, Func, Value
+from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleSave
+from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
 from .response_serializers import ArticleResponseSerializer
 from .database_utils import update_article_engagement_score
-from django.db.models.functions import Coalesce
-from django.core.cache import cache
-from account.models import User
-from django.urls import resolve
-from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
-from django_redis import get_redis_connection
-from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Value
 from django.utils.dateparse import parse_datetime
-from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
+from django.db.models.functions import Coalesce
+from django_redis import get_redis_connection
 from django.db.models import Case, When
+from django.core.cache import cache
+from django.db import transaction
+from django.utils import timezone
+from account.models import User
 
 redis_conn = get_redis_connection("default")
 
@@ -49,7 +47,7 @@ def to_unix_ms(dt):
     else:
         return int(timezone.now().timestamp() * 1000)
     
-def new_get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_vector=None):
+def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_vector=None):
 
     user_instance = request.user
     cache_key = ARTICLE_IDS_CACHE_KEY(cache_key)
@@ -100,7 +98,7 @@ def new_get_paginated_articles(request, queryset, sort_by, cache_key='', embeddi
 
         if mapping:
             redis_conn.zadd(cache_key, mapping)
-            redis_conn.expire(cache_key, 60 * 24 * 60 * 60)
+            redis_conn.expire(cache_key, LONG_CACHE_TIMEOUT)
 
     # Fetch new notification IDs from the cache
     raw_with_scores  = redis_conn.zrevrangebyscore(
@@ -237,7 +235,6 @@ def new_get_paginated_articles(request, queryset, sort_by, cache_key='', embeddi
         "results": {"articles": results.values()},
     }
 
-
 def get_serialized_article(request, article_instance):
 
     # Cache the annotated article
@@ -315,7 +312,6 @@ def update_article(article_instance, updated_fields=None):
             serialized_annotated_article[field] = getattr(article_instance, field)
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
-
 
 def update_user_liked_article_cache(request, article_instance, like_status):
 
