@@ -23,6 +23,7 @@ from community.constants import (
     DELETED_TITLE,
     TRENDING_TAGS,
     CACHE_TIMEOUT,
+    SHORT_CACHE_TIMEOUT
 )
 from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
@@ -230,13 +231,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
         updated_preference_vector = update_preference_vector(
             user_instance.embedding_vector, article_instance.embedding_vector
         )
-        Article.objects.filter(pk=article_instance.id).update(embedding_vector=updated_preference_vector)
 
         # Create relational data
         with transaction.atomic():
             ArticleView.objects.get_or_create(
-                user=user_instance, article=article_instance
+            user=user_instance, article=article_instance
             )
+            # Update the user's embedding vector in the database
+            user_instance.embedding_vector = updated_preference_vector
+            user_instance.save(update_fields=["embedding_vector"])
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"views_count": F("views_count") + 1}
@@ -373,30 +376,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
 
-
     @action(detail=False, methods=["get"])
     def trending_tags(self, request, *args, **kwargs): 
 
         cached = cache.get(TRENDING_TAGS(request.user.school.id))
-        if True:#not cached:
+        if not cached:
             tag_queryset = Tag.objects.filter(
                     articletag__article__user__school=request.user.school,
                     articletag__article__deleted=False
                 ).annotate(
                     use_count=Count('articletag')
                 ).order_by('-use_count')[:5]
-            tags = [tag.name for tag in tag_queryset]
-            print(tags)
-            print('----------------')
-            all_tags = Tag.objects.filter(
-                articletag__article__user__school=request.user.school
-            ).values_list('name')
-            print(all_tags)
-            all_tags = Tag.objects.all().values_list('name', flat=True)
-            print(all_tags)
-            cache.set(TRENDING_TAGS(request.user.school.id), tags, CACHE_TIMEOUT)
+            cached = [tag.name for tag in tag_queryset]
+            cache.set(TRENDING_TAGS(request.user.school.id), cached, SHORT_CACHE_TIMEOUT)
 
-        return Response({"tags":tags}, status=status.HTTP_200_OK)
+        return Response({"tags":cached}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
     def new_notifications(self, request, *args, **kwargs):            
