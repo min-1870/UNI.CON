@@ -1,8 +1,7 @@
 from community.models import Article, Comment, Tag, ArticleTag
-from community.utils import get_embedding
+from community.utils import get_embedding, update_article_tag
 from rest_framework import serializers
 from django.db import transaction
-
 class ArticleSerializer(serializers.ModelSerializer):
     tag = serializers.JSONField(required=False)
     search_content = serializers.CharField(required=False)
@@ -57,7 +56,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
         # Calculate and save the embedding vector
         validated_data["embedding_vector"] = get_embedding(
-            validated_data["title"] + validated_data["body"] + validated_data["tag"].join(',')
+            validated_data["title"] + validated_data["body"] + ','.join(validated_data["tag"])
         )
 
         tags = validated_data["tag"]
@@ -68,15 +67,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             article_instance = Article.objects.create(**validated_data)
 
         # Link the foreign key for each tag if necessary
-        if len(tags) != 0:
-            with transaction.atomic():
-                for code in tags:
-                    tag_instance, _ = Tag.objects.get_or_create(
-                        name=code.lower().strip()
-                    )
-                    ArticleTag.objects.create(
-                        article=article_instance, tag=tag_instance
-                    )
+        update_article_tag(self.context["request"], article_instance, tags)
 
         return article_instance
 

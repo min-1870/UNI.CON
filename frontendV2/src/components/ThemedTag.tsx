@@ -1,17 +1,19 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { InitialDataType } from '@/constants/types';
 import { useFonts } from 'expo-font';
 import React from "react";
-
+import { router } from 'expo-router';
 type TagProps = {
     text: string;
-    type: 'default'|'ranked'|'bigRanked'|'uni';
+    type: 'default'| 'selectedDefault'|'ranked'|'selectedRanked'|'bigRanked'|'uni';
+    searchPage?: boolean;
     initialData?: InitialDataType|null;
   };
 export default function ThemedTag({
   text='',
   type ='default',
+  searchPage = false,
   initialData,
 }: TagProps) {
   
@@ -40,6 +42,23 @@ export default function ThemedTag({
         fontFamily: 'textRegular',
         },
     })
+    : type === 'selectedRanked' ?
+    StyleSheet.create({
+        tag: {
+        backgroundColor: rankedBackgroundColor,
+        borderRadius: 16,
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+        marginRight: 8,
+        borderWidth: 1.5,
+        borderColor: rankedTextColor,
+        },
+        Text: {
+        fontSize: 12,
+        color: rankedTextColor,
+        fontFamily: 'textRegular',
+        },
+    })    
     : type === 'ranked' ?
     StyleSheet.create({
         tag: {
@@ -89,9 +108,35 @@ export default function ThemedTag({
         fontFamily: 'textRegular',
         },
     });
+
   return (
-    <View style={styles.tag}>
-        <Text style={styles.Text}>{text}</Text>
-    </View>
+    <>
+      {type !== 'uni' && !searchPage ? (
+        <Pressable onPress={() => {
+          router.push({
+            pathname: '/(tabs)/search',
+            params: { tag: String(text) }, 
+          });
+        }}>
+          <View style={styles.tag}>
+            <Text style={styles.Text}>{text}</Text>
+          </View>
+        </Pressable>
+      ) : (
+        <View style={styles.tag}>
+          <Text style={styles.Text}>{text}</Text>
+        </View>
+      )}
+    </>
+    // <Pressable onPress={() => {
+    //     type !== 'uni' && !searchPage &&
+    //     router.push({
+    //       pathname: '/(tabs)/search',
+    //       params: { tag: String(text) }, 
+    //     });}}>
+    //   <View style={styles.tag}>
+    //       <Text style={styles.Text}>{text}</Text>
+    //   </View>
+    // </Pressable>
   );
 }

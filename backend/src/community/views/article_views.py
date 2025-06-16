@@ -12,6 +12,7 @@ from community.utils import (
     add_embedding_to_faiss,
     get_paginated_comments,
     get_paginated_articles,
+    update_article_tag,
     add_notification,
     get_faiss_index,
     update_article,
@@ -133,7 +134,27 @@ class ArticleViewSet(viewsets.ModelViewSet):
             queryset=self.get_queryset(),
             sort_by="embedding_result",
             cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name + "_" + search_content,
-            embedding_vector=get_embedding(search_content)
+            embedding_vector=get_embedding(search_content),
+            
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def search_tag(self, request):
+        # Block if the body or the title is empty
+        search_content = request.GET.get("search_content", "").strip()
+        if len(search_content) == 0:
+            return Response(
+                {"detail": "The search_content is empty."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        response_data = get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset().filter(articletag__tag__name__icontains=search_content).distinct(),
+            sort_by="created_at",
+            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name + "_" + search_content,
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -217,16 +238,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        tags = request.data.get("tag", [])
-        embedding_vector = get_embedding(title + body + ','.join(tags))
-
         # Update the article instance & shared article attributes cache
+        tags = request.data.get("tag", [])
+        update_article_tag(request, article_instance, tags)
         updated_fields = {
             "title": title,
             "body": body,
             "edited": True,
             "tag": tags,
-            "embedding_vector": embedding_vector
+            "embedding_vector": get_embedding(title + body + ','.join(tags))
         }
         update_article(article_instance, updated_fields)
 
@@ -276,6 +296,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
+        tags = request.data.get("tag", [])
+        update_article_tag(request, article_instance, tags)
         update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)

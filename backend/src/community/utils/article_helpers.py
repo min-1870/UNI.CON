@@ -54,6 +54,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
     requested_page = int(request.query_params.get("page", 1))
 
     if sort_by == 'embedding_result':
+        search_content = request.query_params.get("search_content", None)
         if not redis_conn.exists(cache_key):
             # Fetch Ids of the article based on the similarity
             ids = search_similar_embeddings(
@@ -225,6 +226,8 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
         url = request.build_absolute_uri()
         if sort_by == 'embedding_result':
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
+            if search_content:
+                next_page += f"&search_content={search_content}"
         elif sort_by == 'created_at':
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
         else:
@@ -291,10 +294,63 @@ def get_serialized_article(request, article_instance):
 
     return serialized_annotated_article
 
-def update_article(article_instance, updated_fields={}):
+def update_article_tag(request, article_instance, new_tags=[]):
+    old_tags = ArticleTag.objects.filter(article=article_instance).values_list(
+        "tag__name", flat=True
+    )
+    old_tags = list(old_tags) if old_tags else []
+    
+    if set(old_tags) == set(new_tags):
+        # If the tags are the same, do nothing
+        return
+    
+    # If the tags are different, update the tags
+    added_tags = set(new_tags) - set(old_tags)
+    removed_tags = set(old_tags) - set(new_tags)
 
-    # Avoid the unnecessary attribute to be existed in the updated_fields
-    tag = updated_fields.pop('tag', None)
+    # Start an atomic transaction for database updates
+    with transaction.atomic():
+        if added_tags:
+            for tag_name in added_tags:
+                tag_obj, _ = Tag.objects.get_or_create(name=tag_name.lower().strip())
+                ArticleTag.objects.create(article=article_instance, tag=tag_obj)
+
+        if removed_tags:
+            for tag_name in removed_tags:
+                tag_obj = Tag.objects.filter(name=tag_name.lower().strip()).first()
+                if tag_obj:
+                    # Only remove the ArticleTag relation for this article and tag
+                    ArticleTag.objects.filter(article=article_instance, tag=tag_obj).delete()
+                    # If the tag is not connected to any other articles, delete the tag itself
+                    if not ArticleTag.objects.filter(tag=tag_obj).exists():
+                        tag_obj.delete()
+
+    # Update search tag cache   
+    if added_tags:
+        for tag_name in added_tags:
+            cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-search_tag_" + tag_name)
+            if redis_conn.exists(cache_key):
+                # Add the article id to the cache only if it does not exist
+                if not redis_conn.zscore(cache_key, str(article_instance.id)):
+                    redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})
+    if removed_tags:
+        for tag_name in removed_tags:
+            cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-search_tag_" + tag_name)
+            if redis_conn.exists(cache_key):
+                # Remove the article id to the cache only if it does not exist
+                if redis_conn.zscore(cache_key, str(article_instance.id)):
+                    redis_conn.zrem(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})   
+
+    # Update the cache for the article
+    cache_key = ARTICLE_CACHE_KEY(article_instance.id)
+    serialized_annotated_article = cache.get(cache_key, None)
+    if serialized_annotated_article:
+        # Update the tag in the cache
+        serialized_annotated_article['tag'] = new_tags
+        cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT) 
+
+
+def update_article(article_instance, updated_fields={}):
 
     # Start an atomic transaction for database updates
     with transaction.atomic():
@@ -302,20 +358,6 @@ def update_article(article_instance, updated_fields={}):
         Article.objects.filter(pk=article_instance.id).update(**updated_fields)
         update_article_engagement_score(article_instance)
         article_instance.refresh_from_db()
-
-        if 'tag' in updated_fields.keys():
-            # Delete initial tag relation
-            ArticleTag.objects.filter(article=article_instance).delete()
-
-            # Create new tag and connect the relation
-            tag_objs = []
-            for tag_name in updated_fields['tag']:
-                tag_obj, _ = Tag.objects.get_or_create(name=tag_name.lower().strip())
-                tag_objs.append(tag_obj)
-                ArticleTag.objects.create(article=article_instance, tag=tag_obj)
-
-            # Remove dangling tags (tags not connected to any articles)
-            Tag.objects.filter(articletag__isnull=True).delete()
     
     # Update the cache
     cache_key = ARTICLE_CACHE_KEY(article_instance.id)
@@ -324,9 +366,6 @@ def update_article(article_instance, updated_fields={}):
     if serialized_annotated_article:
         # Avoid the unnecessary attribute to be existed in the cache
         updated_fields.pop('embedding_vector', None)
-
-        # Reattach if the tag are exist:
-        if tag: serialized_annotated_article['tag'] = tag
 
         for field in updated_fields.keys():
             serialized_annotated_article[field] = getattr(article_instance, field)
@@ -410,4 +449,4 @@ def update_recent_article_cache(request, article_instance):
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
+            redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})

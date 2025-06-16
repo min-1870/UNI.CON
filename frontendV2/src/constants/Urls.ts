@@ -55,6 +55,7 @@ const URLS = {
 
     // Searching
     SEARCHING_ARTICLE: (searchContent: string) => `${domain}/community/article/search?search_content=${searchContent}`,
+    SEARCHING_TAG: (searchContent: string) => `${domain}/community/article/search_tag?search_content=${searchContent}`,
 };
 
 export default URLS;

@@ -7,6 +7,7 @@ from .article_helpers import (
     update_recent_article_cache,
     get_paginated_articles,
     get_serialized_article,
+    update_article_tag,
     update_article,
 )
 
