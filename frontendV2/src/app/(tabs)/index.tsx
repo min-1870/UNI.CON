@@ -9,7 +9,7 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import Toast from 'react-native-toast-message';
-import { ImageBackground } from "react-native";
+import { ImageBackground, View } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
@@ -28,6 +28,7 @@ export default function HomePage() {
   const [articles, setArticles] = useState<ArticleType[]>([]);
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [uniOnly, setUniOnly] = useState<boolean>(false);
   const [tags, setTags] = useState<[]>([]);
   const isFetchingMore = useRef(false);
 
@@ -133,7 +134,8 @@ export default function HomePage() {
       position: "relative", 
     },
     titleContainer: {
-      margin: 15,
+      marginTop: 15,
+      marginHorizontal: 15,
       backgroundColor: "transparent"
     },
     titleHeaderContainer:{
@@ -153,25 +155,24 @@ export default function HomePage() {
       alignSelf: 'flex-start',
       backgroundColor: "transparent"
     },
-    buttonContainer: {
+    buttonContainer:{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    sortingButtons: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
-      marginHorizontal: 15,
       gap: 10,
       padding: 3,
       borderRadius: 50,
       backgroundColor: default_card_background_color,
-      shadowColor: 'rgba(0, 0, 0, 1)',
-      shadowOffset: { width: 0, height: 3 },
       
-      shadowRadius: 13,
-      shadowOpacity: 0.08,
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
     },
     feedContainer: {
       alignItems: 'stretch',
-      // marginHorizontal: 15,
       gap: 20,
     },
   });
@@ -205,26 +206,35 @@ export default function HomePage() {
             ))}
           </ThemedView>
         </ThemedView>
-      </ThemedView>
-      <ThemedView style={styles.buttonContainer}>
-        <ThemedButton
-          type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('all')}
-        >
-          <ThemedText type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}>All</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('hot')}
-        >
-          <ThemedText type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'} >Hot</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('recommend')}
-        >
-          <ThemedText type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'} >Recommend</ThemedText>
-        </ThemedButton>
+        <View style={styles.buttonContainer}>
+          <ThemedView style={styles.sortingButtons}>
+            <ThemedButton
+              type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}
+              onPress={() => setSortOption('all')}
+            >
+              <ThemedText type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}>All</ThemedText>
+            </ThemedButton>
+            <ThemedButton
+              type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'}
+              onPress={() => setSortOption('hot')}
+            >
+              <ThemedText type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'} >Hot</ThemedText>
+            </ThemedButton>
+            <ThemedButton
+              type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'}
+              onPress={() => setSortOption('recommend')}
+            >
+              <ThemedText type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'} >Recommend</ThemedText>
+            </ThemedButton>
+          </ThemedView>
+          
+          <ThemedButton
+            type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
+            onPress={() => setUniOnly(!uniOnly)}
+          >
+            <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'} >UNSW only</ThemedText>
+          </ThemedButton>
+        </View>
       </ThemedView>
     </>
   );

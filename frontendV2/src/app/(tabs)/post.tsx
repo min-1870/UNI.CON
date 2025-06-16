@@ -157,7 +157,7 @@ export default function NewArticlePage() {
     navigation.setOptions({
       headerStyle: {
       backgroundColor: default_card_background_color, // navbar background
-      shadowColor: 'transparent', // remove iOS bottom border
+      // shadowColor: 'transparent', // remove iOS bottom border
       elevation: 0, // remove Android shadow
       borderWidth: 0, 
       },
@@ -299,11 +299,8 @@ export default function NewArticlePage() {
       borderRadius: 30,
       padding: 20, 
       marginBottom: 20,
-
-      shadowColor: 'rgba(0, 0, 0, 1)',
-      shadowOffset: { width: 0, height: 3 },
-      shadowRadius: 13,
-      shadowOpacity: 0.08,
+      
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
     },

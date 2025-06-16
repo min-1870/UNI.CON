@@ -47,7 +47,7 @@ export default function ArticlePage() {
     navigation.setOptions({
       headerStyle: {
         backgroundColor: background_color, // navbar background
-        shadowColor: 'transparent', // remove iOS bottom border
+        // shadowColor: 'transparent', // remove iOS bottom border
         elevation: 0, // remove Android shadow
         borderWidth: 0, 
       },

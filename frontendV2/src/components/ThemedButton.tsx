@@ -8,7 +8,9 @@ type ThemedButtonProps = Omit<ButtonProps, 'title'> & {
   | 'feedChecked' 
   | 'feedUnchecked' 
   | 'toggled' 
-  | 'unToggled';
+  | 'unToggled' 
+  | 'elevatedToggled' 
+  | 'elevatedUnToggled';
   children: ReactNode;
 };
 
@@ -66,6 +68,22 @@ export default function ThemedButton({
           justifyContent: 'center',
         },
       })
+    : type === 'elevatedToggled'
+    ? StyleSheet.create({
+        button: {
+          paddingHorizontal: 20,
+          paddingVertical: 10,
+          borderRadius: 50,
+          backgroundColor: default_brand_color,
+          alignItems: 'center',
+          justifyContent: 'center',
+      
+      
+          boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+          backdropFilter: 'blur(10px)', // For web platforms
+          elevation: 10, // For Android shadow
+        },
+      })
     : type === 'unToggled'
     ? StyleSheet.create({
         button: {
@@ -77,6 +95,24 @@ export default function ThemedButton({
           backgroundColor: default_card_background_color,
           alignItems: 'center',
           justifyContent: 'center',
+        },
+      })
+    : type === 'elevatedUnToggled'
+    ? StyleSheet.create({
+        button: {
+          paddingHorizontal: 15,
+          paddingVertical: 5,
+          borderRadius: 50,
+          borderWidth: 5,
+          borderColor: default_brand_color,
+          backgroundColor: default_card_background_color,
+          alignItems: 'center',
+          justifyContent: 'center',
+      
+      
+          boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+          backdropFilter: 'blur(10px)', // For web platforms
+          elevation: 10, // For Android shadow
         },
       })
     : StyleSheet.create({

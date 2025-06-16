@@ -82,9 +82,7 @@ export default function ThemedTag({
         paddingHorizontal: 5,
         paddingVertical: 3,
 
-        shadowColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color,
-        shadowRadius: 20,
-        shadowOpacity: 1,
+        boxShadow: `0px 0px 13px ${initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color}`,
         backdropFilter: 'blur(10px)', // For web platforms
         elevation: 10, // For Android shadow
         },

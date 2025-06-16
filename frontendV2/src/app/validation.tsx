@@ -156,12 +156,11 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
     alignItems: 'center',
+      
+    boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+    backdropFilter: 'blur(10px)', // For web platforms
+    elevation: 10, // For Android shadow
   },
   iconCircle: {
     backgroundColor: '#dc2626', // red-600

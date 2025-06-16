@@ -126,11 +126,8 @@ function ThemedArticle({ articleData, initialData, type='default' }: ThemedArtic
       borderTopLeftRadius: type=='detail' ? 0 : 20,
       marginHorizontal: type=='detail' ? 0 : 15,
       padding: 16, 
-
-      shadowColor: 'rgba(0, 0, 0, 1)',
-      shadowOffset: { width: 0, height: 3 },
-      shadowRadius: 13,
-      shadowOpacity: 0.08,
+      
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10, // For Android shadow
 
