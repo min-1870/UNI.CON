@@ -1,82 +1,140 @@
 
 import { ArticleType, InitialDataType } from '@/constants/types';
-import { View, Pressable, Dimensions, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
-import React,  { useState, useEffect  } from "react";
+import React,  { useState, useEffect, useCallback, useMemo  } from "react";
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import moment from 'moment';
 import Markdown from 'react-native-markdown-display'
 import { Image } from 'react-native';
+  
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      // backgroundColor: background_color,
+      borderRadius: 20,
+      marginHorizontal: 15,
+      padding: 16, 
+      
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
+    },
+    infoContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginBottom: 14,
+    },
+    content: {
+      gap: 5
+    },
+    tagContainer:{
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 14,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      gap: 10,
+    },
+    button: {
+      display: 'flex',
+      gap: 4,
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+    },
+    body: {
+      width:'100%'
+    },
+    img: {
+      width: '100%',
+      borderRadius: 20,
+      marginVertical: 10,
+      maxHeight: 1000,
+    }
+  });
+
+const IMG_REGEX = new RegExp(
+  `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
+  'g'
+);
+
+// Module‐level cache for aspect ratios
+const ratioCache = new Map<string, number>();
+function parseMarkdownImages(raw: string) {
+  const bodies: string[] = [];
+  const imgUris: string[] = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = IMG_REGEX.exec(raw)) !== null) {
+    bodies.push(raw.slice(lastIndex, m.index));
+    imgUris.push(m[1]);
+    lastIndex = m.index + m[0].length;
+  }
+  bodies.push(raw.slice(lastIndex));
+  return { bodies, imgUris };
+}
 
 type ThemedArticleProps = {
   articleData: any;
+  trendingTags?: string[];
   initialData?: InitialDataType|null;
   type?: string;
 };
 
-function ThemedArticle({ articleData, initialData, type='default' }: ThemedArticleProps) {
+function ThemedArticle({ articleData, initialData, trendingTags, type='default' }: ThemedArticleProps) {
   
   const view_background_color = useThemeColor({}, 'default_view_card_background_color');
   const background_color = useThemeColor({}, 'default_card_background_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
-  const [trending_tags, setTrendingTags] = useState<string[]>([]);
-  const [bodies, setBodies] = useState<string[]>(['']);
-  const [imgUris, setImgUris] = useState<string[]>(['']);
+  const [fetchedTrendingTags, setFetchedTrendingTags] = useState<string[]>(trendingTags ?? []);
   const [article, setArticleState] = useState<ArticleType>(articleData);
-  const [ratios, setRatios] = useState<number[]>([]);
-  function parseMarkdownImages(raw: string): {
-    bodies: string[];
-    imgUris: string[];
-  } {  
-    const imgRegex = new RegExp(
-      `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
-      'g'
-    );
-    const bodies: string[] = [];
-    const imgUris: string[] = [];
-    let lastIndex = 0;
-    let m: RegExpExecArray | null;
-
-    while ((m = imgRegex.exec(raw)) !== null) {
-      bodies.push(raw.slice(lastIndex, m.index));
-      imgUris.push(m[1]);
-      lastIndex = m.index + m[0].length;
-    }
-    bodies.push(raw.slice(lastIndex));
-
-    return { bodies, imgUris };
-  }
-
-  const fetchTrendingTags = async () => {
-    const tags = await getData('trending_tags');
-    setTrendingTags(Array.isArray(tags) ? tags : []);
-  };
+  const { bodies, imgUris } = useMemo(
+    () => parseMarkdownImages(articleData.body),
+    [articleData.body]
+  );
+  const [ratios, setRatios] = useState<number[]>(
+    imgUris.map(uri => ratioCache.get(uri) || (16/9))
+  );
 
   useEffect(() => {
-    const rawMarkdown = article.body; // or wherever it comes from
-    const { bodies, imgUris } = parseMarkdownImages(rawMarkdown);
-    setBodies(bodies);
-    setImgUris(imgUris);
-    fetchTrendingTags();
-    Promise.all(
-      imgUris.map(
-        uri =>
-          new Promise<number>(resolve =>
-            Image.getSize(
-              uri,
-              (w, h) => resolve(w / h),
-              () => resolve(16 / 9) // fallback
-            )
-          )
-      )
-    ).then(setRatios);
-  }, [articleData]);
+    if (!trendingTags) {
+      (async () => {
+        const tags = await getData('trending_tags');
+        setFetchedTrendingTags(Array.isArray(tags) ? tags : []);
+      })();
+    }
+  }, [trendingTags]);
+  
+
+  // Compute ratios, but cache to avoid repeated work
+  useEffect(() => {
+    imgUris.forEach((uri, i) => {
+      if (!ratioCache.has(uri)) {
+        Image.getSize(
+          uri,
+          (w, h) => {
+            const r = w/h;
+            ratioCache.set(uri, r);
+            setRatios(rArr => {
+              const copy = [...rArr];
+              copy[i] = r;
+              return copy;
+            });
+          },
+          () => {}
+        );
+      }
+    });
+  }, [imgUris]);
 
   const handleLike = async () => {
     const url = article.like_status
@@ -106,74 +164,16 @@ function ThemedArticle({ articleData, initialData, type='default' }: ThemedArtic
       }    
   };
 
-  const handleArticleDetail = () => {
-    setArticleState((prevState: any) => ({
-      ...prevState,
-      view_status: true,
-    }));
-    router.push({
-      pathname: '/article/[id]',
-      params: { id: String(article.id) }, 
-    });
-  }
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: type == 'default' && article.view_status ? view_background_color : background_color,
-      borderRadius: 20,
-      borderTopRightRadius: type=='detail' ? 0 : 20,
-      borderTopLeftRadius: type=='detail' ? 0 : 20,
-      marginHorizontal: type=='detail' ? 0 : 15,
-      padding: 16, 
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-
-      marginBottom: type=='detail' ? 20 : 0,
-    },
-    infoContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-      marginBottom: 14,
-    },
-    content: {
-      gap: 5
-    },
-    tagContainer:{
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-      marginBottom: 14,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'flex-start',
-      gap: 10,
-    },
-    button: {
-      display: 'flex',
-      gap: 4,
-      alignItems: 'flex-end',
-      flexDirection: 'row',
-    },
-    body: {
-      backgroundColor: default_text_color,
-      width:'100%'
-    },
-    img: {
-      width: '100%',
-      borderRadius: 20,
-      marginVertical: 10,
-      maxHeight: 1000,
-    }
-  });
+  const handleArticleDetail = useCallback(() => {
+    router.push({ pathname: '/article/[id]', params: { id: String(articleData.id) } });
+  }, [articleData.id]);
   
   return (
-    
-    <View style={[styles.container]}>
+    <View style={[
+      styles.container,
+      type === 'detail' && { borderTopRightRadius: 0, borderTopLeftRadius: 0, marginHorizontal: 0, marginBottom: 20 },
+      { backgroundColor: type === 'default' ? article.view_status ? view_background_color : background_color : background_color}
+    ]}>
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
             {article.unicon && (
@@ -253,7 +253,7 @@ function ThemedArticle({ articleData, initialData, type='default' }: ThemedArtic
               .map((tag: string, i: number) => (
                 <ThemedTag
                   text={tag}
-                  type={trending_tags.includes(tag) ? 'ranked' : 'default'}
+                  type={fetchedTrendingTags.includes(tag) ? 'ranked' : 'default'}
                   key={i}
                 />
             ))}
@@ -316,3 +316,216 @@ export default React.memo(
     prevProps.articleData.likes_count === nextProps.articleData.likes_count &&
     prevProps.articleData.save_status === nextProps.articleData.save_status
 );
+
+
+
+// import React, {
+//   useState,
+//   useEffect,
+//   useMemo,
+//   useCallback
+// } from "react";
+// import {
+//   View,
+//   Pressable,
+//   StyleSheet,
+//   Image
+// } from "react-native";
+// import { AntDesign, FontAwesome } from '@expo/vector-icons';
+// import moment from 'moment';
+// import Markdown from 'react-native-markdown-display';
+// import { useThemeColor } from '@/hooks/useThemeColor';
+// import { fetchAPI } from "@/components/Utils";
+// import { ArticleType, InitialDataType } from '@/constants/types';
+// import URLs from "@/constants/Urls";
+// import ThemedText from '@/components/ThemedText';
+// import ThemedTag from '@/components/ThemedTag';
+// import { router } from 'expo-router';
+
+// // Hoist and cache regex once
+// const IMG_REGEX = new RegExp(
+//   `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
+//   'g'
+// );
+
+// // Module‐level cache for aspect ratios
+// const ratioCache = new Map<string, number>();
+
+// function parseMarkdownImages(raw: string) {
+//   const bodies: string[] = [];
+//   const imgUris: string[] = [];
+//   let lastIndex = 0;
+//   let m: RegExpExecArray | null;
+//   while ((m = IMG_REGEX.exec(raw)) !== null) {
+//     bodies.push(raw.slice(lastIndex, m.index));
+//     imgUris.push(m[1]);
+//     lastIndex = m.index + m[0].length;
+//   }
+//   bodies.push(raw.slice(lastIndex));
+//   return { bodies, imgUris };
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     borderRadius: 20,
+//     marginHorizontal: 15,
+//     padding: 16,
+//     backgroundColor: "#fff",
+//     elevation: 2,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.1,
+//     shadowRadius: 8,
+//     marginBottom: 20,
+//   },
+//   infoRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginBottom: 12,
+//     justifyContent: "space-between",
+//   },
+//   content: { marginBottom: 12 },
+//   buttonsRow: { flexDirection: "row", gap: 16, marginTop: 12 },
+//   image: {
+//     width: "100%",
+//     borderRadius: 12,
+//     marginVertical: 8,
+//   },
+//   tagContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+// });
+
+// type Props = {
+//   articleData: ArticleType;
+//   initialData?: InitialDataType | null;
+//   trendingTags: string[];
+// };
+
+// function ThemedArticle({
+//   articleData,
+//   initialData,
+//   trendingTags
+// }: Props) {
+//   const bg = useThemeColor({}, 'default_card_background_color');
+//   const textColor = useThemeColor({}, 'default_text_color');
+//   const iconColor = useThemeColor({}, 'default_placeholder_color');
+
+//   // Memoize parsed markdown
+//   const { bodies, imgUris } = useMemo(
+//     () => parseMarkdownImages(articleData.body),
+//     [articleData.body]
+//   );
+
+//   // Compute ratios, but cache to avoid repeated work
+//   const [ratios, setRatios] = useState<number[]>(
+//     imgUris.map(uri => ratioCache.get(uri) || (16/9))
+//   );
+//   useEffect(() => {
+//     imgUris.forEach((uri, i) => {
+//       if (!ratioCache.has(uri)) {
+//         Image.getSize(
+//           uri,
+//           (w, h) => {
+//             const r = w/h;
+//             ratioCache.set(uri, r);
+//             setRatios(rArr => {
+//               const copy = [...rArr];
+//               copy[i] = r;
+//               return copy;
+//             });
+//           },
+//           () => {}
+//         );
+//       }
+//     });
+//   }, [imgUris]);
+
+//   // Handlers memoized
+//   const handleLike = useCallback(async () => {
+//     const url = articleData.like_status
+//       ? URLs.ARTICLE_UNLIKE(String(articleData.id))
+//       : URLs.ARTICLE_LIKE(String(articleData.id));
+//     const res = await fetchAPI(url, { method: "POST" });
+//     if (res) {
+//       // You’d want to lift state up or use context
+//     }
+//   }, [articleData.id, articleData.like_status]);
+
+//   const handleSave = useCallback(async () => {
+//     const url = articleData.save_status
+//       ? URLs.ARTICLE_UNSAVE(String(articleData.id))
+//       : URLs.ARTICLE_SAVE(String(articleData.id));
+//     await fetchAPI(url, { method: "POST" });
+//   }, [articleData.id, articleData.save_status]);
+
+//   const goDetail = useCallback(() => {
+//     router.push({ pathname: '/article/[id]', params: { id: String(articleData.id) } });
+//   }, [articleData.id]);
+
+//   return (
+//     <Pressable onPress={goDetail} style={[styles.container, { backgroundColor: bg }]}>
+//       <View style={styles.infoRow}>
+//         <ThemedText type="articleAuthor">{articleData.user_temp_name}</ThemedText>
+//         <ThemedText type="articleDate">
+//           {moment(articleData.created_at).fromNow()}
+//         </ThemedText>
+//       </View>
+
+//       <View style={styles.content}>
+//         <ThemedText type="articleTitle">{articleData.title}</ThemedText>
+//         <ThemedText type="articleBody">
+//           {bodies[0].length > 150
+//             ? bodies[0].slice(0, 150).trimEnd() + "…"
+//             : bodies[0]}
+//         </ThemedText>
+//         {imgUris[0] && (
+//           <Image
+//             source={{ uri: imgUris[0] }}
+//             style={[styles.image, { aspectRatio: ratios[0] }]}
+//             resizeMode="cover"
+//           />
+//         )}
+//         <View style={styles.tagContainer}>
+//           {articleData.tag.map((t, i) => (
+//             <ThemedTag
+//               key={i}
+//               text={t}
+//               type={trendingTags.includes(t) ? "ranked" : "default"}
+//             />
+//           ))}
+//         </View>
+//       </View>
+
+//       <View style={styles.buttonsRow}>
+//         <Pressable onPress={handleLike} style={{ flexDirection: "row", gap: 4 }}>
+//           <AntDesign
+//             name={articleData.like_status ? "heart" : "hearto"}
+//             size={16}
+//             color={iconColor}
+//           />
+//           <ThemedText type="articleButton">{articleData.likes_count}</ThemedText>
+//         </Pressable>
+//         <Pressable style={{ flexDirection: "row", gap: 4 }}>
+//           <AntDesign name="message1" size={16} color={iconColor} />
+//           <ThemedText type="articleButton">{articleData.comments_count}</ThemedText>
+//         </Pressable>
+//         <Pressable onPress={handleSave} style={{ flexDirection: "row", gap: 4 }}>
+//           <FontAwesome
+//             name={articleData.save_status ? "bookmark" : "bookmark-o"}
+//             size={16}
+//             color={iconColor}
+//           />
+//         </Pressable>
+//       </View>
+//     </Pressable>
+//   );
+// }
+
+// // Only re-render when the few primitive props actually change
+// export default React.memo(
+//   ThemedArticle,
+//   (a, b) =>
+//     a.articleData.id === b.articleData.id &&
+//     a.articleData.like_status === b.articleData.like_status &&
+//     a.articleData.likes_count === b.articleData.likes_count &&
+//     a.articleData.save_status === b.articleData.save_status &&
+//     a.trendingTags.join(",") === b.trendingTags.join(",")
+// );
