@@ -2,12 +2,12 @@ from community.models import Article, Comment, ArticleUser
 from django.db.models import F, Sum
 from randomname import get_name
 from django.db import transaction
+from django_redis import get_redis_connection
 
+redis_conn = get_redis_connection("default")
 
 def update_article_engagement_score(article_instance):
-    Article.objects.filter(id=article_instance.id).update(
-        engagement_score=(F("views_count") * 1) + (F("likes_count") * 2) + (F("comments_count") * 3)
-    )
+    redis_conn.sadd("articles:dirty", article_instance.id)
 
 def update_user_points(user_instance, delta_points, increment=True): 
     # Update the user's points

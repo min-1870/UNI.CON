@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 import sys
+from celery.schedules import crontab
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +49,20 @@ CELERY_BROKER_URL = "redis://redis:6379/1"  # Change DB index if needed
 CELERY_RESULT_BACKEND = "redis://redis:6379/1"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULE = {
+    'recalc-engagement-every-hour': {
+        'task': 'community.tasks.recalc_dirty_engagement',
+        # run on the hour, every hour
+        'schedule': crontab(minute=0, hour='*'),
+    },
+    # Run at midnight every day:
+    'recalc-all-engagement-daily': {
+        'task': 'community.tasks.recalc_all_engagement',
+        'schedule': crontab(hour=0, minute=0),
+        'options': {'expires': 3600},
+    },
+}
 
 # Application definition
 
@@ -93,6 +109,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [

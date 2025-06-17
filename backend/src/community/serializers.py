@@ -54,11 +54,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         user_instance = self.context["request"].user
         validated_data["user"] = user_instance
 
-        # Calculate and save the embedding vector
-        validated_data["embedding_vector"] = get_embedding(
-            validated_data["title"] + validated_data["body"] + ','.join(validated_data["tag"])
-        )
-
         tags = validated_data["tag"]
         del validated_data["tag"]
 

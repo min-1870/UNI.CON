@@ -3,11 +3,9 @@ from community.utils import (
     get_paginated_notifications,
     update_preference_vector,
     get_serialized_article,
-    add_embedding_to_faiss,
     get_paginated_comments,
     get_paginated_articles,
     update_article_tag,
-    get_faiss_index,
     update_article,
     get_embedding,
 
@@ -17,7 +15,17 @@ from community.constants import (
     DELETED_TITLE,
     TRENDING_TAGS,
     CACHE_TIMEOUT,
-    SHORT_CACHE_TIMEOUT
+    SHORT_CACHE_TIMEOUT,
+    
+    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
+    ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
+    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
+    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
+    ARTICLE_USER_PREFERRED_IDS_CACHE_KEY,
 )
 from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
@@ -33,6 +41,10 @@ from django.urls import resolve
 from urllib.parse import quote
 from decouple import config
 import boto3   
+from community.tasks import (
+    get_n_update_preference_vector,
+    get_n_register_embedding_vectors
+)
 
 class ArticleViewSet(viewsets.ModelViewSet):
 
@@ -58,13 +70,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         article_instance = serializer.instance
 
-        # Add the embedding to faiss
-        add_embedding_to_faiss(
-            get_faiss_index(),
-            article_instance.embedding_vector,
-            article_instance.id,
-        )
-
         # Add extra properties for the response
         get_set_temp_name_static_points(
             article_instance, user_instance
@@ -78,7 +83,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset(),
             sort_by="created_at",
-            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(
+                request.user.school.id,)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -90,7 +96,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset(),
             sort_by="engagement_score",
-            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY(
+                request.user.school.id,),
+            timeout=CACHE_TIMEOUT
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -102,8 +110,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset(),
             sort_by="embedding_result",
-            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
-            embedding_vector=request.user.embedding_vector
+            cache_key=ARTICLE_USER_PREFERRED_IDS_CACHE_KEY(
+                request.user.id,),
+            embedding_vector=request.user.embedding_vector,
+            
+
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -122,7 +133,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset(),
             sort_by="embedding_result",
-            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name + "_" + search_content,
+            cache_key=ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY(
+                request.user.school.id, search_content),
             embedding_vector=get_embedding(search_content),
             
         )
@@ -132,18 +144,19 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def search_tag(self, request):
         # Block if the body or the title is empty
-        search_content = request.GET.get("search_content", "").strip()
-        if len(search_content) == 0:
+        tag = request.GET.get("tag", "").strip()
+        if len(tag) == 0:
             return Response(
-                {"detail": "The search_content is empty."},
+                {"detail": "The tag is empty."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset().filter(articletag__tag__name__icontains=search_content).distinct(),
+            queryset=self.get_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
             sort_by="created_at",
-            cache_key=str(request.user.school.id) + "_" + resolve(request.path).view_name + "_" + search_content,
+            cache_key=ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                request.user.school.id, tag),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -155,7 +168,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset().filter(user=request.user),
             sort_by="created_at",
-            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_USER_POSTED_IDS_CACHE_KEY(
+                request.user.id,)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -167,7 +181,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset().filter(comment__user=request.user).distinct(),
             sort_by="created_at",
-            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_USER_COMMENTED_IDS_CACHE_KEY(
+                request.user.id,)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -179,7 +194,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset().filter(articlesave__user=request.user),
             sort_by="created_at",
-            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_USER_SAVED_IDS_CACHE_KEY(
+                request.user.id,)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -191,7 +207,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             request=request,
             queryset=self.get_queryset().filter(articlelike__user=request.user),
             sort_by="created_at",
-            cache_key=str(request.user.id) + "_" + resolve(request.path).view_name,
+            cache_key=ARTICLE_USER_LIKED_IDS_CACHE_KEY(
+                request.user.id,)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -234,10 +251,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
             "title": title,
             "body": body,
             "edited": True,
-            "tag": tags,
-            "embedding_vector": get_embedding(title + body + ','.join(tags))
         }
         update_article(article_instance, updated_fields)
+        get_n_register_embedding_vectors.delay(article_instance.id)
 
         return Response({"detail":"The article has been updated by user."}, status=status.HTTP_200_OK)
 
@@ -245,20 +261,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user_instance = request.user
         article_instance = self.get_object()
 
-        # Update user preference based on the embedding of article
-        updated_preference_vector = update_preference_vector(
-            user_instance.embedding_vector, article_instance.embedding_vector
-        )
-
         # Create relational data
         with transaction.atomic():
             ArticleView.objects.get_or_create(
                 user=user_instance, article=article_instance
             )
-            # Update the user's embedding vector in the database
-            user_instance.embedding_vector = updated_preference_vector
-            user_instance.save(update_fields=["embedding_vector"])
-        
+        # Update embedding vector in the user instance
+        get_n_update_preference_vector.delay(
+            article_instance.id, user_instance.id
+        )
+
         # Update the article instance & shared article attributes cache
         updated_fields = {"views_count": F("views_count") + 1}
         update_article(article_instance, updated_fields)
@@ -382,7 +394,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     articletag__article__deleted=False
                 ).annotate(
                     use_count=Count('articletag')
-                ).order_by('-use_count')[:5]
+                ).order_by('-use_count')[:30]
             cached = [tag.name for tag in tag_queryset]
             cache.set(TRENDING_TAGS(request.user.school.id), cached, SHORT_CACHE_TIMEOUT)
 

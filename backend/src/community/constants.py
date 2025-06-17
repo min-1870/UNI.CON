@@ -33,35 +33,67 @@ NOTIFICATION_GROUP_KV = {
     1: "Like",
 }
 
-TRENDING_TAGS = (
-    lambda identifier: f"{identifier}_TRENDING_TAGS"
-)
-
-NOTIFICATION_IDS_CACHE_KEY = (
-    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
+# general cache keys
+ARTICLE_CACHE_KEY = (
+    lambda article_id: f"ARTICLE_{article_id}"
 )
 NOTIFICATION_CACHE_KEY = (
     lambda notification_id: f"NOTIFICATION_{notification_id}"
 )
 
+# school specific cache keys
+TRENDING_TAGS = (
+    lambda school: f"SCHOOL_{school}_TRENDING_TAGS"
+)
+ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY = (
+    lambda school: f"SCHOOL_{school}_RECENT_ARTICLE_IDS"
+)
+ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY = (
+    lambda school: f"SCHOOL_{school}_HOT_ARTICLE_IDS"
+)
+ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY = (
+    lambda school, content: f"SCHOOL_{school}_SEARCHED_{content}_ARTICLE_IDS"
+)
+ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY = (
+    lambda school, tag: f"SCHOOL_{school}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
+)
+
+# user specific cache keys
+NOTIFICATION_USER_IDS_CACHE_KEY = (
+    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
+)
+ARTICLE_USER_LIKED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_LIKED_ARTICLE_IDS"
+)
+ARTICLE_USER_COMMENTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_COMMENTED_ARTICLE_IDS"
+)
+ARTICLE_USER_POSTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_POSTED_ARTICLE_IDS"
+)
+ARTICLE_USER_SAVED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_SAVED_ARTICLE_IDS"
+)
+ARTICLE_USER_PREFERRED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_PREFERRED_ARTICLE_IDS"
+)
+
+# user specific & non-sorted cache keys
+ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_VIEWED_UNSORTED_ARTICLE_IDS"
+)
+ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_LIKED_UNSORTED_ARTICLE_IDS"
+)
+ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_SAVED_UNSORTED_ARTICLE_IDS"
+)
+
+
+
 EMAIL_NOTIFICATIONS_THRESHOLD = 5
 
-ARTICLE_IDS_CACHE_KEY = (
-    lambda identifier: f"{identifier}_ARTICLE_IDS"
-)
-ARTICLE_CACHE_KEY = (
-    lambda article_id: f"ARTICLE_{article_id}"
-)
 
-ARTICLES_LIKE_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_LIKED-ARTICLES"
-)
-ARTICLES_VIEW_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_VIEWED-ARTICLES"
-)
-ARTICLES_SAVE_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_SAVED-ARTICLES"
-)
 COMMENTS_CACHE_KEY = (
     lambda article_id, comment_id="": f"ARTICLE_{article_id}_COMMENT_{comment_id}"
 )

@@ -1,17 +1,16 @@
 from community.constants import (
-    CACHE_TIMEOUT,
-    PAGINATOR_SIZE,
+    ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
+    ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY,
+    ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY,
     ARTICLE_CACHE_KEY,
-    ARTICLES_LIKE_CACHE_KEY,
-    ARTICLES_VIEW_CACHE_KEY,
-    ARTICLES_SAVE_CACHE_KEY,
-    ARTICLE_IDS_CACHE_KEY,
+    
     LONG_CACHE_TIMEOUT,
+    PAGINATOR_SIZE,
+    CACHE_TIMEOUT,
 )
 from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleSave, Tag
 from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
 from .response_serializers import ArticleResponseSerializer
-from .database_utils import update_article_engagement_score
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import OuterRef, Subquery, Value
 from django.utils.dateparse import parse_datetime
@@ -47,10 +46,9 @@ def to_unix_ms(dt):
     else:
         return int(timezone.now().timestamp() * 1000)
     
-def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_vector=None):
+def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vector=None, timeout=None):
 
     user_instance = request.user
-    cache_key = ARTICLE_IDS_CACHE_KEY(cache_key)
     requested_page = int(request.query_params.get("page", 1))
 
     if sort_by == 'embedding_result':
@@ -99,7 +97,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
 
         if mapping:
             redis_conn.zadd(cache_key, mapping)
-            redis_conn.expire(cache_key, LONG_CACHE_TIMEOUT)
+            redis_conn.expire(cache_key, timeout if timeout else LONG_CACHE_TIMEOUT)
 
     # Fetch new notification IDs from the cache
     raw_with_scores  = redis_conn.zrevrangebyscore(
@@ -173,7 +171,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
 
 
     # Cache user like status in bulk
-    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
+    cache_key = ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)        
     user_liked_articles = cache.get(cache_key, None)
     if user_liked_articles is None:
         user_liked_articles = ArticleLike.objects.filter(user=user_instance).values_list(
@@ -183,7 +181,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
         cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
 
     # Cache user view status in bulk
-    cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
+    cache_key = ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
     user_viewed_articles = cache.get(cache_key, None)
     if user_viewed_articles is None:
         user_viewed_articles = ArticleLike.objects.filter(user=user_instance).values_list(
@@ -193,7 +191,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key='', embedding_v
         cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
     # Cache user save status in bulk
-    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
+    cache_key = ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
     if user_saved_articles is None:
         user_saved_articles = ArticleSave.objects.filter(user=user_instance).values_list(
@@ -265,10 +263,10 @@ def get_serialized_article(request, article_instance):
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
     # Attache the user specific attribute
-    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
+    cache_key = ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
     
-    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
+    cache_key = ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
 
     # If the cache miss fetch them
@@ -325,22 +323,6 @@ def update_article_tag(request, article_instance, new_tags=[]):
                     if not ArticleTag.objects.filter(tag=tag_obj).exists():
                         tag_obj.delete()
 
-    # Update search tag cache   
-    if added_tags:
-        for tag_name in added_tags:
-            cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-search_tag_" + tag_name)
-            if redis_conn.exists(cache_key):
-                # Add the article id to the cache only if it does not exist
-                if not redis_conn.zscore(cache_key, str(article_instance.id)):
-                    redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})
-    if removed_tags:
-        for tag_name in removed_tags:
-            cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-search_tag_" + tag_name)
-            if redis_conn.exists(cache_key):
-                # Remove the article id to the cache only if it does not exist
-                if redis_conn.zscore(cache_key, str(article_instance.id)):
-                    redis_conn.zrem(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})   
-
     # Update the cache for the article
     cache_key = ARTICLE_CACHE_KEY(article_instance.id)
     serialized_annotated_article = cache.get(cache_key, None)
@@ -356,7 +338,6 @@ def update_article(article_instance, updated_fields={}):
     with transaction.atomic():
         # Update attributes for updated fields in the permanent database
         Article.objects.filter(pk=article_instance.id).update(**updated_fields)
-        update_article_engagement_score(article_instance)
         article_instance.refresh_from_db()
     
     # Update the cache
@@ -372,81 +353,23 @@ def update_article(article_instance, updated_fields={}):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
-def update_user_liked_article_cache(article_instance, like_status):
 
-    user_instance = article_instance.user
-    cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
-    user_liked_articles = cache.get(cache_key, None)
-    if user_liked_articles:
-        # Update the cache
-        user_liked_articles[article_instance.id] = like_status
-        cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
-    
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-liked-articles")
+def update_sorted_article_ids_cache(article_instance, cache_key, status):
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            if like_status:
-                # If the article is liked, add it to the cache
-                redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
+            if status:
+                redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})
         else:
-            if not like_status:
-                # If the article is unliked, remove it from the cache
-                redis_conn.zrem(cache_key, str(article_instance.id))
+            if not status:
+                redis_conn.zrem(cache_key, str(article_instance.id))    
 
-def update_user_saved_article_cache(article_instance, save_status):
 
-    user_instance = article_instance.user
-    cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
-    user_saved_articles = cache.get(cache_key, None)
-
-    if user_saved_articles:
+def update_unsorted_article_ids_cache(article_instance, cache_key, status):
+    cached = cache.get(cache_key, None)
+    if cached:
         # Update the cache
-        user_saved_articles[article_instance.id] = save_status
-        cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
+        cached[article_instance.id] = status
+        cache.set(cache_key, cached, CACHE_TIMEOUT)
+
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-saved-articles")
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            if save_status:
-                # If the article is saved, add it to the cache
-                redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
-        else:
-            if not save_status:
-                # If the article is unsaved, remove it from the cache
-                redis_conn.zrem(cache_key, str(article_instance.id))
-
-def update_user_viewed_article_cache(article_instance):
-
-    user_instance = article_instance.user
-    cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
-    user_viewed_articles = cache.get(cache_key, None)
-    if user_viewed_articles:
-        # Update the cache
-        user_viewed_articles[article_instance.id] = True
-        cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
-
-def update_user_commented_article_cache(article_instance):
-    
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-commented-articles")
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
-
-def update_user_posted_article_cache(article_instance):
-    
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-posted-articles")
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
-
-def update_recent_article_cache(article_instance):
-    
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.school.id) + "_article-list")
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})

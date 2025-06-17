@@ -1,13 +1,12 @@
 from community.constants import (
-    
     PAGINATOR_SIZE,
     
     EMAIL_NOTIFICATIONS_THRESHOLD,
-    NOTIFICATION_IDS_CACHE_KEY,
+    NOTIFICATION_USER_IDS_CACHE_KEY,
     NOTIFICATION_CACHE_KEY,
     
 )
-from community.task import send_email
+from community.tasks import send_email
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
 from .response_serializers import NotificationResponseSerializer
 from community.models import  Notification, Article, Comment
@@ -54,7 +53,7 @@ def get_paginated_notifications(request, new=True):
         
     user_instance = request.user
 
-    cache_key = NOTIFICATION_IDS_CACHE_KEY(user_instance.id, new)
+    cache_key = NOTIFICATION_USER_IDS_CACHE_KEY(user_instance.id, new)
 
     # Check if the zset exists in Redis
     if not redis_conn.exists(cache_key):
@@ -85,7 +84,7 @@ def get_paginated_notifications(request, new=True):
     # Move the zset ids to old notifications zset
     if new and id_list:
         redis_conn.zrem(cache_key, *id_list)
-        old_cache_key = NOTIFICATION_IDS_CACHE_KEY(user_instance.id, False)
+        old_cache_key = NOTIFICATION_USER_IDS_CACHE_KEY(user_instance.id, False)
         if redis_conn.exists(old_cache_key):
             redis_conn.zadd(old_cache_key, mapping)
         
@@ -198,7 +197,7 @@ def add_notification(notification_type, user_instance, model_class, object_id):
             email=False
         )
 
-    cache_key = NOTIFICATION_IDS_CACHE_KEY(
+    cache_key = NOTIFICATION_USER_IDS_CACHE_KEY(
         user_instance.id, True
     )
     

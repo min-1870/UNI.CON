@@ -3,6 +3,10 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from community.constants import NOTIFICATION_GROUP
+import numpy as np
+
+def default_embedding_vectors():
+    return np.zeros(1536).tolist()
 
 class Article(models.Model):
     title = models.CharField(max_length=100, default="unknown", null=False)
@@ -18,7 +22,7 @@ class Article(models.Model):
     comments_count = models.IntegerField(default=0, null=False)
     likes_count = models.IntegerField(default=0, null=False)
 
-    embedding_vector = models.JSONField(null=False, blank=True)
+    embedding_vector = models.JSONField(null=False, blank=True, default=default_embedding_vectors)
     engagement_score = models.FloatField(default=0, null=False)
 
     class Meta:
