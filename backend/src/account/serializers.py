@@ -10,7 +10,6 @@ import re
 class UserSerializer(serializers.ModelSerializer):
     initial = serializers.CharField(read_only=True)
     color = serializers.CharField(read_only=True)
-    points = serializers.IntegerField(read_only=True)
     refresh = serializers.CharField(read_only=True)
     access = serializers.CharField(read_only=True)
     university_colors = serializers.DictField(read_only=True)

@@ -1,5 +1,4 @@
 from rest_framework_simplejwt.tokens import RefreshToken
-from community.utils import get_current_user_points
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from decouple import config
@@ -69,7 +68,6 @@ def annotate_user(user_instance, params=None):
     university = user_instance.school.name
     initial = user_instance.school.initial
     color = user_instance.school.color
-    points = get_current_user_points(user_instance.id)
     refresh = RefreshToken.for_user(user_instance)
     access = RefreshToken.for_user(user_instance).access_token
     if params:
@@ -79,7 +77,6 @@ def annotate_user(user_instance, params=None):
         user_instance.university = university
         user_instance.initial = initial
         user_instance.color = color
-        user_instance.points = points
         user_instance.refresh = refresh
         user_instance.access = access
         return user_instance

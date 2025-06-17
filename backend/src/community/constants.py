@@ -1,3 +1,15 @@
+USER_POINT_DELTA = {
+    'article':{
+        'view': 1,
+        'like': 2,
+        'comment': 3,
+    },
+    'comment': {
+        'like': 1,
+        'comment': 2,
+    }
+}
+
 SHORT_CACHE_TIMEOUT = 60 * 10 # 10 Minutes
 CACHE_TIMEOUT = 60 * 60 # 1 Hour
 LONG_CACHE_TIMEOUT = 60 * 60 * 24 # 1 Day

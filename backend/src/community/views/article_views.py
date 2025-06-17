@@ -1,19 +1,12 @@
 from community.utils import (
-    ArticleResponseSerializer,
     get_set_temp_name_static_points,
-    update_user_viewed_article_cache,
-    update_user_saved_article_cache,
-    update_user_liked_article_cache,
-    update_user_posted_article_cache,
     get_paginated_notifications,
-    update_recent_article_cache,
     update_preference_vector,
     get_serialized_article,
     add_embedding_to_faiss,
     get_paginated_comments,
     get_paginated_articles,
     update_article_tag,
-    add_notification,
     get_faiss_index,
     update_article,
     get_embedding,
@@ -71,10 +64,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article_instance.embedding_vector,
             article_instance.id,
         )
-
-        # Add article id to the cache
-        update_user_posted_article_cache(request, article_instance)
-        update_recent_article_cache(request, article_instance)
 
         # Add extra properties for the response
         get_set_temp_name_static_points(
@@ -264,7 +253,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Create relational data
         with transaction.atomic():
             ArticleView.objects.get_or_create(
-            user=user_instance, article=article_instance
+                user=user_instance, article=article_instance
             )
             # Update the user's embedding vector in the database
             user_instance.embedding_vector = updated_preference_vector
@@ -273,9 +262,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update the article instance & shared article attributes cache
         updated_fields = {"views_count": F("views_count") + 1}
         update_article(article_instance, updated_fields)
-
-        # update the user specific cache
-        update_user_viewed_article_cache(request, article_instance)
 
         # Fetch the article response data
         article_response_data = get_serialized_article(request, article_instance)
@@ -318,9 +304,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The article already saved by the user."},
                 status=status.HTTP_304_NOT_MODIFIED,
             )
-        
-        # Set save status cache
-        update_user_saved_article_cache(request, article_instance, True)
 
         return Response({"detail":"The article has been saved."}, status=status.HTTP_200_OK)
 
@@ -340,9 +323,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {"detail": "The article already unsaved by the user."},
                 status=status.HTTP_304_NOT_MODIFIED,
             )
-        
-        # Set save status cache
-        update_user_saved_article_cache(request, article_instance, False)
 
         return Response({"detail":"The article has been removed from saved articles."}, status=status.HTTP_200_OK)
 
@@ -367,18 +347,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         updated_fields = {"likes_count": F("likes_count") + 1}
         update_article(article_instance, updated_fields)
 
-        # update the user specific cache
-        update_user_liked_article_cache(request, article_instance, True)
-
-        # Add notification
-        if article_instance.user != user_instance:
-            add_notification(
-                1,
-                article_instance.user,
-                Article,
-                article_instance.id
-            )
-
         return Response({"detail":"The article has been liked by user."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
@@ -401,9 +369,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update the article instance & shared article attributes cache
         updated_fields = {"likes_count": F("likes_count") - 1}
         update_article(article_instance, updated_fields)
-
-        # update the user specific cache
-        update_user_liked_article_cache(request, article_instance, False)
 
         return Response({"detail":"The article has been unliked by user."}, status=status.HTTP_200_OK)
 

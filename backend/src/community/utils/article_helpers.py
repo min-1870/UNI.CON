@@ -372,9 +372,9 @@ def update_article(article_instance, updated_fields={}):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
-def update_user_liked_article_cache(request, article_instance, like_status):
+def update_user_liked_article_cache(article_instance, like_status):
 
-    user_instance = request.user
+    user_instance = article_instance.user
     cache_key = ARTICLES_LIKE_CACHE_KEY(user_instance.id)
     user_liked_articles = cache.get(cache_key, None)
     if user_liked_articles:
@@ -382,7 +382,7 @@ def update_user_liked_article_cache(request, article_instance, like_status):
         user_liked_articles[article_instance.id] = like_status
         cache.set(cache_key, user_liked_articles, CACHE_TIMEOUT)
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-liked-articles")
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-liked-articles")
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
@@ -394,9 +394,9 @@ def update_user_liked_article_cache(request, article_instance, like_status):
                 # If the article is unliked, remove it from the cache
                 redis_conn.zrem(cache_key, str(article_instance.id))
 
-def update_user_saved_article_cache(request, article_instance, save_status):
+def update_user_saved_article_cache(article_instance, save_status):
 
-    user_instance = request.user
+    user_instance = article_instance.user
     cache_key = ARTICLES_SAVE_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
 
@@ -405,7 +405,7 @@ def update_user_saved_article_cache(request, article_instance, save_status):
         user_saved_articles[article_instance.id] = save_status
         cache.set(cache_key, user_saved_articles, CACHE_TIMEOUT)
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-saved-articles")
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-saved-articles")
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
@@ -417,9 +417,9 @@ def update_user_saved_article_cache(request, article_instance, save_status):
                 # If the article is unsaved, remove it from the cache
                 redis_conn.zrem(cache_key, str(article_instance.id))
 
-def update_user_viewed_article_cache(request, article_instance):
+def update_user_viewed_article_cache(article_instance):
 
-    user_instance = request.user
+    user_instance = article_instance.user
     cache_key = ARTICLES_VIEW_CACHE_KEY(user_instance.id)
     user_viewed_articles = cache.get(cache_key, None)
     if user_viewed_articles:
@@ -427,25 +427,25 @@ def update_user_viewed_article_cache(request, article_instance):
         user_viewed_articles[article_instance.id] = True
         cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
 
-def update_user_commented_article_cache(request, article_instance):
+def update_user_commented_article_cache(article_instance):
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-commented-articles")
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-commented-articles")
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
             redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
 
-def update_user_posted_article_cache(request, article_instance):
+def update_user_posted_article_cache(article_instance):
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.id) + "_article-posted-articles")
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.id) + "_article-posted-articles")
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):
             redis_conn.zadd(cache_key, {str(article_instance.id): timezone.now().timestamp() * 1000})
 
-def update_recent_article_cache(request, article_instance):
+def update_recent_article_cache(article_instance):
     
-    cache_key = ARTICLE_IDS_CACHE_KEY(str(request.user.school.id) + "_article-list")
+    cache_key = ARTICLE_IDS_CACHE_KEY(str(article_instance.user.school.id) + "_article-list")
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
         if not redis_conn.zscore(cache_key, str(article_instance.id)):

@@ -1,11 +1,8 @@
 from community.utils import (
     get_paginated_comments,
     update_article,
-    update_user_commented_article_cache,
     add_comment,
     update_comment,
-    update_user_liked_comments_cache,
-    add_notification
 )
 from community.permissions import Comment_IsAuthenticated
 from community.serializers import CommentSerializer
@@ -45,27 +42,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Update the article & comment's instance & cache
         updated_fields = {"comments_count": F("comments_count") + 1}
         update_article(comment_instance.article, updated_fields)
-        update_user_commented_article_cache(request, comment_instance.article)
-
-        # Update the parent comment's instance & cache
         if comment_instance.parent_comment:
             update_comment(comment_instance.parent_comment, updated_fields)
-            if comment_instance.parent_comment.user != user_instance:
-                add_notification(
-                    0,
-                    comment_instance.parent_comment.user,
-                    Comment,
-                    comment_instance.article.id
-                )
-        else:
-            add_notification(
-                0,
-                comment_instance.article.user,
-                Article,
-                comment_instance.article.id
-            )
-        response_data = add_comment(comment_instance, user_instance)
 
+        response_data = add_comment(comment_instance, user_instance)
         
         return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -151,16 +131,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         updated_fields = {"likes_count": F("likes_count") + 1}
         update_comment(comment_instance, updated_fields)
-        update_user_liked_comments_cache(comment_instance, user_instance, True)
-
-        # Add notification
-        if comment_instance.user != user_instance:
-            add_notification(
-                1,
-                comment_instance.user,
-                Comment,
-                comment_instance.article.id
-            )
 
         return Response({"detail":"The comment has been liked by user."}, status=status.HTTP_200_OK)
 
@@ -182,6 +152,5 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         updated_fields = {"likes_count": F("likes_count") - 1}
         update_comment(comment_instance, updated_fields)
-        update_user_liked_comments_cache(comment_instance, user_instance, False)
 
         return Response({"detail":"The comment has been unliked by user."}, status=status.HTTP_200_OK)

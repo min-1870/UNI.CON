@@ -25,8 +25,8 @@ from .notification_helpers import (
 
 from .database_utils import (
     update_article_engagement_score,
-    get_current_user_points,
     get_set_temp_name_static_points,
+    update_user_points,
 )
 from .embedding_utils import (
     get_embedding,
