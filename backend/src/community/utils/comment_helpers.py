@@ -1,8 +1,10 @@
 from community.constants import (
     CACHE_TIMEOUT,
     PAGINATOR_SIZE,
-    COMMENTS_CACHE_KEY,
-    COMMENTS_LIKE_CACHE_KEY,
+    LONG_CACHE_TIMEOUT,
+    COMMENT_SCHOOL_IDS_CACHE_KEY,
+    COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
+    COMMENT_CACHE_KEY
 )
 from .database_utils import get_set_temp_name_static_points
 from community.models import ArticleUser, Comment, CommentLike
@@ -12,48 +14,100 @@ from django.core.cache import cache
 from account.models import User
 from django.db import transaction
 
+# --------------- NEW ---------------
+
+from django.utils.dateparse import parse_datetime
+from django_redis import get_redis_connection
+from django.utils import timezone
+redis_conn = get_redis_connection("default")
+
+def to_unix_ms(dt):
+    """
+    Convert a Django DateTimeField (aware or naive) to an integer
+    timestamp in milliseconds.
+    """
+    if dt:
+        # If dt is a string, try to parse it
+        if isinstance(dt, str):
+            try:
+                parsed_dt = parse_datetime(dt)
+                if parsed_dt is not None:
+                    dt = parsed_dt
+                else:
+                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
+            except Exception:
+                dt = timezone.now()
+        if timezone.is_naive(dt):
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp() * 1000)
+    else:
+        return int(timezone.now().timestamp() * 1000)
+    
+
 def get_paginated_comments(
     request, article_instance, parent_comment_instance=None
 ):
-
-    try:
-        requested_page = int(request.query_params.get("page", 1))
-    except Exception:
-        requested_page = 0
     user_instance = request.user
+    requested_page = int(request.query_params.get("page", 1))
+    dt = request.query_params.get("dt", to_unix_ms(None))
 
-    # Cache comments
-    cache_key = COMMENTS_CACHE_KEY(
-        article_instance.id, parent_comment_instance.id if parent_comment_instance else ""
+    cache_key = COMMENT_SCHOOL_IDS_CACHE_KEY(
+        article_instance.id, '' if parent_comment_instance is None
+        else parent_comment_instance.id
     )
-    comments_cache = cache.get(cache_key)
 
-    # Initiate the cache if the cache is missing
-    if comments_cache is None:
-        total_comments = (
-            Comment.objects.filter(article=article_instance)
-            .filter(
-                Q(parent_comment=parent_comment_instance)
-                if parent_comment_instance
-                else Q(parent_comment__isnull=True)
-            )
-            .count()
+    # Check if the zset exists in Redis
+    if not redis_conn.exists(cache_key):
+        comments = Comment.objects.filter(
+            article=article_instance
+        ).filter(
+            Q(parent_comment=parent_comment_instance)
+            if parent_comment_instance
+            else Q(parent_comment__isnull=True)
+        ).values_list(
+            "id", "created_at"
         )
-        comments_cache = {"total_comments": total_comments, "comments": {}}
-        cache.set(cache_key, comments_cache, CACHE_TIMEOUT)
+            
+        mapping = {}
+        for nid, value in comments:
+            mapping[str(nid)] = to_unix_ms(value)
 
-    if comments_cache["total_comments"] == 0:
-        return {
-            "count": comments_cache["total_comments"],
-            "next": None,
-            "results": {"comments": []},
-        }
+        if mapping:
+            redis_conn.zadd(cache_key, mapping)
+            redis_conn.expire(cache_key, LONG_CACHE_TIMEOUT)
 
-    # Fetch comments if the cache does not have enough comments
-    if len(comments_cache["comments"]) < requested_page * PAGINATOR_SIZE:
-        start_index = len(comments_cache["comments"])
-        end_index = min(comments_cache["total_comments"], requested_page * PAGINATOR_SIZE)
-        comment_queryset = (
+    # Fetch new notification IDs from the cache
+    raw_with_scores  = redis_conn.zrevrangebyscore(
+        cache_key,
+        max=dt,
+        min=0,
+        start= (requested_page - 1) * PAGINATOR_SIZE,
+        num= PAGINATOR_SIZE,
+        withscores=True 
+    )
+    mapping = {member.decode(): int(score) for member, score in raw_with_scores }
+    id_list = list(mapping.keys())
+
+    # Bulk get article from cache
+    cache_keys = [COMMENT_CACHE_KEY(nid) for nid in id_list]
+    cached = cache.get_many(cache_keys)
+
+    # Build the results dictionary
+    results = {}
+    missing_ids = []
+    for nid in id_list:
+        key = COMMENT_CACHE_KEY(nid)
+        serialized_article = cached.get(key)
+        if serialized_article is None:
+            missing_ids.append(nid)
+            results[nid] = None
+        else:
+            results[nid] = serialized_article
+
+    missing_annotated_comment_queryset = {}
+    if len(missing_ids) > 0:
+        # Query all of the missing article ids
+        missing_annotated_comment_queryset = (
             Comment.objects.filter(article=article_instance)
             .filter(
                 Q(parent_comment=parent_comment_instance)
@@ -75,56 +129,88 @@ def get_paginated_comments(
                     User.objects.filter(id=OuterRef("user")).values("school__initial")[:1]
                 ),
             )
-            .order_by("-created_at")[start_index:end_index]
         )
 
-        # Serialize and set the cache
-        new_serialized_comments = CommentResponseSerializer(
-            comment_queryset, many=True
-        ).data
-        new_serialized_comments = {
-            comment["id"]: comment for comment in new_serialized_comments
-        }
-        comments_cache["comments"].update(new_serialized_comments)
-        cache.set(cache_key, comments_cache, CACHE_TIMEOUT)
+    # Serialized the missing comments
+    missing_serialized_annotated_comments = CommentResponseSerializer(
+        missing_annotated_comment_queryset, many=True
+    ).data
 
-    # Slice the comments that user requested only
-    start_index = (requested_page - 1) * 10
-    end_index = start_index + PAGINATOR_SIZE
-    # print(start_index,end_index)
-    serialized_comments = list(comments_cache["comments"].values())[start_index:end_index]
+    # Set annotated comment cache in bulk
+    missing_serialized_annotated_comments = {
+        COMMENT_CACHE_KEY(comment["id"]): comment
+        for comment in missing_serialized_annotated_comments
+    }
+    cache.set_many(missing_serialized_annotated_comments, timeout=CACHE_TIMEOUT)
 
     # Cache user like status in bulk
-    cache_key = COMMENTS_LIKE_CACHE_KEY(user_instance.id)
+    cache_key = COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)        
     user_liked_comments = cache.get(cache_key, None)
     if user_liked_comments is None:
         user_liked_comments = CommentLike.objects.filter(user=user_instance).values_list(
             "comment", flat=True
         )
         user_liked_comments = {pk: True for pk in user_liked_comments}
-        
         cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
+
+    # Insert the missing articles and attach user specific data while maintain the order
+    for nid in id_list:
+        if results[nid] is None:
+            results[nid] = missing_serialized_annotated_comments.get(COMMENT_CACHE_KEY(nid), None)
+        
+        # Attach user specific data
+        results[nid]["like_status"] = user_liked_comments.get(
+            results[nid]["id"], False
+        )
     
-    # Attach user specific data
-    for comment in serialized_comments:
-        comment["like_status"] = user_liked_comments.get(comment["id"], False)
-
-    # Construct the response data with necessary pagination attributes
-    url = request.build_absolute_uri()
-    if end_index < comments_cache["total_comments"]:
-        next_page = f"{url.split('?')[0]}?page={requested_page + 1}"
-    else:
+    if len(results.items()) < PAGINATOR_SIZE:
         next_page = None
-
+    else:
+        url = request.build_absolute_uri()
+        next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
+        
     return {
-        "count": comments_cache["total_comments"],
         "next": next_page,
-        "results": {"comments": serialized_comments},
+        "results": {"comments": results.values()},
     }
 
-def update_comment(comment_instance, updated_fields=None):
-    if updated_fields is None:
-        updated_fields = {}
+def get_serialized_comment(request, comment_instance):
+
+    # Cache the annotated comment
+    cache_key = COMMENT_CACHE_KEY(comment_instance.id)
+    serialized_annotated_comment = cache.get(cache_key, None)
+    user_instance = request.user
+
+    # If the cache missed
+    if serialized_annotated_comment is None:
+
+        # Annotate article instance
+        articleUser_instance = ArticleUser.objects.get(
+            article=comment_instance.article, user=comment_instance.user
+        )
+        comment_instance.user_temp_name = articleUser_instance.user_temp_name
+        comment_instance.user_static_points = articleUser_instance.user_static_points
+
+        # Make an annotated_comment to set the cache
+        serialized_annotated_comment = CommentResponseSerializer(comment_instance).data
+        cache.set(cache_key, serialized_annotated_comment, timeout=CACHE_TIMEOUT)
+
+    # Cache user like status in bulk
+    cache_key = COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)        
+    user_liked_comments = cache.get(cache_key, None)
+    if user_liked_comments is None:
+        user_liked_comments = CommentLike.objects.filter(user=user_instance).values_list(
+            "comment", flat=True
+        )
+        user_liked_comments = {pk: True for pk in user_liked_comments}
+        cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
+
+    like_status = user_liked_comments.get(comment_instance.id, False)
+    serialized_annotated_comment["like_status"] = like_status
+
+    return serialized_annotated_comment
+
+def update_comment(comment_instance, updated_fields={}):
     
     # Start an atomic transaction for database updates
     with transaction.atomic():
@@ -132,58 +218,27 @@ def update_comment(comment_instance, updated_fields=None):
         comment_instance.refresh_from_db()
 
     # Cache the comment
-    cache_key = COMMENTS_CACHE_KEY(
-        comment_instance.article.id,
-        comment_instance.parent_comment.id if comment_instance.parent_comment else "",
+    cache_key = COMMENT_CACHE_KEY(
+        comment_instance.id,
     )
-    serialized_annotated_comments = cache.get(cache_key, None)
+    serialized_annotated_comment = cache.get(cache_key, None)
 
-    if serialized_annotated_comments:
+    if serialized_annotated_comment:
 
         # Update and set the cache
-        serialized_comment = serialized_annotated_comments["comments"][comment_instance.id]
         for field in updated_fields.keys():
-            serialized_comment[field] = getattr(comment_instance, field)
-        cache.set(cache_key, serialized_annotated_comments)
+            serialized_annotated_comment[field] = getattr(comment_instance, field)
+        cache.set(cache_key, serialized_annotated_comment, CACHE_TIMEOUT)
 
+def update_sorted_comment_ids_cache(comment_instance, cache_key):
+    if redis_conn.exists(cache_key):
+        # Add the article id to the cache only if it does not exist
+        if not redis_conn.zscore(cache_key, str(comment_instance.id)):
+                redis_conn.zadd(cache_key, {str(comment_instance.id): to_unix_ms(comment_instance.created_at)})
 
-def add_comment(comment_instance, user_instance):
-    # Attach additional attributes
-    user_temp_name, user_static_points = get_set_temp_name_static_points(
-        comment_instance.article, user_instance
-    )
-    comment_instance.user_temp_name = user_temp_name
-    comment_instance.user_static_points = user_static_points
-    comment_instance.user_school = user_instance.school.initial
-    serialized_comment = CommentResponseSerializer(comment_instance).data
-
-    # Update the cache
-    cache_key = COMMENTS_CACHE_KEY(
-        comment_instance.article.id,
-        comment_instance.parent_comment.id if comment_instance.parent_comment else "",
-    )
-    comments_cache = cache.get(cache_key)
-    if comments_cache:
-        comments_cache["total_comments"] += 1
-
-        # Insert the comment at the beginning of cache
-        comments = {serialized_comment["id"]: serialized_comment}
-        comments.update(comments_cache["comments"])
-        comments_cache["comments"] = comments
-        cache.set(cache_key, comments_cache, CACHE_TIMEOUT)
-
-    serialized_comment["like_status"] = False
-
-    return serialized_comment
-
-
-def update_user_liked_comments_cache(comment_instance, user_instance, like_status):
-    
-    # Cache user like status in bulk
-    cache_key = COMMENTS_LIKE_CACHE_KEY(user_instance.id)
-    user_liked_comments = cache.get(cache_key, None)
-    
-    if user_liked_comments:
-        user_liked_comments[comment_instance.id] = like_status
-        cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
-    
+def update_unsorted_comment_ids_cache(comment_instance, cache_key, status):
+    cached = cache.get(cache_key, None)
+    if cached:
+        # Update the cache
+        cached[comment_instance.id] = status
+        cache.set(cache_key, cached, CACHE_TIMEOUT)

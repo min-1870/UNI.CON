@@ -1,7 +1,6 @@
 from community.utils import (
     get_set_temp_name_static_points,
     get_paginated_notifications,
-    update_preference_vector,
     get_serialized_article,
     get_paginated_comments,
     get_paginated_articles,
@@ -11,21 +10,24 @@ from community.utils import (
 
 )
 from community.constants import (
-    DELETED_BODY,
-    DELETED_TITLE,
-    TRENDING_TAGS,
-    CACHE_TIMEOUT,
-    SHORT_CACHE_TIMEOUT,
-    
+    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
+
     ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
-    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
-    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
     ARTICLE_USER_PREFERRED_IDS_CACHE_KEY,
+    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
+    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
+    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
+
+    TRENDING_TAGS_CACHE_KEY,
+
+    SHORT_CACHE_TIMEOUT,
+    CACHE_TIMEOUT,
+
+    DELETED_BODY,
+    DELETED_TITLE,
 )
 from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
@@ -37,7 +39,6 @@ from django.db.models import F, Q, Count
 from django.http import JsonResponse
 from django.core.cache import cache
 from django.db import transaction
-from django.urls import resolve
 from urllib.parse import quote
 from decouple import config
 import boto3   
@@ -246,7 +247,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         tags = request.data.get("tag", [])
-        update_article_tag(request, article_instance, tags)
+        update_article_tag(article_instance, tags)
         updated_fields = {
             "title": title,
             "body": body,
@@ -295,7 +296,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         # Update the article instance & shared article attributes cache
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
         tags = request.data.get("tag", [])
-        update_article_tag(request, article_instance, tags)
+        update_article_tag(article_instance, tags)
         update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)
@@ -387,7 +388,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def trending_tags(self, request, *args, **kwargs): 
 
-        cached = cache.get(TRENDING_TAGS(request.user.school.id))
+        cached = cache.get(TRENDING_TAGS_CACHE_KEY(request.user.school.id))
         if not cached:
             tag_queryset = Tag.objects.filter(
                     articletag__article__user__school=request.user.school,
@@ -396,7 +397,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     use_count=Count('articletag')
                 ).order_by('-use_count')[:30]
             cached = [tag.name for tag in tag_queryset]
-            cache.set(TRENDING_TAGS(request.user.school.id), cached, SHORT_CACHE_TIMEOUT)
+            cache.set(TRENDING_TAGS_CACHE_KEY(request.user.school.id), cached, SHORT_CACHE_TIMEOUT)
 
         return Response({"tags":cached}, status=status.HTTP_200_OK)
     

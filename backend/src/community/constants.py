@@ -37,12 +37,15 @@ NOTIFICATION_GROUP_KV = {
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )
+COMMENT_CACHE_KEY = (
+    lambda article_id: f"COMMENT_{article_id}"
+)
 NOTIFICATION_CACHE_KEY = (
     lambda notification_id: f"NOTIFICATION_{notification_id}"
 )
 
 # school specific cache keys
-TRENDING_TAGS = (
+TRENDING_TAGS_CACHE_KEY = (
     lambda school: f"SCHOOL_{school}_TRENDING_TAGS"
 )
 ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY = (
@@ -56,6 +59,9 @@ ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY = (
 )
 ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY = (
     lambda school, tag: f"SCHOOL_{school}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
+)
+COMMENT_SCHOOL_IDS_CACHE_KEY = (
+    lambda article_id, parent_comment_id: f"ARTICLE_{article_id}_COMMENT_{parent_comment_id}_COMMENT_IDS"
 )
 
 # user specific cache keys
@@ -88,18 +94,12 @@ ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY = (
 ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_SAVED_UNSORTED_ARTICLE_IDS"
 )
-
+COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_LIKED_UNSORTED_COMMENT_IDS"
+)
 
 
 EMAIL_NOTIFICATIONS_THRESHOLD = 5
-
-
-COMMENTS_CACHE_KEY = (
-    lambda article_id, comment_id="": f"ARTICLE_{article_id}_COMMENT_{comment_id}"
-)
-COMMENTS_LIKE_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_LIKED-COMMENTS"
-)
 
 
 DELETED_TITLE = "[DELETED ARTICLE]"

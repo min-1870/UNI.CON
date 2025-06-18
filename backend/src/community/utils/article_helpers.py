@@ -99,7 +99,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
             redis_conn.zadd(cache_key, mapping)
             redis_conn.expire(cache_key, timeout if timeout else LONG_CACHE_TIMEOUT)
 
-    # Fetch new notification IDs from the cache
+    # Fetch new article IDs from the cache
     raw_with_scores  = redis_conn.zrevrangebyscore(
         cache_key,
         max=dt if sort_by == 'created_at' else score,
@@ -111,7 +111,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }
     id_list = list(mapping.keys())
 
-    # Bulk get notifications from cache
+    # Bulk get article from cache
     cache_keys = [ARTICLE_CACHE_KEY(nid) for nid in id_list]
     cached = cache.get_many(cache_keys)
 
@@ -292,7 +292,7 @@ def get_serialized_article(request, article_instance):
 
     return serialized_annotated_article
 
-def update_article_tag(request, article_instance, new_tags=[]):
+def update_article_tag(article_instance, new_tags=[]):
     old_tags = ArticleTag.objects.filter(article=article_instance).values_list(
         "tag__name", flat=True
     )
@@ -331,7 +331,6 @@ def update_article_tag(request, article_instance, new_tags=[]):
         serialized_annotated_article['tag'] = new_tags
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT) 
 
-
 def update_article(article_instance, updated_fields={}):
 
     # Start an atomic transaction for database updates
@@ -353,7 +352,6 @@ def update_article(article_instance, updated_fields={}):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
-
 def update_sorted_article_ids_cache(article_instance, cache_key, status):
     if redis_conn.exists(cache_key):
         # Add the article id to the cache only if it does not exist
@@ -363,7 +361,6 @@ def update_sorted_article_ids_cache(article_instance, cache_key, status):
         else:
             if not status:
                 redis_conn.zrem(cache_key, str(article_instance.id))    
-
 
 def update_unsorted_article_ids_cache(article_instance, cache_key, status):
     cached = cache.get(cache_key, None)

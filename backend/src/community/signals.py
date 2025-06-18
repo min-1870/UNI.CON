@@ -5,23 +5,32 @@ from django.dispatch import receiver
 from community.models import Comment, CommentLike, Article, ArticleView, ArticleLike, ArticleSave, ArticleTag
 from community.tasks import get_n_register_embedding_vectors
 from community.utils import (
-    update_user_liked_comments_cache,
     add_notification,
     update_user_points,
     update_article_engagement_score,
+
     update_sorted_article_ids_cache,
-    update_unsorted_article_ids_cache
+    update_unsorted_article_ids_cache,
+
+    update_sorted_comment_ids_cache,
+    update_unsorted_comment_ids_cache
 )
 from community.constants import (
-    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
-    ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
-    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
-    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
+
     ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY,
     ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
     ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY,
+
+    ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
+    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
+    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
+    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
+
+    COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
+    COMMENT_SCHOOL_IDS_CACHE_KEY,
+
     USER_POINT_DELTA,
 )
 
@@ -34,6 +43,12 @@ def on_comment_save(sender, instance, created, **kwargs):
             instance.article,
             ARTICLE_USER_COMMENTED_IDS_CACHE_KEY(instance.user.id),
             True
+        )
+        update_sorted_comment_ids_cache(
+            instance,
+            COMMENT_SCHOOL_IDS_CACHE_KEY(
+                instance.article.id, instance.parent_comment.id 
+                if instance.parent_comment else ''),
         )
         update_article_engagement_score(instance.article)
         if instance.parent_comment:
@@ -68,7 +83,12 @@ def on_comment_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CommentLike)
 def on_commentLike_save(sender, instance, created, **kwargs):
     if created:
-        update_user_liked_comments_cache(instance.comment, instance.user, True)
+        update_unsorted_comment_ids_cache(
+            instance.comment,
+            COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
+                instance.user.id),
+            True
+        )
         if instance.comment.user != instance.user:
             # Add notification
             add_notification(
@@ -85,7 +105,12 @@ def on_commentLike_save(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=CommentLike)
 def on_commentLike_delete(sender, instance, **kwargs):
-    update_user_liked_comments_cache(instance.comment, instance.user, False)
+    update_unsorted_comment_ids_cache(
+        instance.comment,
+        COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
+            instance.user.id),
+        False
+    )
     if instance.comment.user != instance.user:
         # Update user points
         update_user_points(

@@ -1,12 +1,13 @@
 from community.utils import (
+    get_set_temp_name_static_points,
     get_paginated_comments,
+    get_serialized_comment,
     update_article,
-    add_comment,
     update_comment,
 )
 from community.permissions import Comment_IsAuthenticated
 from community.serializers import CommentSerializer
-from community.models import Article, Comment, CommentLike
+from community.models import Comment, CommentLike
 from community.constants import DELETED_BODY
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -39,15 +40,20 @@ class CommentViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         comment_instance = serializer.instance
 
+        # Add extra properties for the response
+        get_set_temp_name_static_points(
+            comment_instance.article, user_instance
+        )
+
         # Update the article & comment's instance & cache
         updated_fields = {"comments_count": F("comments_count") + 1}
         update_article(comment_instance.article, updated_fields)
         if comment_instance.parent_comment:
             update_comment(comment_instance.parent_comment, updated_fields)
-
-        response_data = add_comment(comment_instance, user_instance)
         
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        comment_data = get_serialized_comment(request, comment_instance)
+
+        return Response(comment_data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
         return Response(
@@ -106,9 +112,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         comment_instance = self.get_object()
 
-        article_instance = comment_instance.article
         paginated_comments = get_paginated_comments(
-            request, article_instance, comment_instance
+            request, comment_instance.article, comment_instance
         )
 
         return Response(paginated_comments)
