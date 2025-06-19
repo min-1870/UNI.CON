@@ -65,7 +65,8 @@ export default function LoginPage() {
         text1: `Hi, ${response.data.id}!`,
       });
 
-      router.push("/(tabs)");
+      // Navigate to sign up page
+      router.replace("/sign-up");
     } else {
       setError(response?.data?.detail || "An error occurred");
       Toast.show({

@@ -22,29 +22,8 @@ export default function LoginPage() {
   const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
   const discovery = {
     authorizationEndpoint: URLs.authorizationEndpoint,
-    tokenEndpoint:         URLs.tokenEndpoint,
+    tokenEndpoint: URLs.tokenEndpoint,
   };
-
-  /*
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-    expoClientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-
-      Toast.show({
-        type: 'success',
-        text1: 'Signed in with Google!',
-      });
-
-      // Send token to backend or process login here if needed
-      router.push("/(tabs)");
-    }
-  }, [response]);
-  */
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -72,7 +51,7 @@ export default function LoginPage() {
         text1: `Hi, ${response.data.id}!`,
       });
 
-      router.push("/(tabs)");
+      router.push("/feed");
     } else {
       setError(response?.data?.detail || "An error occurred");
       Toast.show({
@@ -88,7 +67,6 @@ export default function LoginPage() {
   const googleLogin = async () => {
     setLoading(true);
     try {
-      // Generate a code verifier and challenge for PKCE
       const request = new AuthSession.AuthRequest({
         clientId: URLs.GOOGLE_CLIENT_ID,
         scopes: ['openid', 'profile', 'email'], 
@@ -100,14 +78,12 @@ export default function LoginPage() {
         },
       });
 
-      // Send to Oauth
       await request.makeAuthUrlAsync(discovery);
       const oauth_response = await request.promptAsync(discovery);
 
       if (oauth_response.type === 'success') {
         const { code } = oauth_response.params;
         
-        // Send back the response to API server
         const login_response = await fetchAPI(
           URLs.GOOGLE_LOGIN, {
           method: 'POST',
@@ -122,7 +98,6 @@ export default function LoginPage() {
           setError(login_response?.data?.detail || "Google account is not registered");
           return;
         }
-
       } else {
         setError("Failed to login with Google");
       }
@@ -137,16 +112,16 @@ export default function LoginPage() {
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText type="Wording">Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
 
         <ThemedText>University Email</ThemedText>
         <View style={styles.emailRow}>
-        <ThemedInput
-          onChangeText={setEmail}
-          value={email}
-          keyboardType='email-address'
-        />
+          <ThemedInput
+            onChangeText={setEmail}
+            value={email}
+            keyboardType='email-address'
+          />
         </View>
 
         <ThemedText>Password</ThemedText>
@@ -161,14 +136,14 @@ export default function LoginPage() {
         {error ? <ThemedText type="error">{error}</ThemedText> : null}
 
         <ThemedText
-  type="link"
-  onPress={() => router.push("/forgot-password")}
-  style={styles.passwordForgot}
->
-  Forgot Password?
-</ThemedText>
+          type="link"
+          onPress={() => router.push("/Login")}
+          style={styles.passwordForgot}
+        >
+          Forgot Password?
+        </ThemedText>
 
-        <ThemedButton onPress={handleSubmit} disabled={loading} style={styles.loginButton}>
+        <ThemedButton onPress={handleSubmit} disabled={loading} type="auth">
           {loading ? 'Logging in...' : 'Login'}
         </ThemedButton>
 
@@ -179,7 +154,7 @@ export default function LoginPage() {
         </ThemedText>
 
         <View style={styles.socialButtonContainer}>
-          <ThemedButton onPress={() => googleLogin()} disabled={loading} style={styles.googleButton}>
+          <ThemedButton onPress={() => googleLogin()} disabled={loading} type="auth">
             <View style={styles.googleButtonContent}>
               <View style={styles.googleIconWrapper}>
                 {/* @ts-ignore */}
@@ -240,7 +215,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emailRow: {
-    backgroundColor:'f3f4f6',
+    backgroundColor: '#f3f4f6',
     height: 50,
     flexDirection: 'row',
     alignItems: 'center',
@@ -248,7 +223,6 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginBottom: 0,
   },
-
   passwordRow: {
     height: 50,
     flexDirection: 'row',
@@ -263,14 +237,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 40,
     textDecorationLine: 'underline',
-  },
-  loginButton: {
-    backgroundColor: '#4ade80',
-    borderRadius: 30,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   divider: {
     height: 1,
@@ -292,31 +258,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '100%',
   },
-  googleButton: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginTop: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '70%',
-  },
   googleButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
   },
   googleIconWrapper: {
-    backgroundColor: 'transparent',
-    width: 20,
-    height: 20,
+    marginRight: 8,
   },
   googleButtonText: {
-    color: '#000',
-    fontWeight: '500',
-    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,188 +8,276 @@ import {
   FlatList,
   StyleSheet,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
+import { fetchAPI, getData } from '../components/Utils';
+import URLs from '@/constants/Urls';
+import { router } from 'expo-router';
+import CreatePost from '../components/CreatePost';
+import AppContainer from '../components/AppContainer';
 
 const TAGS = ['All', 'School', 'IT'];
 
-const POSTS = [
-  {
-    id: '1',
-    user: 'Jane Doe',
-    timestamp: '2h ago',
-    title: 'Welcome to UNICON!',
-    content:
-      'We are excited to launch the new UNICON platform for all UNSW Sydney students. Stay tuned for updates and events.',
-    tags: ['News', 'Events'],
-    likes: 12,
-    comments: 5,
-    bookmarks: 3,
-    image: 'https://images.unsplash.com/photo-1508780709619-79562169bc64?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: '2',
-    user: 'John Smith',
-    timestamp: '1d ago',
-    title: 'Campus Job Fair',
-    content:
-      'Join us this Friday at the campus job fair to meet potential employers and learn about internship opportunities.',
-    tags: ['Jobs', 'Events'],
-    likes: 30,
-    comments: 10,
-    bookmarks: 7,
-  },
-  {
-    id: '3',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-  {
-    id: '4',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-  {
-    id: '5',
-    user: 'Emily Chen',
-    timestamp: '3d ago',
-    title: 'Library Renovation Update',
-    content:
-      'The main library will be closed for renovation starting next week. Please plan your study sessions accordingly.',
-    tags: ['Updates'],
-    likes: 8,
-    comments: 2,
-    bookmarks: 1,
-  },
-];
+interface Article {
+  id: number;
+  user_temp_name: string;
+  created_at: string;
+  title: string;
+  body: string;
+  course_code: string;
+  likes_count: number;
+  comments_count: number;
+  save_status: boolean;
+  image?: string;
+  like_status?: boolean;
+}
+
+type FilterType = 'All' | 'Hot' | 'Recommended';
 
 export default function Feed() {
   const [selectedTag, setSelectedTag] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [isSwitchOn, setIsSwitchOn] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState('Latest');
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('All');
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [nextPage, setNextPage] = useState<string | null>(null);
+  const fetchedPage = useRef<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const [createPostVisible, setCreatePostVisible] = useState(false);
+  const [posting, setPosting] = useState(false);
 
-  const filteredPosts = POSTS.filter(post => {
-    const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
+  const apiEndpoints: Record<FilterType, string> = {
+    All: URLs.ARTICLE(),
+    Hot: URLs.ARTICLE_HOT,
+    Recommended: URLs.ARTICLE_PREFERENCE,
+  };
+
+  useEffect(() => {
+    fetchArticles();
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+    }
+  }, [selectedFilter]);
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetchAPI(apiEndpoints[selectedFilter], {
+        method: 'GET',
+        token: true,
+      });
+
+      if (!response.error) {
+        setArticles(response.data?.results?.articles || []);
+        setNextPage(response.data?.next || null);
+        fetchedPage.current = apiEndpoints[selectedFilter];
+      } else {
+        setError(response?.data?.detail || "An error occurred");
+      }
+    } catch (err) {
+      setError("Failed to load articles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMoreArticles = async () => {
+    if (!nextPage || nextPage === fetchedPage.current) return;
+    
+    try {
+      const response = await fetchAPI(nextPage, {
+        method: 'GET',
+        token: true,
+      });
+
+      if (!response.error) {
+        setArticles(prevArticles => [
+          ...prevArticles,
+          ...(response.data?.results?.articles || []),
+        ]);
+        fetchedPage.current = nextPage;
+        setNextPage(response.data?.next || null);
+      } else {
+        setError(response?.data?.detail || "An error occurred");
+      }
+    } catch (err) {
+      setError("Failed to load more articles");
+    }
+  };
+
+  const filteredArticles = articles.filter(post => {
+    const matchesTag = selectedTag === 'All' || (post.course_code && post.course_code.toLowerCase().includes(selectedTag.toLowerCase()));
     const matchesSearch =
       post.title.toLowerCase().includes(searchText.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchText.toLowerCase());
+      post.body.toLowerCase().includes(searchText.toLowerCase());
     return matchesTag && matchesSearch;
   });
 
-  const FILTERS = ['All', 'Hot', 'Recommended'];
+  const FILTERS: FilterType[] = ['All', 'Hot', 'Recommended'];
+
+  const handleCreatePost = async ({ title, content, hashtags, images, unicon }: { title: string; content: string; hashtags: string[]; images: string[]; unicon?: boolean }) => {
+    setPosting(true);
+    try {
+      const accessToken = await getData('access');
+      const body = {
+        title,
+        body: content,
+        unicon: !!unicon,
+      } as any;
+      if (hashtags && hashtags.length > 0) {
+        body.course_code = hashtags;
+      }
+      const response = await fetchAPI(URLs.ARTICLE(), {
+        method: 'POST',
+        token: true,
+        body,
+      });
+      if (!response.error) {
+        setCreatePostVisible(false);
+        await fetchArticles();
+        if (flatListRef.current) {
+          flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+        }
+      } else {
+        setError(response?.data?.detail || 'Failed to post');
+      }
+    } catch (err) {
+      setError('Failed to post');
+    } finally {
+      setPosting(false);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>UNICON</Text>
-        <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
-      </View>
+    <AppContainer>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>UNICON</Text>
+          <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
+        </View>
 
-      {/* Tags */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tagsContainer}
-        contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
-      >
-        {TAGS.map(tag => (
-          <TouchableOpacity
-            key={tag}
-            style={[
-              styles.tagBadge,
-              selectedTag === tag && styles.tagBadgeSelected,
-            ]}
-            onPress={() => setSelectedTag(tag)}
-          >
-            <Text
-              style={[
-                styles.tagText,
-                selectedTag === tag && styles.tagTextSelected,
-              ]}
-            >
-              {tag}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* New Post */}
-      <View style={styles.newPostContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="What's on your mind?"
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholderTextColor="#999"
-        />
-        <FontAwesome name="pencil" size={20} color="#666" />
-      </View>
-
-      {/* Filter Tabs and Toggle */}
-      <View style={styles.filterToggleContainer}>
-        <View style={styles.filterTabs}>
-          {FILTERS.map(filter => (
+        {/* Tags */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tagsContainer}
+          contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
+        >
+          {TAGS.map(tag => (
             <TouchableOpacity
-              key={filter}
+              key={tag}
               style={[
-                styles.filterTab,
-                selectedFilter === filter && styles.filterTabSelected,
+                styles.tagBadge,
+                selectedTag === tag && styles.tagBadgeSelected,
               ]}
-              onPress={() => setSelectedFilter(filter)}
+              onPress={() => setSelectedTag(tag)}
             >
               <Text
                 style={[
-                  styles.filterTabText,
-                  selectedFilter === filter && styles.filterTabTextSelected,
+                  styles.tagText,
+                  selectedTag === tag && styles.tagTextSelected,
                 ]}
               >
-                {filter}
+                {tag}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
-        <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Toggle</Text>
-          <Switch
-            value={isSwitchOn}
-            onValueChange={setIsSwitchOn}
-            trackColor={{ false: '#ccc', true: '#4CAF50' }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+        </ScrollView>
 
-      {/* Posts List */}
-      <FlatList
-        data={filteredPosts}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 20 }}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            styles={styles}
-          />
+        {/* New Post */}
+        <TouchableOpacity style={styles.fab} onPress={() => setCreatePostVisible(true)}>
+          <Ionicons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
+        <CreatePost
+          visible={createPostVisible}
+          onClose={() => setCreatePostVisible(false)}
+          onSubmit={handleCreatePost}
+          loading={posting}
+        />
+
+        {/* Filter Tabs and Toggle */}
+        <View style={styles.filterToggleContainer}>
+          <View style={styles.filterTabs}>
+            {FILTERS.map(filter => (
+              <TouchableOpacity
+                key={filter}
+                style={[
+                  styles.filterTab,
+                  selectedFilter === filter && styles.filterTabSelected,
+                ]}
+                onPress={() => setSelectedFilter(filter)}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    selectedFilter === filter && styles.filterTabTextSelected,
+                  ]}
+                >
+                  {filter}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Toggle</Text>
+            <Switch
+              value={isSwitchOn}
+              onValueChange={setIsSwitchOn}
+              trackColor={{ false: '#ccc', true: '#4CAF50' }}
+              thumbColor="#fff"
+            />
+          </View>
+        </View>
+
+        {/* Posts List */}
+        {loading && articles.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#57EC6B" />
+          </View>
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : (
+        <FlatList
+            ref={flatListRef}
+            data={filteredArticles}
+            keyExtractor={item => String(item.id)}
+          contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => router.push(`/article/${item.id}` as any)} activeOpacity={0.85}>
+            <PostCard
+                  post={{
+                    id: String(item.id),
+                    user: item.user_temp_name || 'Unknown',
+                    timestamp: item.created_at,
+                    title: item.title,
+                    content: item.body,
+                    tags: item.course_code ? item.course_code.split(',') : [],
+                    likes: item.likes_count,
+                    comments: item.comments_count,
+                    bookmarks: item.save_status ? 1 : 0,
+                    image: item.image,
+                    like_status: item.like_status || false,
+                  }}
+              styles={styles}
+            />
+              </TouchableOpacity>
+            )}
+            onEndReached={fetchMoreArticles}
+            onEndReachedThreshold={0.5}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No articles found.</Text>
+            }
+        />
         )}
-      />
-    </View>
+      </View>
+    </AppContainer>
   );
 }
 
@@ -218,9 +306,8 @@ const styles = StyleSheet.create({
     maxHeight: 40,
     marginBottom: 10,
   },
-
   tagBadge: {
-    backgroundColor: '#\F3F4F6',
+    backgroundColor: '#F3F4F6',
     borderRadius: 20,
     paddingVertical: 6,
     paddingHorizontal: 15,
@@ -270,9 +357,7 @@ const styles = StyleSheet.create({
   },
   filterTabs: {
     flexDirection: 'row',
-    
   },
-  
   filterTab: {
     paddingHorizontal: 15,
     height: 32,
@@ -284,18 +369,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   filterTabSelected: {
     backgroundColor: '#57EC6B',
   },
-
  filterTabText: {
    fontSize: 14,
    fontWeight: '600',
    textAlign: 'center',
    lineHeight: 18,
  },
-
   filterTabTextSelected: {
     color: '#fff',
   },
@@ -305,9 +387,22 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     marginRight: 8,
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '600',
+    color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
   },
   postCard: {
     backgroundColor: '#fff',
@@ -321,13 +416,10 @@ const styles = StyleSheet.create({
     elevation: 3,
     transitionDuration: '200ms',
     transform: [{ scale: 1 }],
-   
   },
   postHeader: {
-  
     flexDirection: 'row',
     marginBottom: 10,
-    fontFamily: 'Roboto_400Regular',
   },
   userInfo: {
     flexDirection: 'row',
@@ -353,7 +445,7 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   postTimestamp: {
-    marginLeft:15,
+    marginLeft: 15,
     fontSize: 12,
     color: '#999',
   },
@@ -399,5 +491,22 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     color: '#666',
     fontSize: 13,
+  },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 32,
+    backgroundColor: '#57EC6B',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    zIndex: 100,
   },
 });
