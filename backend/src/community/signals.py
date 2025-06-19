@@ -9,11 +9,8 @@ from community.utils import (
     update_user_points,
     update_article_engagement_score,
 
-    update_sorted_article_ids_cache,
-    update_unsorted_article_ids_cache,
-
-    update_sorted_comment_ids_cache,
-    update_unsorted_comment_ids_cache
+    update_sorted_ids_cache,
+    update_unsorted_ids_cache,
 )
 from community.constants import (
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
@@ -39,12 +36,11 @@ article_viewed = Signal()
 @receiver(post_save, sender=Comment)
 def on_comment_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance.article,
             ARTICLE_USER_COMMENTED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
-        update_sorted_comment_ids_cache(
+        update_sorted_ids_cache(
             instance,
             COMMENT_SCHOOL_IDS_CACHE_KEY(
                 instance.article.id, instance.parent_comment.id 
@@ -83,11 +79,10 @@ def on_comment_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CommentLike)
 def on_commentLike_save(sender, instance, created, **kwargs):
     if created:
-        update_unsorted_comment_ids_cache(
+        update_unsorted_ids_cache(
             instance.comment,
             COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
                 instance.user.id),
-            True
         )
         if instance.comment.user != instance.user:
             # Add notification
@@ -105,7 +100,7 @@ def on_commentLike_save(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=CommentLike)
 def on_commentLike_delete(sender, instance, **kwargs):
-    update_unsorted_comment_ids_cache(
+    update_unsorted_ids_cache(
         instance.comment,
         COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
             instance.user.id),
@@ -122,15 +117,13 @@ def on_commentLike_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=Article)
 def on_article_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance,
             ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
-            True
         )
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance,
             ARTICLE_USER_POSTED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
         update_article_engagement_score(instance)
         get_n_register_embedding_vectors.delay(instance.id)
@@ -139,17 +132,16 @@ def on_article_save(sender, instance, created, **kwargs):
 def on_articleTag_save(sender, instance, created, **kwargs):
     if created:
         # Update sorted article ids cache for the tag
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance.article,
             ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
                 instance.article.user.school.id, instance.tag.name),
-            True
         )
 
 @receiver(post_delete, sender=ArticleTag)
 def on_articleTag_delete(sender, instance, **kwargs):
     # Update sorted article ids cache for the tag
-    update_sorted_article_ids_cache(
+    update_sorted_ids_cache(
         instance.article,
         ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
             instance.article.user.school.id, instance.tag.name),
@@ -159,10 +151,9 @@ def on_articleTag_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=ArticleView)
 def on_articleView_save(sender, instance, created, **kwargs):
     if created:
-        update_unsorted_article_ids_cache(
+        update_unsorted_ids_cache(
             instance.article,
             ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
         update_article_engagement_score(instance.article)
         if instance.article.user != instance.user:
@@ -175,25 +166,22 @@ def on_articleView_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=ArticleSave)
 def on_articleSave_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance.article,
             ARTICLE_USER_SAVED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
-        update_unsorted_article_ids_cache(
+        update_unsorted_ids_cache(
             instance.article,
             ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
     
 @receiver(post_delete, sender=ArticleSave)
 def on_articleSave_delete(sender, instance, **kwargs):
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance.article,
             ARTICLE_USER_SAVED_IDS_CACHE_KEY(instance.user.id),
-            False
         )
-        update_unsorted_article_ids_cache(
+        update_unsorted_ids_cache(
             instance.article,
             ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
             False
@@ -202,15 +190,13 @@ def on_articleSave_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=ArticleLike)
 def on_articleLike_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_article_ids_cache(
+        update_sorted_ids_cache(
             instance.article,
             ARTICLE_USER_LIKED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
-        update_unsorted_article_ids_cache(
+        update_unsorted_ids_cache(
             instance.article,
             ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-            True
         )
         update_article_engagement_score(instance.article)
         if instance.article.user != instance.user:
@@ -230,12 +216,12 @@ def on_articleLike_save(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=ArticleLike)
 def on_articleLike_delete(sender, instance, **kwargs):
-    update_sorted_article_ids_cache(
+    update_sorted_ids_cache(
         instance.article,
         ARTICLE_USER_LIKED_IDS_CACHE_KEY(instance.user.id),
         False
     )
-    update_unsorted_article_ids_cache(
+    update_unsorted_ids_cache(
         instance.article,
         ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
         False

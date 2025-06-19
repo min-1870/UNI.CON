@@ -6,42 +6,19 @@ from community.constants import (
     NOTIFICATION_CACHE_KEY,
     
 )
-from community.tasks import send_email
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
 from .response_serializers import NotificationResponseSerializer
 from community.models import  Notification, Article, Comment
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Coalesce
+from django_redis import get_redis_connection
+from community.tasks import send_email
+from .database_utils import to_unix_ms
 from django.core.cache import cache
 from django.db import transaction
 from django.db import models
-from django_redis import get_redis_connection
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
 redis_conn = get_redis_connection("default")
-
-def to_unix_ms(dt):
-    """
-    Convert a Django DateTimeField (aware or naive) to an integer
-    timestamp in milliseconds.
-    """
-    if dt:
-        # If dt is a string, try to parse it
-        if isinstance(dt, str):
-            try:
-                parsed_dt = parse_datetime(dt)
-                if parsed_dt is not None:
-                    dt = parsed_dt
-                else:
-                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
-            except Exception:
-                dt = timezone.now()
-        if timezone.is_naive(dt):
-            dt = dt.replace(tzinfo=timezone.utc)
-        return int(dt.timestamp() * 1000)
-    else:
-        return int(timezone.now().timestamp() * 1000)
 
 def get_paginated_notifications(request, new=True):
     try:

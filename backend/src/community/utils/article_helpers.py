@@ -13,38 +13,15 @@ from community.utils.embedding_utils import get_faiss_index, search_similar_embe
 from .response_serializers import ArticleResponseSerializer
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import OuterRef, Subquery, Value
-from django.utils.dateparse import parse_datetime
 from django.db.models.functions import Coalesce
 from django_redis import get_redis_connection
 from django.db.models import Case, When
+from .database_utils import to_unix_ms
 from django.core.cache import cache
 from django.db import transaction
-from django.utils import timezone
 from account.models import User
 
 redis_conn = get_redis_connection("default")
-
-def to_unix_ms(dt):
-    """
-    Convert a Django DateTimeField (aware or naive) to an integer
-    timestamp in milliseconds.
-    """
-    if dt:
-        # If dt is a string, try to parse it
-        if isinstance(dt, str):
-            try:
-                parsed_dt = parse_datetime(dt)
-                if parsed_dt is not None:
-                    dt = parsed_dt
-                else:
-                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
-            except Exception:
-                dt = timezone.now()
-        if timezone.is_naive(dt):
-            dt = dt.replace(tzinfo=timezone.utc)
-        return int(dt.timestamp() * 1000)
-    else:
-        return int(timezone.now().timestamp() * 1000)
     
 def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vector=None, timeout=None):
 
@@ -352,21 +329,3 @@ def update_article(article_instance, updated_fields={}):
 
         cache.set(cache_key, serialized_annotated_article, timeout=CACHE_TIMEOUT)
 
-def update_sorted_article_ids_cache(article_instance, cache_key, status):
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(article_instance.id)):
-            if status:
-                redis_conn.zadd(cache_key, {str(article_instance.id): to_unix_ms(article_instance.created_at)})
-        else:
-            if not status:
-                redis_conn.zrem(cache_key, str(article_instance.id))    
-
-def update_unsorted_article_ids_cache(article_instance, cache_key, status):
-    cached = cache.get(cache_key, None)
-    if cached:
-        # Update the cache
-        cached[article_instance.id] = status
-        cache.set(cache_key, cached, CACHE_TIMEOUT)
-
-    

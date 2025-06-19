@@ -6,43 +6,16 @@ from community.constants import (
     COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
     COMMENT_CACHE_KEY
 )
-from .database_utils import get_set_temp_name_static_points
 from community.models import ArticleUser, Comment, CommentLike
 from .response_serializers import CommentResponseSerializer
 from django.db.models import OuterRef, Subquery, Q
-from django.core.cache import cache
-from account.models import User
-from django.db import transaction
-
-# --------------- NEW ---------------
-
-from django.utils.dateparse import parse_datetime
 from django_redis import get_redis_connection
-from django.utils import timezone
-redis_conn = get_redis_connection("default")
+from .database_utils import to_unix_ms
+from django.core.cache import cache
+from django.db import transaction
+from account.models import User
 
-def to_unix_ms(dt):
-    """
-    Convert a Django DateTimeField (aware or naive) to an integer
-    timestamp in milliseconds.
-    """
-    if dt:
-        # If dt is a string, try to parse it
-        if isinstance(dt, str):
-            try:
-                parsed_dt = parse_datetime(dt)
-                if parsed_dt is not None:
-                    dt = parsed_dt
-                else:
-                    dt = timezone.datetime.fromtimestamp(float(dt), tz=timezone.utc)
-            except Exception:
-                dt = timezone.now()
-        if timezone.is_naive(dt):
-            dt = dt.replace(tzinfo=timezone.utc)
-        return int(dt.timestamp() * 1000)
-    else:
-        return int(timezone.now().timestamp() * 1000)
-    
+redis_conn = get_redis_connection("default")
 
 def get_paginated_comments(
     request, article_instance, parent_comment_instance=None
@@ -229,16 +202,3 @@ def update_comment(comment_instance, updated_fields={}):
         for field in updated_fields.keys():
             serialized_annotated_comment[field] = getattr(comment_instance, field)
         cache.set(cache_key, serialized_annotated_comment, CACHE_TIMEOUT)
-
-def update_sorted_comment_ids_cache(comment_instance, cache_key):
-    if redis_conn.exists(cache_key):
-        # Add the article id to the cache only if it does not exist
-        if not redis_conn.zscore(cache_key, str(comment_instance.id)):
-                redis_conn.zadd(cache_key, {str(comment_instance.id): to_unix_ms(comment_instance.created_at)})
-
-def update_unsorted_comment_ids_cache(comment_instance, cache_key, status):
-    cached = cache.get(cache_key, None)
-    if cached:
-        # Update the cache
-        cached[comment_instance.id] = status
-        cache.set(cache_key, cached, CACHE_TIMEOUT)
