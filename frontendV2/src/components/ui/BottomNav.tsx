@@ -1,83 +1,127 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router, usePathname } from 'expo-router';
+import { BlurView } from 'expo-blur';
 
-// Dummy screens
-function HomeScreen() {
-  return <View style={styles.screen}><Text>Home</Text></View>;
-}
-function CartScreen() {
-  return <View style={styles.screen}><Text>Cart</Text></View>;
-}
-function SearchScreen() {
-  return <View style={styles.screen}><Text>Search</Text></View>;
-}
-function ProfileScreen() {
-  return <View style={styles.screen}><Text>Profile</Text></View>;
+interface BottomNavProps {
+  onSearchClick?: () => void;
+  onAddClick?: () => void;
 }
 
-const Tab = createBottomTabNavigator();
+const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
+  const pathname = usePathname();
 
-export default function BottomTabs() {
+  const navItems = [
+    { 
+      icon: 'home-outline' as const, 
+      activeIcon: 'home' as const, 
+      label: 'Home', 
+      path: '/feed' as const 
+    },
+    { 
+      icon: 'search-outline' as const, 
+      activeIcon: 'search' as const, 
+      label: 'Search', 
+      action: onSearchClick 
+    },
+    { 
+      icon: 'add-circle-outline' as const, 
+      activeIcon: 'add-circle' as const, 
+      label: 'Add', 
+      action: onAddClick 
+    },
+    { 
+      icon: 'chatbubble-outline' as const, 
+      activeIcon: 'chatbubble' as const, 
+      label: 'Chat', 
+      path: '/chat' as const 
+    },
+    { 
+      icon: 'person-outline' as const, 
+      activeIcon: 'person' as const, 
+      label: 'Profile', 
+      path: '/profile' as const 
+    },
+  ];
+
+  const handleNavClick = (item: typeof navItems[0]) => {
+    if (item.action) {
+      item.action();
+    } else if (item.path) {
+      router.push(item.path as any);
+    }
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="home-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="cart-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="search-outline" size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Icon name="person-outline" size={24} color={color} />,
-        }}
-      />
-    </Tab.Navigator>
+    <View style={styles.container}>
+      <BlurView intensity={100} tint="light" style={styles.blurContainer}>
+        <View style={styles.navContainer}>
+          {navItems.map((item, index) => {
+            const isActive = item.path && pathname === item.path;
+            
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleNavClick(item)}
+                style={[
+                  styles.navItem,
+                  isActive && styles.navItemActive
+                ]}
+                activeOpacity={0.7}
+              >
+                <Ionicons 
+                  name={isActive ? item.activeIcon : item.icon} 
+                  size={26} 
+                  color={isActive ? '#007AFF' : '#8E8E93'} 
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </BlurView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  tabBar: {
+  container: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 34,
     left: 20,
     right: 20,
-    elevation: 5,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    height: 70,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
+    zIndex: 1000,
   },
-  screen: {
-    flex: 1,
+  blurContainer: {
+    borderRadius: 35,
+    overflow: 'hidden',
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
+  },
+  navItem: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'transparent',
+  },
+  navItemActive: {
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(0, 122, 255, 0.15)',
+    transform: [{ scale: 1.1 }],
   },
 });
+
+export default BottomNav;

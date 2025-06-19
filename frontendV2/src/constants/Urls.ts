@@ -15,6 +15,7 @@ const URLS = {
     TEMP_STATE: `${domain}/account/user/google_auth_session/`,
     GOOGLE_LINK_URL: `${domain}/account/user/googlelink/`,
     NEW_PASSWORD: `${domain}/account/user/newpassword/`,
+    CHANGE_PASSWORD: `${domain}/account/user/changepassword/`,
     NEW_TOKEN: `${domain}/account/token/refresh`,
 
     // Feed (main feed)
@@ -23,10 +24,10 @@ const URLS = {
     PREFERENCE_SORTED_ARTICLES: `${domain}/community/article/preference`,
 
     // Feed (profile feed)
-    POSTED_ARTICLES: `${domain}/community/article/posted_articles`,
-    SAVED_ARTICLES: `${domain}/community/article/saved_articles`,
-    COMMENTED_ARTICLES: `${domain}/community/article/commented_articles`,
-    LIKED_ARTICLES: `${domain}/community/article/liked_articles`,
+    POSTED_ARTICLES: `${domain}/community/article/posted_articles/`,
+    SAVED_ARTICLES: `${domain}/community/article/saved_articles/`,
+    COMMENTED_ARTICLES: `${domain}/community/article/commented_articles/`,
+    LIKED_ARTICLES: `${domain}/community/article/liked_articles/`,
 
     // Notifications
     OLD_NOTIFICATIONS: `${domain}/community/article/old_notifications`,

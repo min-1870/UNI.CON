@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Switch,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
@@ -17,6 +18,7 @@ import URLs from '@/constants/Urls';
 import { router } from 'expo-router';
 import CreatePost from '../components/CreatePost';
 import AppContainer from '../components/AppContainer';
+import BottomNav from '../components/ui/BottomNav';
 
 const TAGS = ['All', 'School', 'IT'];
 
@@ -49,6 +51,13 @@ export default function Feed() {
   const flatListRef = useRef<FlatList>(null);
   const [createPostVisible, setCreatePostVisible] = useState(false);
   const [posting, setPosting] = useState(false);
+  
+  // Animation state for navbar
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const isScrollingDown = useRef(false);
 
   const apiEndpoints: Record<FilterType, string> = {
     All: URLs.ARTICLE(),
@@ -153,20 +162,82 @@ export default function Feed() {
     }
   };
 
+  const handleSearchClick = () => {
+    // Open search functionality or navigate to search
+    console.log('Search clicked');
+  };
+
+  const handleAddClick = () => {
+    setCreatePostVisible(true);
+  };
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        const scrollDirection = currentScrollY > lastScrollY.current ? 'down' : 'up';
+        
+        if (scrollDirection === 'down' && currentScrollY > 50 && !isScrollingDown.current) {
+          // Hide navbar when scrolling down
+          isScrollingDown.current = true;
+          Animated.parallel([
+            Animated.timing(headerOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(headerTranslateY, {
+              toValue: -100,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        } else if (scrollDirection === 'up' && isScrollingDown.current) {
+          // Show navbar when scrolling up
+          isScrollingDown.current = false;
+          Animated.parallel([
+            Animated.timing(headerOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(headerTranslateY, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+        
+        lastScrollY.current = currentScrollY;
+      },
+    }
+  );
+
   return (
     <AppContainer>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Animated Header */}
+        <Animated.View 
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            }
+          ]}
+        >
           <Text style={styles.headerTitle}>UNICON</Text>
           <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
-        </View>
+        </Animated.View>
 
         {/* Tags */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.tagsContainer}
+          style={[styles.tagsContainer, { marginTop: 120 }]}
           contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
         >
           {TAGS.map(tag => (
@@ -190,16 +261,7 @@ export default function Feed() {
           ))}
         </ScrollView>
 
-        {/* New Post */}
-        <TouchableOpacity style={styles.fab} onPress={() => setCreatePostVisible(true)}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <CreatePost
-          visible={createPostVisible}
-          onClose={() => setCreatePostVisible(false)}
-          onSubmit={handleCreatePost}
-          loading={posting}
-        />
+
 
         {/* Filter Tabs and Toggle */}
         <View style={styles.filterToggleContainer}>
@@ -249,6 +311,8 @@ export default function Feed() {
             keyExtractor={item => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           renderItem={({ item }) => (
               <TouchableOpacity onPress={() => router.push(`/article/${item.id}` as any)} activeOpacity={0.85}>
             <PostCard
@@ -277,6 +341,17 @@ export default function Feed() {
         />
         )}
       </View>
+      <BottomNav 
+        onSearchClick={handleSearchClick}
+        onAddClick={handleAddClick}
+      />
+      
+      <CreatePost
+        visible={createPostVisible}
+        onClose={() => setCreatePostVisible(false)}
+        onSubmit={handleCreatePost}
+        loading={posting}
+      />
     </AppContainer>
   );
 }
@@ -288,8 +363,20 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    marginBottom: 15,
+    paddingTop: 60,
+    paddingBottom: 15,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   headerTitle: {
     fontSize: 30,
