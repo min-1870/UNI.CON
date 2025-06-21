@@ -145,7 +145,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def search_tag(self, request):
         # Block if the body or the title is empty
-        tag = request.GET.get("tag", "").strip()
+        tag = request.GET.get("search_content", "").strip()
         if len(tag) == 0:
             return Response(
                 {"detail": "The tag is empty."},

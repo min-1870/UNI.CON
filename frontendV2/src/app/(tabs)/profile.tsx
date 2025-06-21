@@ -1,5 +1,6 @@
 import { ArticleType, InitialDataType } from '@/constants/types';
-import React, { useState, useEffect, useRef  } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useArticlesStore } from '@/store/articleStore';
 import ThemedArticle from '@/components/ThemedArticle';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
@@ -11,18 +12,24 @@ import * as AuthSession from 'expo-auth-session';
 import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
 import { Animated } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import URLs from "@/constants/Urls";
 
 export default function ProfilePage() {
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
-  const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [articles, setArticles] = useState<ArticleType[]>([]);
+  // const [nextArticlePage, setNextArticlePage] = useState(null);
+  // const [articles, setArticles] = useState<ArticleType[]>([]);
   const [loading, setLoading] = useState(false);
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
-  const fetchedArticlePage = useRef(null);
+  const isFetchingMore = useRef(false);
+  
+  const feedIds = useArticlesStore(s => s.feeds) || {};
+  const articlesById = useArticlesStore(s => s.articlesById);
+  const feedArticles = (feedIds[sortOption] || []).map(id => articlesById[id]) || [];
+  const nextArticlePage = useArticlesStore(s => s.nextArticlePage);
+  const currentArticlePage = useArticlesStore(s => s.currentArticlePage);
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   
@@ -37,10 +44,18 @@ export default function ProfilePage() {
     commented: URLs.COMMENTED_ARTICLES,
     liked: URLs.LIKED_ARTICLES,
   };
-
+  // FETCH ONCE: initial data 
   useEffect(() => {
-    fetchArticles();
-    fetchInitialData();
+    (async () => {
+      const stored = await getData('initialData');
+      if (stored) setInitialData(JSON.parse(stored));
+    })();
+  }, []);
+  
+  useEffect(() => {
+    if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
+      fetchArticles();
+    }
   }, [sortOption]);
     
   useEffect(() => {
@@ -54,56 +69,47 @@ export default function ProfilePage() {
       }).start();
     }
   }, [loading]);
-  
-  
-  const fetchInitialData = async () => {
-    const storedInitialData = await getData('initialData');
-    storedInitialData && setInitialData(JSON.parse(storedInitialData));
-  };
 
-  const fetchArticles = async () => {
+
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
-    const response = await fetchAPI(apiEndpoints[sortOption], {
-      method: 'GET',
-      token: true,
-    });
-    if (!response.error) {
-      setArticles(response.data?.results?.articles || null);
-      console.log(response.data)
-      setNextArticlePage(response.data?.next || null);
+    if (feedIds && (feedIds[sortOption]||[]).length > 0) {
+      return;
+    }
+    
+    const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
+    if (!res.error) {
+      useArticlesStore.getState().setFeed(sortOption, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-      });
+      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
-    fetchedArticlePage.current = null;
-  };
+  }, [sortOption]);
 
-  const fetchMoreArticles = async () => {
-    if (!nextArticlePage || nextArticlePage == fetchedArticlePage.current) return;
-    
-    const response = await fetchAPI(nextArticlePage, {
-      method: 'GET',
-      token: true,
-    });
-    if (!response.error) {
-      setArticles(prevArticles => [
-        ...prevArticles,
-        ...(response.data?.results?.articles || []),
-      ]);
-      console.log(response.data)
-      fetchedArticlePage.current = nextArticlePage;
-      setNextArticlePage(response.data?.next || null);
-    } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-      });
+  useFocusEffect(
+  useCallback(() => {
+      if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
+        fetchArticles();
+      }
+    }, [feedIds, sortOption, fetchArticles])
+  );
+  
+  const fetchMoreArticles = useCallback(async () => {
+    if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
+      return;
     }
     
-  };
+    isFetchingMore.current = true;
+    const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
+    if (!res.error) {
+      useArticlesStore.getState().setFeed(sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+    } else {
+      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
+    }
+    isFetchingMore.current = false;
+  }, [nextArticlePage[sortOption]]);
 
   const connectGoogle = async () => {
     const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -298,7 +304,7 @@ export default function ProfilePage() {
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           <FlatList
-            data={articles}
+            data={feedArticles}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
             contentContainerStyle={styles.feedContainer}

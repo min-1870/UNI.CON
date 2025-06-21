@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
+import { useFocusEffect } from '@react-navigation/native';
 import { ArticleType, InitialDataType } from '@/constants/types';
 import URLs from "@/constants/Urls";
 import { fetchAPI, getData, setData } from "@/components/Utils";
@@ -21,7 +22,7 @@ import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import Toast from 'react-native-toast-message';
 import { useThemeColor } from '@/hooks/useThemeColor';
-
+import { useArticlesStore } from '@/store/articleStore';
 const apiEndpoints = {
   all: URLs.TIME_SORTED_ARTICLES,
   hot: URLs.HOT_SORTED_ARTICLES,
@@ -85,16 +86,19 @@ export default function HomePage() {
   const defaultCardBg = useThemeColor({}, 'default_card_background_color');
 
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
-  const [initialData, setInitialData] = useState<InitialDataType | null>(null);
-  const [articles, setArticles] = useState<ArticleType[]>([]);
-  const [nextArticlePage, setNextArticlePage] = useState<string | null>(null);
+  const [initialData, setInitialData] = useState<InitialDataType | null>(null);  
   const [tags, setTags] = useState<string[]>([]);
   const [uniOnly, setUniOnly] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const isFetchingMore = useRef(false);
-  const fetchedArticlePage = useRef<string | null>(null);
   const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  const feedIds = useArticlesStore(s => s.feeds) || {};
+  const articlesById = useArticlesStore(s => s.articlesById);
+  const feedArticles = (feedIds[sortOption] || []).map(id => articlesById[id]) || [];
+  const nextArticlePage = useArticlesStore(s => s.nextArticlePage);
+  const currentArticlePage = useArticlesStore(s => s.currentArticlePage);
 
   // FETCH ONCE: initial data & tags
   useEffect(() => {
@@ -115,25 +119,14 @@ export default function HomePage() {
       }
       setLoading(false);
     })();
+    fetchArticles();
   }, []);
 
-  // FETCH ARTICLES on mount & sortOption change
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
-    fetchedArticlePage.current = null;
-    const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
-    if (!res.error) {
-      setArticles(res.data?.results?.articles || []);
-      setNextArticlePage(res.data?.next || null);
-    } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
-    }
-    setLoading(false);
-  }, [sortOption]);
-
   useEffect(() => {
-    fetchArticles();
-  }, [fetchArticles]);
+    if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
+      fetchArticles();
+    }
+  }, [sortOption]);
 
   // ANIMATE CONTENT APPEARANCE
   useEffect(() => {
@@ -148,21 +141,47 @@ export default function HomePage() {
     }
   }, [loading, contentOpacity]);
 
-  const fetchMoreArticles = useCallback(async () => {
-    if (!nextArticlePage || nextArticlePage === fetchedArticlePage.current || isFetchingMore.current) {
+  // FETCH ARTICLES on mount & sortOption change
+  const fetchArticles = useCallback(async () => {
+    setLoading(true);
+    if (feedIds && (feedIds[sortOption]||[]).length > 0) {
       return;
     }
-    isFetchingMore.current = true;
-    const res = await fetchAPI(nextArticlePage, { method: 'GET', token: true });
+    
+    const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      setArticles(prev => [...prev, ...(res.data?.results?.articles || [])]);
-      fetchedArticlePage.current = nextArticlePage;
-      setNextArticlePage(res.data?.next || null);
+      useArticlesStore.getState().setFeed(sortOption, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+    } else {
+      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
+    }
+    setLoading(false);
+  }, [sortOption]);
+
+  useFocusEffect(
+  useCallback(() => {
+      if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
+        fetchArticles();
+      }
+    }, [feedIds, sortOption, fetchArticles])
+  );
+
+
+  const fetchMoreArticles = useCallback(async () => {
+    if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
+      return;
+    }
+    
+    isFetchingMore.current = true;
+    const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
+    if (!res.error) {
+      useArticlesStore.getState().setFeed(sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
-  }, [nextArticlePage]);
+  }, [nextArticlePage[sortOption]]);
 
   const renderHeader = useCallback(() => (
     <>
@@ -231,8 +250,8 @@ export default function HomePage() {
         <FlatList
           data={
             uniOnly
-              ? articles.filter(a => a.unicon == true)
-              : articles
+              ? feedArticles.filter(a => a.unicon === true)
+              : feedArticles
           }
           keyExtractor={item => String(item.id)}
           renderItem={renderItem}

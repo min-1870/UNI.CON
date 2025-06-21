@@ -1,4 +1,4 @@
-import React from 'react';
+import React  from 'react';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Octicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -6,9 +6,10 @@ import NewArticlePage from './post';
 import HomePage from './index';
 import SearchPage from './search';
 import ProfilePage from './profile';
-
+import { useArticlesStore } from '@/store/articleStore';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useRef } from 'react';
 
 export type TabParamList = {
   home: undefined;
@@ -22,6 +23,7 @@ const Tabs = createBottomTabNavigator<TabParamList>();
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const default_brand_color = useThemeColor({}, 'default_brand_color');
+  const routeName = useRef('');
   const tabBarOptions = {
     style: {
       backgroundColor: colorScheme === 'dark' ? '#18181b' : '#fff',
@@ -44,7 +46,18 @@ export default function TabLayout() {
     },
   };
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator 
+    
+      screenOptions={screenOptions}
+      screenListeners={({ navigation, route }) => ({
+      tabPress: (e) => {
+        if (route.name === routeName.current) {
+          useArticlesStore.getState().reset();
+        }
+        routeName.current = route.name; 
+      },
+      })}
+    >
       <Tabs.Screen
         name="home"
         component={HomePage}

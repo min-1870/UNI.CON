@@ -1,17 +1,18 @@
 
+import React,  { useState, useEffect, useCallback, useMemo  } from "react";
 import { ArticleType, InitialDataType } from '@/constants/types';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
+import { useArticlesStore } from '@/store/articleStore';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
+import Markdown from 'react-native-markdown-display'
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
-import React,  { useState, useEffect, useCallback, useMemo  } from "react";
+import { Image } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import moment from 'moment';
-import Markdown from 'react-native-markdown-display'
-import { Image } from 'react-native';
   
   const styles = StyleSheet.create({
     container: {
@@ -91,7 +92,7 @@ type ThemedArticleProps = {
 };
 
 function ThemedArticle({ articleData, initialData, trendingTags, type='default' }: ThemedArticleProps) {
-  
+
   const view_background_color = useThemeColor({}, 'default_view_card_background_color');
   const background_color = useThemeColor({}, 'default_card_background_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
@@ -142,6 +143,10 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
         : URLs.ARTICLE_LIKE(String(article.id));
     const response_data = await fetchAPI(url, {method: 'POST'})
     if (response_data) {
+        useArticlesStore.getState().updateArticle(article.id, {
+          like_status: !article.like_status,
+          likes_count: article.likes_count + (article.like_status ? -1 : 1),
+        });
         setArticleState((prevState: any) => ({
           ...prevState,
           like_status: !prevState.like_status,
@@ -157,6 +162,9 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
       
       const data = await fetchAPI(url, {method: 'POST'})
       if (data) {
+        useArticlesStore.getState().updateArticle(article.id, {
+          save_status: !articleData.save_status,
+        });
           setArticleState((prevState: any) => ({
           ...prevState,
           save_status: !article.save_status,
@@ -263,12 +271,16 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
       <View style={[styles.buttonContainer]}>
         <Pressable onPress={handleLike} style={[styles.button]}>
           <AntDesign
-            name={article.like_status ? 'heart' : 'hearto'}
+            name={type == 'detail' 
+              ? article.like_status ? 'heart' : 'hearto'
+              : articleData.like_status ? 'heart' : 'hearto'}
             size={15}
             color={button_color}
           />
           <ThemedText type='articleButton'>
-            {article.likes_count}
+            {type == 'detail'
+              ? article.likes_count
+              : articleData.likes_count}
           </ThemedText>
         </Pressable>
         <View style={[styles.button]}>
@@ -293,7 +305,9 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
         </View>
         <Pressable onPress={handleSave} style={[styles.button]}>
           <FontAwesome
-            name={article.save_status ? 'bookmark' : 'bookmark-o'}
+            name={type == 'detail'
+              ? article.save_status ? 'bookmark' : 'bookmark-o'
+              : articleData.save_status ? 'bookmark' : 'bookmark-o'}
             size={15}
             color={button_color}
           />
