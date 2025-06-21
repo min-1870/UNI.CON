@@ -9,7 +9,7 @@ from community.constants import (
     CACHE_TIMEOUT,
 )
 from community.models import Article, ArticleUser, ArticleTag, ArticleLike, ArticleSave, Tag
-from community.utils.embedding_utils import get_faiss_index, search_similar_embeddings
+from community.utils.database_utils import get_faiss_index, search_similar_embeddings
 from .response_serializers import ArticleResponseSerializer
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import OuterRef, Subquery, Value
