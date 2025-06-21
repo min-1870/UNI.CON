@@ -35,6 +35,7 @@ export default function TabLayout() {
         component={SearchPage}
         options={{
           headerShown: false,
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
         />

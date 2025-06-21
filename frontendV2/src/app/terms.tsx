@@ -1,8 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AppScreen from '@/components/AppScreen';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import ThemedButton from '@/components/ThemedButton';
+import AppContainer from '@/components/AppContainer';
 
 const TermsAndConditions = () => {
   const [hasReachedBottom, setHasReachedBottom] = useState(false);
@@ -28,21 +32,23 @@ const TermsAndConditions = () => {
   };
 
   return (
-    <AppScreen>
-      <View style={styles.header}>
-        <Text style={styles.title}>Terms and Conditions</Text>
-        <Text style={styles.subtitle}>Please read carefully before continuing</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.badge}>UNI.CON</ThemedText>
+            <ThemedText type="Wording">Terms and Conditions</ThemedText>
+            <ThemedText style={styles.subtitle}>Please read carefully before continuing</ThemedText>
 
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.content}>
-          {`1. Acceptance of Terms
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.scrollView}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.termsContent}>
+                {`1. Acceptance of Terms
 
 By accessing and using UNI.CON, you agree to be bound by these Terms and Conditions.
 
@@ -108,74 +114,115 @@ support@unicon.edu.au
 10. Final Agreement
 
 By clicking "Continue", you confirm that you have read, understood, and agree to these Terms and Conditions.`}
-        </Text>
-      </ScrollView>
+              </Text>
+            </ScrollView>
 
-      <TouchableOpacity 
-        style={[styles.button, hasReachedBottom && styles.buttonActive]} 
-        onPress={handleButtonPress}
-      >
-        <Text style={[styles.buttonText, hasReachedBottom && styles.buttonTextActive]}>
-          {hasReachedBottom ? 'Continue' : 'Scroll to Bottom'}
-        </Text>
-        <Ionicons 
-          name={hasReachedBottom ? "checkmark-circle" : "arrow-down"} 
-          size={24} 
-          color={hasReachedBottom ? "#fff" : "#57EC6B"} 
-        />
-      </TouchableOpacity>
-    </AppScreen>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                onPress={handleButtonPress}
+                disabled={!hasReachedBottom}
+                style={[styles.customButton, !hasReachedBottom && styles.buttonDisabled]}
+              >
+                <View style={styles.buttonContent}>
+                  <Text style={[styles.buttonText, !hasReachedBottom && styles.buttonTextDisabled]}>
+                    {hasReachedBottom ? 'I Agree & Continue' : 'Scroll to Bottom'}
+                  </Text>
+                  <Ionicons 
+                    name={hasReachedBottom ? "checkmark-circle" : "arrow-down"} 
+                    size={20} 
+                    color={hasReachedBottom ? "#fff" : "#ccc"} 
+                    style={styles.buttonIcon}
+                  />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
   },
-  title: {
-    fontSize: 24,
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+  },
+  card: {
+    width: '100%',
+    height: '90%',
+    padding: 24,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  badge: {
+    alignSelf: 'center',
+    backgroundColor: '#d1fae5',
+    color: '#059669',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    alignSelf: 'center',
+    color: '#6b7280',
+    marginBottom: 20,
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    marginBottom: 20,
+    borderRadius: 8,
+    backgroundColor: '#f9fafb',
+    padding: 16,
   },
-  content: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#444',
+  termsContent: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#374151',
   },
-  button: {
+  buttonContainer: {
+    marginTop: 10,
+  },
+  customButton: {
+    backgroundColor: '#059669',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 1,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    margin: 20,
-    borderRadius: 12,
-    backgroundColor: '#f8f8f8',
-    borderWidth: 2,
-    borderColor: '#57EC6B',
-  },
-  buttonActive: {
-    backgroundColor: '#57EC6B',
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#57EC6B',
-    marginRight: 8,
-  },
-  buttonTextActive: {
     color: '#fff',
+  },
+  buttonTextDisabled: {
+    color: '#ccc',
+  },
+  buttonIcon: {
+    marginLeft: 8,
   },
 });
 

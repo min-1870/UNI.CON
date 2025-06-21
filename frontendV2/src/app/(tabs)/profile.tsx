@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -6,93 +6,57 @@ import {
   TouchableOpacity, 
   ScrollView, 
   ActivityIndicator,
-  Alert,
-  Animated,
-  Modal,
-  FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchAPI, getData } from "@/components/Utils";
-import ThemedButton from '@/components/ThemedButton';
-import ThemedText from '@/components/ThemedText';
-import ThemedView from '@/components/ThemedView';
+import AppContainer from '@/components/AppContainer';
+import BottomNav from '@/components/ui/BottomNav';
+import URLs from "@/constants/Urls";
+import { LinearGradient } from 'expo-linear-gradient';
 import PostCard from '@/components/PostCard';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
-import AppContainer from '@/components/AppContainer';
-import URLs from "@/constants/Urls";
+
+// Mock user data - replace with real API call
+const userData = {
+  id: 1,
+  name: 'Michael Chen',
+  username: 'michelc',
+  email: 'root@unsw.edu.au',
+  university: 'University of New South Wales',
+  verified: true,
+  credibilityScore: 140,
+  joinDate: 'September 2023',
+  bio: 'Computer Science student passionate about AI and web development. Always looking for interesting discussions!',
+  avatar: '',
+  stats: {
+    posts: 23,
+    comments: 157,
+    likes: 892,
+    saved: 45
+  }
+};
 
 export default function ProfilePage() {
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const [activeTab, setActiveTab] = useState<keyof typeof apiEndpoints>("posted");
-  const [nextArticlePage, setNextArticlePage] = useState(null);
-  const [articles, setArticles] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('posted');
+  const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [likedPosts, setLikedPosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [university, setUniversity] = useState('');
-  const [points, setPoints] = useState('');
-  const [email, setEmail] = useState('');
-  const [stats, setStats] = useState({
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [realStats, setRealStats] = useState({
     posts: 0,
     comments: 0,
     likes: 0,
     saved: 0
   });
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const fetchedArticlePage = useRef(null);
-
-  const apiEndpoints = {
-    posted: URLs.POSTED_ARTICLES,
-    saved: URLs.SAVED_ARTICLES,
-    commented: URLs.COMMENTED_ARTICLES,
-    liked: URLs.LIKED_ARTICLES,
-  };
 
   useEffect(() => {
-    initializeData();
-  }, []);
-
-  useEffect(() => {
-    fetchArticles();
+    fetchUserData();
+    fetchStats();
   }, [activeTab]);
-
-  const initializeData = async () => {
-    await Promise.all([
-      fetchUserData(),
-      fetchStats(),
-      fetchArticles()
-    ]);
-    
-    // Animate in
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const fetchUserData = async () => {
-    const storedUniversity = await getData('university');
-    const storedEmail = await getData('email');
-    const storedPoints = await getData('points');
-    setUniversity(storedUniversity || "University of Sydney");
-    setEmail(storedEmail || "");
-    setPoints(storedPoints || '1,247');
-  };
 
   const fetchStats = async () => {
     try {
@@ -104,249 +68,305 @@ export default function ProfilePage() {
         fetchAPI(URLs.LIKED_ARTICLES, { method: 'GET', token: true })
       ]);
 
-      setStats({
-        posts: postedRes.data?.count || 0,
-        saved: savedRes.data?.count || 0,
-        comments: commentedRes.data?.count || 0,
-        likes: likedRes.data?.count || 0,
+      setRealStats({
+        posts: postedRes.data?.count || userData.stats.posts,
+        saved: savedRes.data?.count || userData.stats.saved,
+        comments: commentedRes.data?.count || userData.stats.comments,
+        likes: likedRes.data?.count || userData.stats.likes,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
   };
 
-  const fetchArticles = async () => {
+  const fetchUserData = async () => {
     setLoading(true);
-    setError(null);
     
     try {
-      const response = await fetchAPI(apiEndpoints[activeTab], {
+      const apiEndpoints = {
+        posted: URLs.POSTED_ARTICLES,
+        saved: URLs.SAVED_ARTICLES,
+        commented: URLs.COMMENTED_ARTICLES,
+        liked: URLs.LIKED_ARTICLES,
+      };
+
+      const response = await fetchAPI(apiEndpoints[activeTab as keyof typeof apiEndpoints], {
         method: 'GET',
         token: true,
       });
       
       if (!response.error) {
-        setArticles(response.data?.results?.articles || []);
-        setNextArticlePage(response.data?.next || null);
-      } else {
-        setError(response?.data?.detail || "Failed to load articles");
+        const articles = response.data?.results?.articles || [];
+        
+        switch (activeTab) {
+          case 'posted':
+            setPosts(articles);
+            break;
+          case 'saved':
+            setSavedPosts(articles);
+            break;
+          case 'commented':
+            setComments(articles);
+            break;
+          case 'liked':
+            setLikedPosts(articles);
+            break;
+        }
       }
     } catch (error) {
-      setError("Network error occurred");
+      console.error('Error fetching user data:', error);
     } finally {
       setLoading(false);
-      fetchedArticlePage.current = null;
     }
   };
 
-  const fetchMoreArticles = async () => {
-    if (!nextArticlePage || nextArticlePage === fetchedArticlePage.current) return;
-    
-    try {
-      const response = await fetchAPI(nextArticlePage, {
-        method: 'GET',
-        token: true,
-      });
-      
-      if (!response.error) {
-        setArticles(prevArticles => [
-          ...prevArticles,
-          ...(response.data?.results?.articles || []),
-        ]);
-        fetchedArticlePage.current = nextArticlePage;
-        setNextArticlePage(response.data?.next || null);
-      }
-    } catch (error) {
-      console.error('Error fetching more articles:', error);
-    }
-  };
-
-  const handleTabPress = (tab: keyof typeof apiEndpoints) => {
+  const handleTabChange = (tab: string) => {
     if (tab === activeTab) return;
-    
     setActiveTab(tab);
-    setArticles([]);
-    setExpandedPostId(null);
   };
 
-  const handlePostPress = (postId: string) => {
-    if (expandedPostId === postId) {
-      // Close expanded post
-      setExpandedPostId(null);
-    } else {
-      // Open post details
-      router.push(`/article/${postId}`);
-    }
+  const handleLogout = () => {
+    // Add logout logic here
+    router.replace('/Login');
   };
 
-  const renderCredibilityScore = () => (
-    <View style={styles.credibilityContainer}>
-      <LinearGradient
-        colors={['#10B981', '#059669', '#047857']}
-        style={styles.credibilityGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text style={styles.credibilityTitle}>Credibility Score</Text>
-        <Text style={styles.credibilityScore}>{points}</Text>
-        <Text style={styles.credibilitySubtitle}>Points</Text>
-      </LinearGradient>
-    </View>
-  );
+  const handleSettings = () => {
+    // Navigate to settings or show settings modal
+    console.log('Settings clicked');
+  };
 
-  const renderAccountSummary = () => (
-    <View style={styles.summaryContainer}>
-      <Text style={styles.sectionTitle}>Account Summary</Text>
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>University</Text>
-          <Text style={styles.summaryValue}>{university}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Student Email</Text>
-          <Text style={styles.summaryValue}>{email}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Google Account</Text>
-          <TouchableOpacity>
-            <Text style={styles.linkText}>Connect Account</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Update Password</Text>
-          <TouchableOpacity onPress={() => setShowChangePasswordModal(true)}>
-            <Text style={styles.linkText}>Change Password</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+  const handleSearchClick = () => {
+    router.push('/search');
+  };
 
-  const renderStats = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statsGrid}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.posts}</Text>
-          <Text style={styles.statLabel}>Posts</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.comments}</Text>
-          <Text style={styles.statLabel}>Comments</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.likes}</Text>
-          <Text style={styles.statLabel}>Likes</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.saved}</Text>
-          <Text style={styles.statLabel}>Saved</Text>
-        </View>
-      </View>
-    </View>
-  );
+  const handleAddClick = () => {
+    console.log('Add clicked');
+  };
 
-  const renderTabs = () => (
-    <View style={styles.tabContainer}>
-      {Object.keys(apiEndpoints).map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          style={[
-            styles.tab,
-            activeTab === tab && styles.activeTab
-          ]}
-          onPress={() => handleTabPress(tab as keyof typeof apiEndpoints)}
-        >
-          <Text style={[
-            styles.tabText,
-            activeTab === tab && styles.activeTabText
-          ]}>
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
-  const renderArticleList = () => {
+  const renderTabContent = () => {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10B981" />
-          <Text style={styles.loadingText}>Loading articles...</Text>
         </View>
       );
     }
 
-    if (error) {
-      return (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color="#EF4444" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchArticles}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      );
+    switch (activeTab) {
+      case 'posted':
+        return (
+          <View style={styles.tabContent}>
+            {posts.length > 0 ? (
+              posts.map((post, index) => (
+                <PostCard key={index} article={post} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No posts yet</Text>
+                <Text style={styles.emptySubtext}>Share your first post!</Text>
+              </View>
+            )}
+          </View>
+        );
+      case 'saved':
+        return (
+          <View style={styles.tabContent}>
+            {savedPosts.length > 0 ? (
+              savedPosts.map((post, index) => (
+                <PostCard key={index} article={post} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="bookmark-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No saved posts yet</Text>
+              </View>
+            )}
+          </View>
+        );
+      case 'commented':
+        return (
+          <View style={styles.tabContent}>
+            {comments.length > 0 ? (
+              comments.map((comment, index) => (
+                <PostCard key={index} article={comment} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubble-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No comments yet</Text>
+              </View>
+            )}
+          </View>
+        );
+      case 'liked':
+        return (
+          <View style={styles.tabContent}>
+            {likedPosts.length > 0 ? (
+              likedPosts.map((post, index) => (
+                <PostCard key={index} article={post} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="heart-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No liked posts yet</Text>
+              </View>
+            )}
+          </View>
+        );
+      default:
+        return null;
     }
-
-    if (articles.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="document-outline" size={48} color="#9CA3AF" />
-          <Text style={styles.emptyText}>No {activeTab} articles yet</Text>
-        </View>
-      );
-    }
-
-    return (
-      <FlatList
-        data={articles}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <PostCard 
-            article={item} 
-            onPress={() => handlePostPress(item.id.toString())}
-          />
-        )}
-        showsVerticalScrollIndicator={false}
-        onEndReachedThreshold={0.5}
-        onEndReached={fetchMoreArticles}
-        contentContainerStyle={styles.articleList}
-      />
-    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <AppContainer>
-        <Animated.View 
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          <ScrollView 
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {renderCredibilityScore()}
-            {renderAccountSummary()}
-            {renderStats()}
-            {renderTabs()}
-            <View style={styles.articlesContainer}>
-              {renderArticleList()}
-            </View>
-          </ScrollView>
-        </Animated.View>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Header with Settings */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>My Profile</Text>
+            <TouchableOpacity onPress={handleSettings} style={styles.settingsButton}>
+              <Ionicons name="settings-outline" size={24} color="#111827" />
+            </TouchableOpacity>
+          </View>
 
-        <ChangePasswordModal
-          visible={showChangePasswordModal}
-          onClose={() => setShowChangePasswordModal(false)}
+          {/* Profile Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.profileHeader}>
+              <View style={styles.avatarContainer}>
+                <Text style={styles.avatarText}>MC</Text>
+              </View>
+              <View style={styles.profileInfo}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>{userData.name}</Text>
+                  {userData.verified && (
+                    <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />
+                  )}
+                </View>
+                <Text style={styles.username}>@{userData.username}</Text>
+                <View style={styles.locationRow}>
+                  <Text style={styles.university}>{userData.university}</Text>
+                  <View style={styles.joinBadge}>
+                    <Text style={styles.joinText}>{userData.joinDate}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Bio */}
+            <Text style={styles.bio}>{userData.bio}</Text>
+
+            {/* Credibility Score */}
+            <View style={styles.credibilitySection}>
+              <LinearGradient
+                colors={['#10B981', '#059669', '#047857']}
+                style={styles.credibilityGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.credibilityLabel}>Credibility Score</Text>
+                <Text style={styles.credibilityValue}>{userData.credibilityScore}</Text>
+                <Text style={styles.credibilitySubtext}>Points</Text>
+              </LinearGradient>
+            </View>
+
+            {/* Account Summary */}
+            <View style={styles.accountSection}>
+              <Text style={styles.sectionTitle}>Account Summary</Text>
+              <View style={styles.accountRow}>
+                <Text style={styles.accountLabel}>University</Text>
+                <Text style={styles.accountValue}>{userData.university}</Text>
+              </View>
+              <View style={styles.accountRow}>
+                <Text style={styles.accountLabel}>Student Email</Text>
+                <Text style={styles.accountValue}>{userData.email}</Text>
+              </View>
+              <View style={styles.accountRow}>
+                <Text style={styles.accountLabel}>Google Account</Text>
+                <Text style={styles.accountValue}>(PLACE HOLDER)</Text>
+              </View>
+              <View style={styles.accountRow}>
+                <Text style={styles.accountLabel}>Update Password</Text>
+                <TouchableOpacity onPress={() => setShowChangePasswordModal(true)}>
+                  <Text style={styles.accountLink}>Change Password</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.accountRow}>
+                <Text style={styles.accountLabel}>Logout</Text>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Text style={[styles.accountLink, { color: '#EF4444' }]}>Sign Out</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Stats */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{realStats.posts}</Text>
+                <Text style={styles.statLabel}>Posts</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{realStats.comments}</Text>
+                <Text style={styles.statLabel}>Comments</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{realStats.likes}</Text>
+                <Text style={styles.statLabel}>Likes</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{realStats.saved}</Text>
+                <Text style={styles.statLabel}>Saved</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Tabs Section */}
+          <View style={styles.tabsContainer}>
+            <View style={styles.tabsList}>
+              {[
+                { key: 'posted', label: 'Posted', icon: 'document-text' },
+                { key: 'liked', label: 'Liked', icon: 'heart' },
+                { key: 'commented', label: 'Commented', icon: 'chatbubble' },
+                { key: 'saved', label: 'Saved', icon: 'bookmark' },
+              ].map((tab) => (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[
+                    styles.tabItem,
+                    activeTab === tab.key && styles.tabItemActive
+                  ]}
+                  onPress={() => handleTabChange(tab.key)}
+                >
+                  <Ionicons 
+                    name={tab.icon as any} 
+                    size={16} 
+                    color={activeTab === tab.key ? '#fff' : '#6B7280'} 
+                    style={{ marginRight: tab.key === 'commented' ? 8 : 6 }}
+                  />
+                  <Text style={[
+                    styles.tabLabel,
+                    activeTab === tab.key && styles.tabLabelActive
+                  ]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {renderTabContent()}
+          </View>
+        </ScrollView>
+
+        <BottomNav 
+          onSearchClick={handleSearchClick}
+          onAddClick={handleAddClick}
         />
       </AppContainer>
+      
+      <ChangePasswordModal
+        visible={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -356,15 +376,100 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  header: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
   content: {
     flex: 1,
   },
-  scrollContent: {
+  profileSection: {
+    backgroundColor: '#fff',
     padding: 20,
-    paddingBottom: 100, // Space for bottom nav
+    marginBottom: 8,
   },
-  credibilityContainer: {
-    marginBottom: 24,
+  profileHeader: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginRight: 8,
+  },
+  username: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  university: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginRight: 12,
+    flex: 1,
+  },
+  joinBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  joinText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  bio: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  credibilitySection: {
+    marginBottom: 20,
   },
   credibilityGradient: {
     borderRadius: 20,
@@ -376,43 +481,32 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  credibilityTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  credibilityScore: {
-    color: '#fff',
-    fontSize: 48,
+  credibilityLabel: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 4,
   },
-  credibilitySubtitle: {
+  credibilityValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
     color: '#fff',
-    fontSize: 14,
+  },
+  credibilitySubtext: {
+    fontSize: 16,
+    color: '#fff',
     opacity: 0.9,
   },
-  summaryContainer: {
-    marginBottom: 24,
+  accountSection: {
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#111827',
     marginBottom: 12,
   },
-  summaryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  summaryRow: {
+  accountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -420,39 +514,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  summaryLabel: {
+  accountLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#374151',
   },
-  summaryValue: {
+  accountValue: {
     fontSize: 16,
     color: '#6B7280',
   },
-  linkText: {
+  accountLink: {
     fontSize: 16,
     color: '#3B82F6',
     fontWeight: '500',
   },
-  statsContainer: {
-    marginBottom: 24,
-  },
   statsGrid: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   statItem: {
     flex: 1,
     alignItems: 'center',
   },
-  statNumber: {
+  statValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#111827',
@@ -463,84 +549,97 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontWeight: '500',
   },
-  tabContainer: {
-    flexDirection: 'row',
+  tabsContainer: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 4,
+    paddingTop: 20,
+  },
+  tabsList: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  tab: {
+  tabItem: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#F9FAFB',
   },
-  activeTab: {
+  tabItemActive: {
     backgroundColor: '#3B82F6',
   },
-  tabText: {
+  tabLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#6B7280',
   },
-  activeTabText: {
+  tabLabelActive: {
     color: '#fff',
   },
-  articlesContainer: {
-    minHeight: 300,
-  },
-  articleList: {
-    gap: 16,
+  tabContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
   },
   loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 48,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#EF4444',
-    textAlign: 'center',
-  },
-  retryButton: {
-    marginTop: 16,
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyContainer: {
+  emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 48,
   },
   emptyText: {
     marginTop: 16,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
     color: '#9CA3AF',
+  },
+  emptySubtext: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  commentCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
+  },
+  commentTime: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 8,
+  },
+  commentFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentLikes: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginLeft: 4,
   },
 });
 

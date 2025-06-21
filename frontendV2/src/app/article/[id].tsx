@@ -291,48 +291,51 @@ export default function ArticleDetailPage() {
                   </View>
                 </View>
                 <Text style={styles.commentsTitle}>Comments</Text>
-                <FlatList
-                  data={comments}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <View style={styles.commentRow}>
-                      <View style={styles.commentAvatar}>
-                        <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
-                      </View>
-                      <View style={styles.commentContentBox}>
-                        <View style={styles.commentHeaderRow}>
-                          <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
-                          <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
+                <View style={styles.commentsContainer}>
+                  <FlatList
+                    data={comments}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <View style={styles.commentRow}>
+                        <View style={styles.commentAvatar}>
+                          <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
                         </View>
-                        <Text style={styles.commentBody}>{item.body}</Text>
-                        <View style={styles.commentActionsRow}>
-                          <Ionicons
-                            name={item.like_status ? 'heart' : 'heart-outline'}
-                            size={18}
-                            color={item.like_status ? '#e11d48' : '#666'}
-                            style={{ marginRight: 2 }}
-                            onPress={() => likeComment(item.id, null)}
-                          />
-                          <Text style={styles.commentActionText}>{item.likes_count}</Text>
-                          <Ionicons
-                            name="chatbubble-outline"
-                            size={18}
-                            color="#666"
-                            style={{ marginLeft: 12, marginRight: 2 }}
-                            onPress={() => {
-                              setFocusedComment(item.id);
-                              setReplyPreview(item.body);
-                            }}
-                          />
-                          <Text style={styles.commentActionText}>{item.comments_count}</Text>
+                        <View style={styles.commentContentBox}>
+                          <View style={styles.commentHeaderRow}>
+                            <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
+                            <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
+                          </View>
+                          <Text style={styles.commentBody}>{item.body}</Text>
+                          <View style={styles.commentActionsRow}>
+                            <Ionicons
+                              name={item.like_status ? 'heart' : 'heart-outline'}
+                              size={18}
+                              color={item.like_status ? '#e11d48' : '#666'}
+                              style={{ marginRight: 2 }}
+                              onPress={() => likeComment(item.id, null)}
+                            />
+                            <Text style={styles.commentActionText}>{item.likes_count}</Text>
+                            <Ionicons
+                              name="chatbubble-outline"
+                              size={18}
+                              color="#666"
+                              style={{ marginLeft: 12, marginRight: 2 }}
+                              onPress={() => {
+                                setFocusedComment(item.id);
+                                setReplyPreview(item.body);
+                              }}
+                            />
+                            <Text style={styles.commentActionText}>{item.comments_count}</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  )}
-                  ListEmptyComponent={<Text style={styles.noComments}>No comments yet.</Text>}
-                  showsVerticalScrollIndicator={false}
-                  style={styles.commentsList}
-                />
+                    )}
+                    ListEmptyComponent={<Text style={styles.noComments}>No comments yet.</Text>}
+                    showsVerticalScrollIndicator={true}
+                    style={styles.commentsList}
+                    nestedScrollEnabled={true}
+                  />
+                </View>
                 {replyPreview && (
                   <View style={styles.replyPreviewBox}>
                     <Text style={styles.replyPreviewText}>Replying to: "{replyPreview.length > 40 ? replyPreview.slice(0, 40) + '...' : replyPreview}"</Text>
@@ -368,14 +371,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     minHeight: '100vh',
   },
   animatedContainer: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   card: {
     backgroundColor: '#fff',
@@ -384,6 +387,7 @@ const styles = StyleSheet.create({
     maxWidth: 700,
     width: '100%',
     minWidth: 320,
+    height: '90vh', // Fixed height for uniform card size
     marginVertical: 32,
     shadowColor: '#000',
     shadowOpacity: 0.08,
@@ -469,8 +473,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: '#222',
   },
-  commentsList: {
+  commentsContainer: {
+    flex: 1,
+    maxHeight: 300, // Limit height to make it scrollable
     marginBottom: 16,
+  },
+  commentsList: {
+    flex: 1,
   },
   noComments: {
     color: '#888',

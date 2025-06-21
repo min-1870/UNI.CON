@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Link, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedView from '@/components/ThemedView';
+import AppContainer from '@/components/AppContainer';
 
 const getPasswordStrength = (password: string) => {
   return {
@@ -82,8 +84,10 @@ export default function RegisterPage() {
   };
   
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
         <ThemedText type="Wording">Create Account</ThemedText>
         <ThemedText style={styles.subtitle}>Join our university community</ThemedText>
@@ -158,18 +162,23 @@ export default function RegisterPage() {
         <ThemedText style={styles.footerText}>
           Already have an account? <Link href="/" style={styles.link}>Sign in</Link>
         </ThemedText>
-      </ThemedView>
-    </ThemedView>
+          </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 30,
-    backgroundColor: '#f9fafb',
   },
   card: {
     width: '100%',

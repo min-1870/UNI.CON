@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getData } from '@/components/Utils';
 import ThemedView from '@/components/ThemedView';
 import ThemedText from '@/components/ThemedText';
+import AppContainer from '@/components/AppContainer';
 
 const Validation = () => {
   useEffect(() => {
@@ -29,23 +31,30 @@ const Validation = () => {
   }, []);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
-        <ActivityIndicator size="large" color="#57EC6B" />
-        <ThemedText type="Wording">Validating Account</ThemedText>
-        <ThemedText style={styles.subtitle}>Please wait while we verify your information...</ThemedText>
-      </ThemedView>
-    </ThemedView>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.card}>
+            <ActivityIndicator size="large" color="#57EC6B" />
+            <ThemedText type="Wording">Validating Account</ThemedText>
+            <ThemedText style={styles.subtitle}>Please wait while we verify your information...</ThemedText>
+          </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 30,
-    backgroundColor: '#f9fafb',
   },
   card: {
     width: '100%',

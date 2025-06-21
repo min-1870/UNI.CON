@@ -163,8 +163,7 @@ export default function Feed() {
   };
 
   const handleSearchClick = () => {
-    // Open search functionality or navigate to search
-    console.log('Search clicked');
+    router.push('/search' as any);
   };
 
   const handleAddClick = () => {
@@ -233,38 +232,38 @@ export default function Feed() {
           <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
         </Animated.View>
 
-        {/* Tags */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={[styles.tagsContainer, { marginTop: 120 }]}
-          contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
-        >
-          {TAGS.map(tag => (
-            <TouchableOpacity
-              key={tag}
-              style={[
-                styles.tagBadge,
-                selectedTag === tag && styles.tagBadgeSelected,
-              ]}
-              onPress={() => setSelectedTag(tag)}
-            >
-              <Text
+        {/* Tags - Only show when header is visible */}
+        <Animated.View style={{ opacity: headerOpacity }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={[styles.tagsContainer, { marginTop: 120 }]}
+            contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
+          >
+            {TAGS.map(tag => (
+              <TouchableOpacity
+                key={tag}
                 style={[
-                  styles.tagText,
-                  selectedTag === tag && styles.tagTextSelected,
+                  styles.tagBadge,
+                  selectedTag === tag && styles.tagBadgeSelected,
                 ]}
+                onPress={() => setSelectedTag(tag)}
               >
-                {tag}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={[
+                    styles.tagText,
+                    selectedTag === tag && styles.tagTextSelected,
+                  ]}
+                >
+                  {tag}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </Animated.View>
 
-
-
-        {/* Filter Tabs and Toggle */}
-        <View style={styles.filterToggleContainer}>
+        {/* Filter Tabs and Toggle - Only show when header is visible */}
+        <Animated.View style={[styles.filterToggleContainer, { opacity: headerOpacity }]}>
           <View style={styles.filterTabs}>
             {FILTERS.map(filter => (
               <TouchableOpacity
@@ -295,7 +294,7 @@ export default function Feed() {
               thumbColor="#fff"
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Posts List */}
         {loading && articles.length === 0 ? (
@@ -305,40 +304,38 @@ export default function Feed() {
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : (
-        <FlatList
+          <FlatList
             ref={flatListRef}
             data={filteredArticles}
             keyExtractor={item => String(item.id)}
-          contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => router.push(`/article/${item.id}` as any)} activeOpacity={0.85}>
-            <PostCard
-                  post={{
-                    id: String(item.id),
-                    user: item.user_temp_name || 'Unknown',
-                    timestamp: item.created_at,
-                    title: item.title,
-                    content: item.body,
-                    tags: item.course_code ? item.course_code.split(',') : [],
-                    likes: item.likes_count,
-                    comments: item.comments_count,
-                    bookmarks: item.save_status ? 1 : 0,
-                    image: item.image,
-                    like_status: item.like_status || false,
-                  }}
-              styles={styles}
-            />
-              </TouchableOpacity>
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 20 }}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            renderItem={({ item }) => (
+              <PostCard
+                post={{
+                  id: String(item.id),
+                  user: item.user_temp_name || 'Unknown',
+                  timestamp: item.created_at,
+                  title: item.title,
+                  content: item.body,
+                  tags: item.course_code ? item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
+                  likes: item.likes_count,
+                  comments: item.comments_count,
+                  bookmarks: item.save_status ? 1 : 0,
+                  image: item.image,
+                  like_status: item.like_status || false,
+                }}
+                onPress={() => router.push(`/article/${item.id}` as any)}
+              />
             )}
             onEndReached={fetchMoreArticles}
             onEndReachedThreshold={0.5}
             ListEmptyComponent={
               <Text style={styles.emptyText}>No articles found.</Text>
             }
-        />
+          />
         )}
       </View>
       <BottomNav 
@@ -459,12 +456,12 @@ const styles = StyleSheet.create({
   filterTabSelected: {
     backgroundColor: '#57EC6B',
   },
- filterTabText: {
-   fontSize: 14,
-   fontWeight: '600',
-   textAlign: 'center',
-   lineHeight: 18,
- },
+  filterTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
   filterTabTextSelected: {
     color: '#fff',
   },
@@ -490,110 +487,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginTop: 20,
-  },
-  postCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    transitionDuration: '200ms',
-    transform: [{ scale: 1 }],
-  },
-  postHeader: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userAvatar: {
-    backgroundColor: '#57EC6B',
-    width: 30,
-    height: 30,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  userAvatarText: {
-    color: '#fff',
-    fontWeight: '300',
-    fontSize: 15,
-  },
-  userName: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: '#222',
-  },
-  postTimestamp: {
-    marginLeft: 15,
-    fontSize: 12,
-    color: '#999',
-  },
-  postTitle: {
-    fontWeight: '600',
-    fontSize: 20,
-    marginBottom: 10,
-    color: '#222',
-  },
-  postContent: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 10,
-  },
-  postTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  postTagBadge: {
-    backgroundColor: '#e0f2f1',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginBottom: 6,
-  },
-  postTagText: {
-    fontSize: 12,
-    color: '#00796b',
-    fontWeight: '600',
-  },
-  postActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  actionText: {
-    marginLeft: 6,
-    color: '#666',
-    fontSize: 13,
-  },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 32,
-    backgroundColor: '#57EC6B',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-    zIndex: 100,
   },
 });

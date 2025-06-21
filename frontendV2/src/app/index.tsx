@@ -3,8 +3,10 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
+import AppContainer from '@/components/AppContainer';
 import * as AuthSession from 'expo-auth-session';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import Toast from 'react-native-toast-message';
 import { Link, router } from 'expo-router';
@@ -109,8 +111,10 @@ export default function LoginPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
         <ThemedText type="Wording">Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
@@ -170,18 +174,23 @@ export default function LoginPage() {
             </View>
           </ThemedButton>
         </View>
-      </ThemedView>
-    </ThemedView>
+          </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 30,
-    backgroundColor: '#f9fafb',
   },
   card: {
     width: '100%',

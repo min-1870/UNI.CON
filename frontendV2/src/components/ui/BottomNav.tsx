@@ -23,7 +23,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
       icon: 'search-outline' as const, 
       activeIcon: 'search' as const, 
       label: 'Search', 
-      action: onSearchClick 
+      path: '/search' as const 
     },
     { 
       icon: 'add-circle-outline' as const, 
@@ -32,10 +32,10 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
       action: onAddClick 
     },
     { 
-      icon: 'chatbubble-outline' as const, 
-      activeIcon: 'chatbubble' as const, 
-      label: 'Chat', 
-      path: '/chat' as const 
+      icon: 'storefront-outline' as const, 
+      activeIcon: 'storefront' as const, 
+      label: 'Marketplace', 
+      path: '/marketplace' as const 
     },
     { 
       icon: 'person-outline' as const, 

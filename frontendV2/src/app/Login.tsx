@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
+import AppContainer from '@/components/AppContainer';
 import { API_URL } from "@/constants/Domains";
 import { fetchAPI, setData } from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
@@ -80,10 +82,11 @@ export default function LoginPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="Wording">Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
 
         <ThemedText>University Email</ThemedText>
@@ -141,18 +144,23 @@ export default function LoginPage() {
             </View>
           </ThemedButton>
         </View>
-      </ThemedView>
-    </ThemedView>
+          </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 30,
-    backgroundColor: '#f9fafb',
   },
   card: {
     width: '100%',

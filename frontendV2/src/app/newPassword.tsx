@@ -1,7 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
+import AppContainer from '@/components/AppContainer';
 import URLs from "@/constants/Urls";
 import {fetchAPI, setData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
@@ -42,8 +44,10 @@ export default function NewPasswordPage() {
   }
   
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.textInputContainer}>
+    <SafeAreaView style={styles.container}>
+      <AppContainer>
+        <ThemedView style={styles.content}>
+          <ThemedView style={styles.textInputContainer}>
         <ThemedText type="defaultSemiBold">Initial Password</ThemedText>
         <ThemedInput
           onChangeText={setPassword}
@@ -91,13 +95,18 @@ export default function NewPasswordPage() {
           {success ? 'Back to Profile' : loading ? 'Updating Password..' : 'Update Password'}
         </ThemedButton>
       </ThemedView>
-
-    </ThemedView>
+        </ThemedView>
+      </AppContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',

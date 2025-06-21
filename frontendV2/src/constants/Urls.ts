@@ -37,7 +37,8 @@ const URLS = {
 
 
     // CRUDE Article
-    ARTICLE: (articleId?: string) => `${domain}/community/article${articleId ? `/${articleId}` : ''}`,
+    ARTICLE: (articleId?: string) => `${domain}/community/article${articleId ? `/${articleId}/` : '/'}`,
+    ARTICLE_IMG: (queryParams?: string) => `${domain}/community/article/image${queryParams || ''}`,
     ARTICLE_HOT: `${domain}/community/article/hot`,
     ARTICLE_PREFERENCE: `${domain}/community/article/preference`,
     ARTICLE_LIKE: (articleId: string) => `${domain}/community/article/${articleId}/like/`,

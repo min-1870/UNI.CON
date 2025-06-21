@@ -19,35 +19,46 @@ import { fetchAPI } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { router } from 'expo-router';
 
-const TRENDING_TOPICS = [
-  '💻 Computer Science',
-  '📚 Study Groups',
-  '🍕 Campus Food',
-  '📝 Assignments',
-  '🎉 Events',
-  '📖 Textbooks',
-  '💼 Internships',
-  '🏠 Housing',
-];
-
-const RECENT_SEARCHES = [
-  'COMP3900 project',
-  'Study tips',
-  'Exam preparation',
-];
-
 export default function SearchPage() {
   const [searchText, setSearchText] = useState('');
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nextPage, setNextPage] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   
   const searchRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+
+  // Local data to avoid conflicts
+  const trendingTopics = [
+    { tag: 'school', count: '2.3k', color: '#EF4444' },
+    { tag: 'lunch', count: '1.8k', color: '#F97316' },
+    { tag: 'IT', count: '1.5k', color: '#3B82F6' },
+    { tag: 'mid-term', count: '987', color: '#8B5CF6' },
+    { tag: 'fashion', count: '756', color: '#EC4899' },
+    { tag: 'sports', count: '654', color: '#10B981' },
+    { tag: 'music', count: '543', color: '#6366F1' },
+    { tag: 'movies', count: '432', color: '#F59E0B' },
+  ];
+
+  const recentSearches = [
+    'assignment help',
+    'campus events',
+    'study groups',
+    'textbook exchange',
+  ];
+
+  const popularCategories = [
+    'Academic',
+    'Social',
+    'Events',
+    'Resources',
+    'Help',
+    'Entertainment',
+  ];
 
   useEffect(() => {
     // Animate in the trending topics
@@ -77,7 +88,6 @@ export default function SearchPage() {
       
       if (!response.error) {
         setArticles(response.data?.results?.articles || []);
-        setNextPage(response.data?.next || null);
       }
     } catch (err) {
       console.error('Error fetching trending:', err);
@@ -92,6 +102,7 @@ export default function SearchPage() {
 
     setSearching(true);
     setShowResults(true);
+    setSearchFocused(false);
     setError(null);
 
     try {
@@ -102,7 +113,9 @@ export default function SearchPage() {
       
       if (!response.error) {
         setArticles(response.data?.results?.articles || []);
-        setNextPage(response.data?.next || null);
+        if (response.data?.results?.articles?.length === 0) {
+          setError('No results found');
+        }
       } else {
         setError('No results found');
         setArticles([]);
@@ -116,9 +129,8 @@ export default function SearchPage() {
   };
 
   const handleTrendingClick = (topic: string) => {
-    const cleanTopic = topic.replace(/[^\w\s]/gi, '').trim();
-    setSearchText(cleanTopic);
-    handleSearch(cleanTopic);
+    setSearchText(topic);
+    handleSearch(topic);
   };
 
   const handleRecentClick = (recent: string) => {
@@ -126,10 +138,16 @@ export default function SearchPage() {
     handleSearch(recent);
   };
 
+  const handleCategoryClick = (category: string) => {
+    setSearchText(category.toLowerCase());
+    handleSearch(category.toLowerCase());
+  };
+
   const clearSearch = () => {
     setSearchText('');
     setShowResults(false);
-    setArticles([]);
+    setSearchFocused(false);
+    setError(null);
     fetchTrendingArticles();
   };
 
@@ -141,6 +159,8 @@ export default function SearchPage() {
     console.log('Add clicked');
   };
 
+
+
   const renderTrendingTopics = () => (
     <Animated.View 
       style={[
@@ -151,16 +171,22 @@ export default function SearchPage() {
         }
       ]}
     >
-      <Text style={styles.sectionTitle}>🔥 Trending Topics</Text>
+      <View style={styles.sectionHeader}>
+        <Ionicons name="trending-up" size={20} color="#EF4444" />
+        <Text style={styles.sectionTitle}>Trending Now</Text>
+      </View>
       <View style={styles.topicsGrid}>
-        {TRENDING_TOPICS.map((topic, index) => (
+        {trendingTopics.map((topic: any, index: number) => (
           <TouchableOpacity
             key={index}
-            style={styles.topicTag}
-            onPress={() => handleTrendingClick(topic)}
+            style={[styles.topicCard, { backgroundColor: `${topic.color}15` }]}
+            onPress={() => handleTrendingClick(topic.tag)}
             activeOpacity={0.7}
           >
-            <Text style={styles.topicText}>{topic}</Text>
+            <Text style={[styles.topicTag, { color: topic.color }]}>
+              #{topic.tag}
+            </Text>
+            <Text style={styles.topicCount}>{topic.count} posts</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -169,19 +195,43 @@ export default function SearchPage() {
 
   const renderRecentSearches = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>🕒 Recent Searches</Text>
-      {RECENT_SEARCHES.map((search, index) => (
+      <View style={styles.sectionHeader}>
+        <Ionicons name="time" size={20} color="#6B7280" />
+        <Text style={styles.sectionTitle}>Recent Searches</Text>
+      </View>
+      {recentSearches.map((search: string, index: number) => (
         <TouchableOpacity
           key={index}
           style={styles.recentItem}
           onPress={() => handleRecentClick(search)}
           activeOpacity={0.7}
         >
-          <Ionicons name="time-outline" size={18} color="#9CA3AF" />
+          <Ionicons name="search-outline" size={18} color="#9CA3AF" />
           <Text style={styles.recentText}>{search}</Text>
           <Ionicons name="arrow-up-outline" size={16} color="#9CA3AF" />
         </TouchableOpacity>
       ))}
+    </View>
+  );
+
+  const renderPopularCategories = () => (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Ionicons name="people" size={20} color="#10B981" />
+        <Text style={styles.sectionTitle}>Popular Categories</Text>
+      </View>
+      <View style={styles.categoriesGrid}>
+        {popularCategories.map((category: string, index: number) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.categoryButton}
+            onPress={() => handleCategoryClick(category)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.categoryText}>{category}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
@@ -236,7 +286,13 @@ export default function SearchPage() {
         <View style={styles.content}>
           {/* Search Header */}
           <View style={styles.searchHeader}>
-            <Text style={styles.title}>Search</Text>
+            <View style={styles.headerRow}>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={24} color="#111827" />
+              </TouchableOpacity>
+              <Text style={styles.title}>Search</Text>
+              <View style={{ width: 24 }} />
+            </View>
             
             {/* Search Bar */}
             <View style={styles.searchContainer}>
@@ -245,10 +301,11 @@ export default function SearchPage() {
                 <TextInput
                   ref={searchRef}
                   style={styles.searchInput}
-                  placeholder="Search posts, topics, or hashtags..."
+                  placeholder="Search posts, hashtags, or content..."
                   value={searchText}
                   onChangeText={setSearchText}
                   onSubmitEditing={() => handleSearch()}
+                  onFocus={() => setSearchFocused(true)}
                   returnKeyType="search"
                   autoCorrect={false}
                   autoCapitalize="none"
@@ -260,6 +317,13 @@ export default function SearchPage() {
                 )}
               </View>
             </View>
+
+            {/* Search Results Count */}
+            {searchText && showResults && (
+              <Text style={styles.resultsCount}>
+                {articles.length} result{articles.length !== 1 ? 's' : ''} found
+              </Text>
+            )}
           </View>
 
           {/* Content */}
@@ -272,6 +336,7 @@ export default function SearchPage() {
               <>
                 {renderTrendingTopics()}
                 {renderRecentSearches()}
+                {renderPopularCategories()}
                 
                 {loading && (
                   <View style={styles.loadingContainer}>
@@ -282,7 +347,10 @@ export default function SearchPage() {
                 
                 {articles.length > 0 && !showResults && (
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>📈 Trending Posts</Text>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="flame" size={20} color="#F59E0B" />
+                      <Text style={styles.sectionTitle}>Trending Posts</Text>
+                    </View>
                     <FlatList
                       data={articles.slice(0, 5)}
                       keyExtractor={(item) => item.id.toString()}
@@ -301,14 +369,44 @@ export default function SearchPage() {
                   <Text style={styles.resultsTitle}>
                     Search Results for "{searchText}"
                   </Text>
-                  <Text style={styles.resultsCount}>
-                    {articles.length} results found
-                  </Text>
                 </View>
                 {renderSearchResults()}
               </View>
             )}
           </ScrollView>
+
+          {/* Trending Tags Overlay */}
+          {searchFocused && (
+            <>
+              <TouchableOpacity 
+                style={styles.overlay}
+                onPress={() => setSearchFocused(false)}
+                activeOpacity={1}
+              />
+              <View style={styles.trendingOverlay}>
+                <View style={styles.overlayHeader}>
+                  <Ionicons name="trending-up" size={16} color="#EF4444" />
+                  <Text style={styles.overlayTitle}>Trending Tags</Text>
+                </View>
+                                 {trendingTopics.slice(0, 6).map((topic: any, index: number) => (
+                   <TouchableOpacity
+                     key={index}
+                     style={styles.overlayItem}
+                     onPress={() => handleTrendingClick(topic.tag)}
+                   >
+                     <View style={[styles.rankBadge, { 
+                       backgroundColor: index === 0 ? '#10B981' : 
+                                      index === 1 ? '#3B82F6' : 
+                                      index === 2 ? '#8B5CF6' : '#6B7280' 
+                     }]}>
+                       <Text style={styles.rankText}>{String(index + 1).padStart(2, '0')}</Text>
+                     </View>
+                     <Text style={styles.overlayItemText}>#{topic.tag}</Text>
+                   </TouchableOpacity>
+                 ))}
+              </View>
+            </>
+          )}
         </View>
 
         <BottomNav 
@@ -335,11 +433,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 16,
   },
   searchContainer: {
     marginBottom: 8,
@@ -363,35 +466,48 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
   },
+  resultsCount: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
   scrollContent: {
     flex: 1,
   },
   section: {
     padding: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 16,
+    marginLeft: 8,
   },
   topicsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  topicTag: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 20,
+  topicCard: {
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
+    paddingVertical: 12,
+    minWidth: '45%',
+    alignItems: 'center',
   },
-  topicText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1D4ED8',
+  topicTag: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  topicCount: {
+    fontSize: 12,
+    color: '#6B7280',
   },
   recentItem: {
     flexDirection: 'row',
@@ -413,6 +529,24 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginLeft: 12,
   },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryButton: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1D4ED8',
+  },
   resultsSection: {
     flex: 1,
   },
@@ -426,11 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 4,
-  },
-  resultsCount: {
-    fontSize: 14,
-    color: '#6B7280',
   },
   resultsList: {
     padding: 20,
@@ -485,4 +614,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    zIndex: 30,
+  },
+  trendingOverlay: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 40,
+  },
+  overlayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  overlayTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#EF4444',
+    marginLeft: 8,
+  },
+  overlayItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  rankBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rankText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  overlayItemText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
 });
+

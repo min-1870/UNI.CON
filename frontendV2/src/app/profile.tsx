@@ -333,7 +333,7 @@ const Profile = () => {
                       name={tab.icon as any} 
                       size={16} 
                       color={activeTab === tab.key ? '#fff' : '#6B7280'} 
-                      style={{ marginRight: 6 }}
+                      style={{ marginRight: tab.key === 'commented' ? 8 : 6 }}
                     />
                     <Text style={[
                       styles.tabLabel,
