@@ -1,4 +1,4 @@
-import {View, NativeSyntheticEvent, TextInputKeyPressEventData,} from 'react-native';
+import {View, NativeSyntheticEvent, TextInputKeyPressEventData, Platform, TextStyle} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
@@ -9,6 +9,7 @@ import { ImagePickerResult } from 'expo-image-picker'
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedView from '@/components/ThemedView';
+import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
 import Toast from 'react-native-toast-message';
@@ -271,20 +272,14 @@ export default function NewArticlePage() {
     });
   }
 
-  const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key === ' ' || e.nativeEvent.key === ',') {
-      const word = raw.trim().toLocaleLowerCase();
-      if (word.length > 0 && !tags.includes(word)) {
-        setTags([...tags, word]);
-      }
-      setRaw(''); 
-    }
-  };
-
   const removeTag = (indexToRemove: number) => {
     setTags(prev => prev.filter((_, i) => i !== indexToRemove));
   };
-
+  const removeOutline = {
+        ...(Platform.OS === 'web'
+          ? ({ outlineStyle: 'none' } as TextStyle)
+          : {}),
+  };
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -324,20 +319,19 @@ export default function NewArticlePage() {
       marginBottom: 20, 
       flex:1
     },
-  bodyTextArea: {
-    borderWidth: 0,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    fontSize: 16,
-    color: default_text_color,
-    lineHeight: 30
-  },
+    bodyTextArea: {
+      borderWidth: 0,
+      borderRadius: 4,
+      paddingHorizontal: 8,
+      fontSize: 16,
+      color: default_text_color,
+      lineHeight: 30
+    },
     tagAreaContainer:{
       padding: 20,
       gap: 20,
       display: 'flex',
       minHeight: 200,
-      // flex: 1,
     },
     chipContainer: {
       flexDirection: 'row',
@@ -345,10 +339,12 @@ export default function NewArticlePage() {
       alignItems: 'center',
     },
     tagTextArea: {
+      color: default_text_color,
       flexGrow: 1,
       minWidth: 80,
       fontSize: 16,
       padding: 4,
+      borderWidth: 0,
     },
     img: {
       width: '100%',
@@ -370,7 +366,7 @@ export default function NewArticlePage() {
       <ThemedView style={styles.cardContainer}>
         <ThemedView style={styles.textAreasContainer}>
           <TextInput
-            style={styles.titleTextArea}
+            style={[removeOutline, styles.titleTextArea]}
             underlineColorAndroid="transparent" 
             numberOfLines={6}            
             placeholder="Title"
@@ -391,6 +387,7 @@ export default function NewArticlePage() {
                     style={[
                         styles.bodyTextArea,
                         { height: inputHeights[idx] || undefined },
+                        removeOutline,
                         isLastBlock && styles.activeBodyTextArea
                     ]}
                     underlineColorAndroid="transparent"
@@ -446,18 +443,32 @@ export default function NewArticlePage() {
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
             <Pressable onPress={() => removeTag(i)}>
-              <ThemedTag text={tag} type={'default'} key={i}/>
+              <ThemedTag unClickable={true} text={tag} type={'default'} key={i}/>
             </Pressable>
           ))}
-          <TextInput
-            style={styles.tagTextArea}
+          <ThemedInput
+            style={[removeOutline, styles.tagTextArea]}
             value={raw}
-            onChangeText={setRaw}
-            onKeyPress={onKeyPress}
+            onChangeText={(text) => {
+              if (text.endsWith(' ') || text.endsWith(',')) {
+                const word = text.trim().toLowerCase();
+                if (word.length > 0 && !tags.includes(word)) {
+                  setTags([...tags, word]);
+                }
+                setRaw('');
+              } else {
+                setRaw(text);
+              }
+            }}
             placeholder="Type and hit space"
             placeholderTextColor={place_holder_color}
             autoCorrect={false}
             autoCapitalize="none"
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === 'Backspace' && raw.length === 0 && tags.length > 0) {
+                setTags(prevTags => prevTags.slice(0, -1));
+              }
+            }}
           />
         </View>
       </ThemedView>

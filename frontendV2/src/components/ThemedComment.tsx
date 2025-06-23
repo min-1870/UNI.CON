@@ -101,7 +101,7 @@ export default function ThemedComment({ commentData, setFocusedComment, isReplyi
     <View style={commentData.parent_comment ? styles.nested_container : styles.container}>
       <View style={styles.info_container}>
           {isUnicon && (
-            <ThemedTag initialData={initialData} type='uni' text={commentData.user_school.toUpperCase()}/>
+            <ThemedTag unClickable={true} initialData={initialData} type='uni' text={commentData.user_school.toUpperCase()}/>
           )}
         <ThemedText type='articleAuthor' style={{fontSize:12}}>
           {commentData.user_temp_name}

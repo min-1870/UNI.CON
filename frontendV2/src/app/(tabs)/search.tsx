@@ -29,7 +29,7 @@ const TagHeader = memo<{
     <View style={styles.tagsRow}>
       {tags.map((t) => (
         <Pressable key={t} onPress={() => onTagPress(t)}>
-          <ThemedTag searchPage = {true}text={t} type={selectedTag && selectedTag == t ? 'selectedRanked' : 'ranked'} />
+          <ThemedTag text={t} unClickable={true} type={selectedTag && selectedTag == t ? 'selectedRanked' : 'ranked'} />
         </Pressable>
       ))}
     </View>

@@ -157,7 +157,6 @@ export default function HomePage() {
   const fetchArticles = useCallback(async () => {
     // setLoading(true);
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
-      console.log(feedIds, feedIds[sortOption]||[]);
       return;
     }
     const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });

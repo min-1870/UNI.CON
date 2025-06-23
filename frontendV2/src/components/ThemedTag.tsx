@@ -7,13 +7,13 @@ import { router } from 'expo-router';
 type TagProps = {
     text: string;
     type: 'default'| 'selectedDefault'|'ranked'|'selectedRanked'|'bigRanked'|'uni';
-    searchPage?: boolean;
+    unClickable?: boolean;
     initialData?: InitialDataType|null;
   };
 export default function ThemedTag({
   text='',
   type ='default',
-  searchPage = false,
+  unClickable = false,
   initialData,
 }: TagProps) {
   
@@ -109,7 +109,7 @@ export default function ThemedTag({
 
   return (
     <>
-      {type !== 'uni' && !searchPage ? (
+      { !unClickable ? (
         <Pressable onPress={() => {
           router.push({
             pathname: '/(tabs)/search',

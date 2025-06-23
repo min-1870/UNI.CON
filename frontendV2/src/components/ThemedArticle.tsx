@@ -194,7 +194,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
       <Pressable onPress={handleArticleDetail}>
         <View style={[styles.infoContainer]}>
             {article.unicon && (
-              <ThemedTag initialData={initialData} type='uni' text={article.user_school.toUpperCase()}/>
+              <ThemedTag initialData={initialData} type='uni' unClickable={true} text={article.user_school.toUpperCase()}/>
             )}
           <ThemedText type='articleAuthor'>
             {article.user_temp_name}

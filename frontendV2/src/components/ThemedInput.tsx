@@ -1,9 +1,8 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Pressable, TextInput, StyleSheet, type TextInputProps } from 'react-native';
-import { ReactNode } from 'react';
+import { Platform, TextStyle, TextInput, StyleSheet, type TextInputProps } from 'react-native';
 
 type ThemedInputProps = TextInputProps & {
-  type?: 'auth' | 'comment' | 'search';
+  type?: 'auth' | 'comment' | 'search' ;
 };
 
 export default function ThemedInput({
@@ -15,50 +14,63 @@ export default function ThemedInput({
     const textColor = useThemeColor({}, 'default_text_color');
     const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
-    const styles = StyleSheet.create({
-      auth: { //TODO fix the styles to match the design
-        padding: 12,
-        paddingHorizontal: 20,
-        backgroundColor: backgroundColor,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: textColor, 
-        width: '100%',
-      },
-      comment: {
-        padding: 12,
-        paddingHorizontal: 20,
-        backgroundColor: backgroundColor,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: textColor, 
-        width: '100%',
-      },
-      search: {
-        paddingHorizontal: 30,
-        paddingVertical:18,
-        backgroundColor: default_card_background_color,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: textColor, 
-        width: '100%',
-        
-        boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-        backdropFilter: 'blur(10px)', // For web platforms
-        elevation: 10, // For Android shadow
-      },
-    })
+    const default_style = {
+      ...(Platform.OS === 'web'
+        ? ({ outlineStyle: 'none' } as TextStyle)
+        : {}),
+    };
+    const styles = type === 'auth'
+      ? StyleSheet.create({
+          style: {
+            padding: 12,
+            paddingHorizontal: 20,
+            backgroundColor: backgroundColor,
+            borderRadius: 50,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: textColor, 
+            width: '100%',
+          },
+        })
+      : type === 'comment'
+      ? StyleSheet.create({
+          style: {
+            padding: 12,
+            paddingHorizontal: 20,
+            backgroundColor: backgroundColor,
+            borderRadius: 50,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: textColor, 
+            width: '100%',
+          },
+        })
+      : type === 'search'
+      ? StyleSheet.create({
+          style: {
+            paddingHorizontal: 30,
+            paddingVertical: 18,
+            backgroundColor: default_card_background_color,
+            borderRadius: 50,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: textColor, 
+            width: '100%',
+            
+            boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+            backdropFilter: 'blur(10px)', // For web platforms
+            elevation: 10, // For Android shadow
+          },
+        })
+      : StyleSheet.create({
+          style: {
+          },
+        });
+      
 
   return (
     <TextInput
-      style={[
-        type === 'auth' ? styles.auth : undefined,
-        type === 'comment' ? styles.comment : undefined,
-        type === 'search' ? styles.search : undefined,
-      ]}
+      style={[default_style, styles.style, rest.style]}
       {...rest}
       placeholderTextColor={placeholderColor}
     />

@@ -163,6 +163,7 @@ def get_serialized_comment(request, comment_instance):
         )
         comment_instance.user_temp_name = articleUser_instance.user_temp_name
         comment_instance.user_static_points = articleUser_instance.user_static_points
+        comment_instance.user_school = comment_instance.user.school.initial
 
         # Make an annotated_comment to set the cache
         serialized_annotated_comment = CommentResponseSerializer(comment_instance).data
