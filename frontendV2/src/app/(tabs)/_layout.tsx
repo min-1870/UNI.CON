@@ -52,7 +52,7 @@ export default function TabLayout() {
       screenListeners={({ navigation, route }) => ({
       tabPress: (e) => {
         if (route.name === routeName.current) {
-          useArticlesStore.getState().reset();
+          useArticlesStore.getState().reset(route.name);
         }
         routeName.current = route.name; 
       },

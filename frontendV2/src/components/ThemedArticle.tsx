@@ -173,6 +173,15 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
   };
 
   const handleArticleDetail = useCallback(() => {
+        useArticlesStore.getState().updateArticle(article.id, {
+          view_status: true,
+          views_count: article.views_count + 1,
+        });
+        setArticleState((prevState: any) => ({
+          ...prevState,
+          view_status: true,
+          views_count: prevState.views_count + 1,
+        }));
     router.push({ pathname: '/article/[id]', params: { id: String(articleData.id) } });
   }, [articleData.id]);
   

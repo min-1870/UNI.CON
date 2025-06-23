@@ -10,8 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-
-import { useFocusEffect } from '@react-navigation/native';
 import { ArticleType, InitialDataType } from '@/constants/types';
 import URLs from "@/constants/Urls";
 import { fetchAPI, getData, setData } from "@/components/Utils";
@@ -23,6 +21,8 @@ import ThemedTag from '@/components/ThemedTag';
 import Toast from 'react-native-toast-message';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useArticlesStore } from '@/store/articleStore';
+import { useRoute } from '@react-navigation/native';
+
 const apiEndpoints = {
   all: URLs.TIME_SORTED_ARTICLES,
   hot: URLs.HOT_SORTED_ARTICLES,
@@ -84,7 +84,8 @@ const styles = StyleSheet.create({
 
 export default function HomePage() {
   const defaultCardBg = useThemeColor({}, 'default_card_background_color');
-
+  const route = useRoute();
+  
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
   const [initialData, setInitialData] = useState<InitialDataType | null>(null);  
   const [tags, setTags] = useState<string[]>([]);
@@ -94,21 +95,22 @@ export default function HomePage() {
   const isFetchingMore = useRef(false);
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
-  const feedIds = useArticlesStore(s => s.feeds) || {};
-  const articlesById = useArticlesStore(s => s.articlesById);
-  const feedArticles = (feedIds[sortOption] || []).map(id => articlesById[id]) || [];
-  const nextArticlePage = useArticlesStore(s => s.nextArticlePage);
-  const currentArticlePage = useArticlesStore(s => s.currentArticlePage);
+  const lastResetPage = useArticlesStore(s => s.lastResetPage);
+  const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
+  const articlesById = useArticlesStore(s => s.articlesById) || {};
+  const feedArticles = (feedIds[sortOption] ?? []).map(id => articlesById[id]) || [];
+  const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
+  const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
   // FETCH ONCE: initial data & tags
   useEffect(() => {
+    setLoading(true);
     (async () => {
       const stored = await getData('initialData');
       if (stored) setInitialData(JSON.parse(stored));
     })();
 
     (async () => {
-      setLoading(true);
       const res = await fetchAPI(URLs.TRENDING_TAGS, { method: 'GET', token: true });
       if (!res.error) {
         const allTags = Array.isArray(res.data?.tags) ? res.data.tags : [];
@@ -117,18 +119,28 @@ export default function HomePage() {
       } else {
         Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
       }
-      setLoading(false);
+      
     })();
     fetchArticles();
+    setLoading(false);
   }, []);
 
+  // Fetch again when the page is reset
+  useEffect(() => {
+    if (lastResetPage && lastResetPage === route.name) {
+      fetchArticles();
+
+    }
+  },[lastResetPage]);
+
+  // Fetch articles when sortOption changes
   useEffect(() => {
     if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
       fetchArticles();
     }
   }, [sortOption]);
 
-  // ANIMATE CONTENT APPEARANCE
+  // Animate content opacity based on loading state
   useEffect(() => {
     if (loading) {
       contentOpacity.setValue(0);
@@ -143,28 +155,20 @@ export default function HomePage() {
 
   // FETCH ARTICLES on mount & sortOption change
   const fetchArticles = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true);
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
+      console.log(feedIds, feedIds[sortOption]||[]);
       return;
     }
-    
     const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(sortOption, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
-    setLoading(false);
-  }, [sortOption]);
-
-  useFocusEffect(
-  useCallback(() => {
-      if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
-        fetchArticles();
-      }
-    }, [feedIds, sortOption, fetchArticles])
-  );
+    // setLoading(false);
+  }, [sortOption, lastResetPage]);
 
 
   const fetchMoreArticles = useCallback(async () => {
@@ -175,8 +179,8 @@ export default function HomePage() {
     isFetchingMore.current = true;
     const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }

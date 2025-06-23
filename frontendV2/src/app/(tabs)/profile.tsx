@@ -12,24 +12,25 @@ import * as AuthSession from 'expo-auth-session';
 import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
 import { Animated } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { router, useFocusEffect } from 'expo-router';
 import URLs from "@/constants/Urls";
 
 export default function ProfilePage() {
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
-  // const [nextArticlePage, setNextArticlePage] = useState(null);
-  // const [articles, setArticles] = useState<ArticleType[]>([]);
   const [loading, setLoading] = useState(false);
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const isFetchingMore = useRef(false);
+  const route = useRoute();
   
-  const feedIds = useArticlesStore(s => s.feeds) || {};
-  const articlesById = useArticlesStore(s => s.articlesById);
-  const feedArticles = (feedIds[sortOption] || []).map(id => articlesById[id]) || [];
-  const nextArticlePage = useArticlesStore(s => s.nextArticlePage);
-  const currentArticlePage = useArticlesStore(s => s.currentArticlePage);
+  const lastResetPage = useArticlesStore(s => s.lastResetPage);
+  const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
+  const articlesById = useArticlesStore(s => s.articlesById) || {};
+  const feedArticles = (feedIds[sortOption] ?? []).map(id => articlesById[id]) || [];
+  const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
+  const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   
@@ -44,6 +45,14 @@ export default function ProfilePage() {
     commented: URLs.COMMENTED_ARTICLES,
     liked: URLs.LIKED_ARTICLES,
   };
+
+  // Fetch again when the page is reset
+  useEffect(() => {
+    if (lastResetPage && lastResetPage === route.name) {
+      fetchArticles();
+    }
+  },[lastResetPage]);
+
   // FETCH ONCE: initial data 
   useEffect(() => {
     (async () => {
@@ -72,20 +81,20 @@ export default function ProfilePage() {
 
 
   const fetchArticles = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true);
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
       return;
     }
     
     const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(sortOption, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
-    setLoading(false);
-  }, [sortOption]);
+    // setLoading(false);
+  }, [sortOption, lastResetPage]);
 
   useFocusEffect(
   useCallback(() => {
@@ -103,8 +112,8 @@ export default function ProfilePage() {
     isFetchingMore.current = true;
     const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }

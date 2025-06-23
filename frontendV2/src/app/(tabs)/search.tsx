@@ -6,7 +6,7 @@ import {
   Animated,
   Pressable,
 } from "react-native";
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useArticlesStore } from '@/store/articleStore';
 import { ArticleType, InitialDataType } from '@/constants/types';
@@ -18,6 +18,7 @@ import ThemedView from '@/components/ThemedView';
 import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from "expo-router";
 // Memoized Tag header
 const TagHeader = memo<{
   tags: string[];
@@ -58,6 +59,7 @@ type SearchRoute = RouteProp<{ Search: { tag?: string } }, "Search">;
 export default function SearchPage() {
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const route = useRoute<SearchRoute>();
+  const navigation = useNavigation();
   const isFetchingMore = useRef(false);
   
   const [searchTag, setSearchTag] = useState<string | undefined>(route.params?.tag || undefined);
@@ -68,11 +70,19 @@ export default function SearchPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);  
     
-  const feedIds = useArticlesStore(s => s.feeds) || {};
-  const articlesById = useArticlesStore(s => s.articlesById);
-  const feedArticles = (feedIds[sortOption] || []).map(id => articlesById[id]) || [];
-  const nextArticlePage = useArticlesStore(s => s.nextArticlePage);
-  const currentArticlePage = useArticlesStore(s => s.currentArticlePage);
+    
+  const lastResetPage = useArticlesStore(s => s.lastResetPage);
+  const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
+  const articlesById = useArticlesStore(s => s.articlesById) || {};
+  const feedArticles = (feedIds[sortOption] ?? []).map(id => articlesById[id]) || [];
+  const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
+  const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
+
+  useEffect(() => {
+    if (lastResetPage && lastResetPage === route.name) {
+      fetchArticles();
+    }
+  },[lastResetPage]);
 
   useEffect(() => {  
     if (searchContent.length > 0 && searched) { 
@@ -98,6 +108,25 @@ export default function SearchPage() {
   },[sortOption])
 
   useEffect(() => {
+    Animated.timing(contentOpacity, {
+      toValue: loading ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [loading]);
+
+    
+  useEffect(() => {
+    if (route.params?.tag) {
+      setSearchContent('');
+      setSearchTag(route.params?.tag);
+      router.push({
+        pathname: '/(tabs)/search',
+      });
+    }
+  },[searchTag, route.params?.tag]);
+
+  useEffect(() => {
     (async () => {
       const stored = await getData('initialData');
       if (stored) setInitialData(JSON.parse(stored));
@@ -115,18 +144,6 @@ export default function SearchPage() {
       setLoading(false);
     })();
   }, []);
-
-  useEffect(() => {
-    Animated.timing(contentOpacity, {
-      toValue: loading ? 0 : 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [loading]);
-
-  useEffect(() => {
-    setSearchTag(route.params?.tag);
-  },[route.params?.tag]);
   
   const fetchArticles = useCallback(async () => {
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
@@ -141,23 +158,14 @@ export default function SearchPage() {
       url = URLs.HOT_SORTED_ARTICLES;
     } 
     const res = await fetchAPI(url, { method: 'GET', token: true });
-    if (!res.error) {
-      console.log(sortOption);
-      
-      useArticlesStore.getState().setFeed(sortOption, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+    if (!res.error) {      
+      useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
-  }, [sortOption]);
-  
-  useFocusEffect(
-    useCallback(() => {
-        if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
-          fetchArticles();
-        }
-      }, [feedIds, sortOption, fetchArticles])
-  );
+  }, [searchContent, searchTag, sortOption, lastResetPage]);
+
 
   const fetchMoreArticles = useCallback(async () => {
     if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
@@ -167,8 +175,8 @@ export default function SearchPage() {
     isFetchingMore.current = true;
     const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
-      useArticlesStore.getState().setNextArticlePage(sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
