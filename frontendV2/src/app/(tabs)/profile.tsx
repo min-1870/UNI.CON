@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { fetchAPI, getData } from "@/components/Utils";
 import AppContainer from '@/components/AppContainer';
-import BottomNav from '@/components/ui/BottomNav';
+
 import URLs from "@/constants/Urls";
 import { LinearGradient } from 'expo-linear-gradient';
 import PostCard from '@/components/PostCard';
@@ -28,7 +28,7 @@ const userData = {
   verified: true,
   credibilityScore: 140,
   joinDate: 'September 2023',
-  bio: 'Computer Science student passionate about AI and web development. Always looking for interesting discussions!',
+
   avatar: '',
   stats: {
     posts: 23,
@@ -284,7 +284,7 @@ export default function ProfilePage() {
               </View>
               <View style={styles.accountRow}>
                 <Text style={styles.accountLabel}>Google Account</Text>
-                <Text style={styles.accountValue}>(PLACE HOLDER)</Text>
+                <Text style={styles.accountLink}>Connect with Google</Text>
               </View>
               <View style={styles.accountRow}>
                 <Text style={styles.accountLabel}>Update Password</Text>
@@ -306,13 +306,14 @@ export default function ProfilePage() {
                 <Text style={styles.statValue}>{realStats.posts}</Text>
                 <Text style={styles.statLabel}>Posts</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{realStats.comments}</Text>
-                <Text style={styles.statLabel}>Comments</Text>
-              </View>
+
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{realStats.likes}</Text>
                 <Text style={styles.statLabel}>Likes</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{realStats.comments}</Text>
+                <Text style={styles.statLabel}>Comments</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{realStats.saved}</Text>
@@ -357,10 +358,7 @@ export default function ProfilePage() {
           </View>
         </ScrollView>
 
-        <BottomNav 
-          onSearchClick={handleSearchClick}
-          onAddClick={handleAddClick}
-        />
+
       </AppContainer>
       
       <ChangePasswordModal

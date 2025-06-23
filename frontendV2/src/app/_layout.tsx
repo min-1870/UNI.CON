@@ -48,7 +48,11 @@ export default function RootLayout() {
         <Stack.Screen name="feed" />
         <Stack.Screen name="article" options={{ headerShown: true }} />
         <Stack.Screen name="+not-found" />
-        <Stack.Screen name="registerComplete" />
+        <Stack.Screen name="sign-in-complete" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="newPassword" />
+        <Stack.Screen name="notification" />
+        <Stack.Screen name="Login" />
       </Stack>
       <Toast />
       <StatusBar style="auto" />

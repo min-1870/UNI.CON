@@ -14,8 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppContainer from '@/components/AppContainer';
 import PostCard from '@/components/PostCard';
-import BottomNav from '@/components/ui/BottomNav';
-import { fetchAPI } from '@/components/Utils';
+
+import { fetchAPI, getData, setData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { router } from 'expo-router';
 
@@ -27,41 +27,31 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
   const searchRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   // Local data to avoid conflicts
   const trendingTopics = [
-    { tag: 'school', count: '2.3k', color: '#EF4444' },
-    { tag: 'lunch', count: '1.8k', color: '#F97316' },
-    { tag: 'IT', count: '1.5k', color: '#3B82F6' },
-    { tag: 'mid-term', count: '987', color: '#8B5CF6' },
-    { tag: 'fashion', count: '756', color: '#EC4899' },
-    { tag: 'sports', count: '654', color: '#10B981' },
-    { tag: 'music', count: '543', color: '#6366F1' },
-    { tag: 'movies', count: '432', color: '#F59E0B' },
-  ];
-
-  const recentSearches = [
-    'assignment help',
-    'campus events',
-    'study groups',
-    'textbook exchange',
+    { tag: 'Computer Science', color: '#3B82F6', count: 125 },
+    { tag: 'Study Groups', color: '#10B981', count: 89 },
+    { tag: 'Campus Events', color: '#F59E0B', count: 67 },
+    { tag: 'Housing', color: '#8B5CF6', count: 45 },
+    { tag: 'Food', color: '#EF4444', count: 34 },
+    { tag: 'Internships', color: '#06B6D4', count: 28 },
   ];
 
   const popularCategories = [
-    'Academic',
-    'Social',
-    'Events',
-    'Resources',
-    'Help',
-    'Entertainment',
+    'Academic', 'Social', 'Career', 'Sports', 'Technology', 'Arts'
   ];
 
   useEffect(() => {
-    // Animate in the trending topics
+    loadRecentSearches();
+    fetchTrendingArticles();
+    
+    // Animate page load
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -74,14 +64,52 @@ export default function SearchPage() {
         useNativeDriver: true,
       }),
     ]).start();
-    
-    fetchTrendingArticles();
   }, []);
+
+  // Auto-search with debounce
+  useEffect(() => {
+    if (searchText.trim().length > 2) {
+      const debounceTimer = setTimeout(() => {
+        handleSearch(searchText);
+      }, 800); // Wait 800ms after user stops typing
+
+      return () => clearTimeout(debounceTimer);
+    } else if (searchText.trim().length === 0) {
+      setShowResults(false);
+      setError(null);
+    }
+  }, [searchText]);
+
+  const loadRecentSearches = async () => {
+    try {
+      const recent = await getData('recentSearches');
+      if (recent) {
+        setRecentSearches(JSON.parse(recent));
+      }
+    } catch (err) {
+      console.log('No recent searches found');
+    }
+  };
+
+  const saveRecentSearch = async (query: string) => {
+    try {
+      const trimmedQuery = query.trim();
+      if (!trimmedQuery) return;
+      
+      let updatedSearches = [trimmedQuery, ...recentSearches.filter(s => s !== trimmedQuery)];
+      updatedSearches = updatedSearches.slice(0, 5); // Keep only 5 recent searches
+      
+      setRecentSearches(updatedSearches);
+      await setData('recentSearches', JSON.stringify(updatedSearches));
+    } catch (err) {
+      console.log('Failed to save recent search');
+    }
+  };
 
   const fetchTrendingArticles = async () => {
     setLoading(true);
     try {
-      const response = await fetchAPI(URLs.HOT_SORTED_ARTICLES, {
+      const response = await fetchAPI(URLs.ARTICLE_HOT, {
         method: 'GET',
         token: true,
       });
@@ -98,30 +126,45 @@ export default function SearchPage() {
 
   const handleSearch = async (query?: string) => {
     const searchQuery = query || searchText.trim();
-    if (!searchQuery) return;
+    if (!searchQuery || searchQuery.length < 1) {
+      setError('Please enter a search term');
+      return;
+    }
 
+    console.log('🔍 Searching for:', searchQuery);
     setSearching(true);
     setShowResults(true);
     setSearchFocused(false);
     setError(null);
 
     try {
+      // Save to recent searches
+      await saveRecentSearch(searchQuery);
+      
+      console.log('📡 API URL:', URLs.SEARCHING_ARTICLE(searchQuery));
       const response = await fetchAPI(URLs.SEARCHING_ARTICLE(searchQuery), {
         method: 'GET',
         token: true,
       });
       
+      console.log('🔍 Search response:', response);
+      
       if (!response.error) {
-        setArticles(response.data?.results?.articles || []);
-        if (response.data?.results?.articles?.length === 0) {
-          setError('No results found');
+        const searchResults = response.data?.results?.articles || response.data?.articles || [];
+        console.log('📝 Search results:', searchResults);
+        setArticles(searchResults);
+        
+        if (searchResults.length === 0) {
+          setError(`No results found for "${searchQuery}"`);
         }
       } else {
-        setError('No results found');
+        console.error('Search API error:', response.data);
+        setError(response?.data?.detail || 'Search failed. Please try again.');
         setArticles([]);
       }
     } catch (err) {
-      setError('Search failed. Please try again.');
+      console.error('Search error:', err);
+      setError('Search failed. Please check your connection and try again.');
       setArticles([]);
     } finally {
       setSearching(false);
@@ -152,14 +195,12 @@ export default function SearchPage() {
   };
 
   const handleSearchClick = () => {
-    router.push('/search');
+    // Already on search page
   };
 
   const handleAddClick = () => {
-    console.log('Add clicked');
+    router.push('/(tabs)' as any);
   };
-
-
 
   const renderTrendingTopics = () => (
     <Animated.View 
@@ -193,26 +234,30 @@ export default function SearchPage() {
     </Animated.View>
   );
 
-  const renderRecentSearches = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Ionicons name="time" size={20} color="#6B7280" />
-        <Text style={styles.sectionTitle}>Recent Searches</Text>
+  const renderRecentSearches = () => {
+    if (recentSearches.length === 0) return null;
+    
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="time" size={20} color="#6B7280" />
+          <Text style={styles.sectionTitle}>Recent Searches</Text>
+        </View>
+        {recentSearches.map((search: string, index: number) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.recentItem}
+            onPress={() => handleRecentClick(search)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+            <Text style={styles.recentText}>{search}</Text>
+            <Ionicons name="arrow-up-outline" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+        ))}
       </View>
-      {recentSearches.map((search: string, index: number) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.recentItem}
-          onPress={() => handleRecentClick(search)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="search-outline" size={18} color="#9CA3AF" />
-          <Text style={styles.recentText}>{search}</Text>
-          <Ionicons name="arrow-up-outline" size={16} color="#9CA3AF" />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+    );
+  };
 
   const renderPopularCategories = () => (
     <View style={styles.section}>
@@ -262,7 +307,7 @@ export default function SearchPage() {
         <View style={styles.emptyContainer}>
           <Ionicons name="document-outline" size={64} color="#E5E7EB" />
           <Text style={styles.emptyText}>No results found</Text>
-          <Text style={styles.emptySubtext}>Try different keywords</Text>
+          <Text style={styles.emptySubtext}>Try different keywords or browse trending topics</Text>
         </View>
       );
     }
@@ -309,11 +354,20 @@ export default function SearchPage() {
                   returnKeyType="search"
                   autoCorrect={false}
                   autoCapitalize="none"
+                  editable={!searching}
                 />
+                {searching && (
+                  <ActivityIndicator size="small" color="#3B82F6" style={styles.searchingIndicator} />
+                )}
                 {searchText.length > 0 && (
-                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                    <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity onPress={() => handleSearch()} style={styles.searchButton}>
+                      <Ionicons name="search" size={18} color="#3B82F6" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                      <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -321,7 +375,14 @@ export default function SearchPage() {
             {/* Search Results Count */}
             {searchText && showResults && (
               <Text style={styles.resultsCount}>
-                {articles.length} result{articles.length !== 1 ? 's' : ''} found
+                {searching ? 'Searching...' : `${articles.length} result${articles.length !== 1 ? 's' : ''} found`}
+              </Text>
+            )}
+            
+            {/* Search Hint */}
+            {searchText.length > 0 && searchText.length <= 2 && !showResults && (
+              <Text style={styles.searchHint}>
+                Type at least 3 characters to search automatically
               </Text>
             )}
           </View>
@@ -409,10 +470,7 @@ export default function SearchPage() {
           )}
         </View>
 
-        <BottomNav 
-          onSearchClick={handleSearchClick}
-          onAddClick={handleAddClick}
-        />
+
       </AppContainer>
     </SafeAreaView>
   );
@@ -463,6 +521,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
   },
+  searchButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  searchingIndicator: {
+    marginRight: 8,
+  },
   clearButton: {
     padding: 4,
   },
@@ -470,6 +535,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     marginTop: 8,
+  },
+  searchHint: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   scrollContent: {
     flex: 1,

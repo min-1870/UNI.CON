@@ -22,20 +22,42 @@ export default function ArticleDetailPage() {
   const [newComment, setNewComment] = useState('');
   const [focusedComment, setFocusedComment] = useState<string | null>(null);
   const [slideAnim] = useState(new Animated.Value(1));
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [scaleAnim] = useState(new Animated.Value(0.95));
   const [slideOut, setSlideOut] = useState(false);
   const [replyPreview, setReplyPreview] = useState<string | null>(null);
   const [articleLiked, setArticleLiked] = useState(false);
   const [articleLikes, setArticleLikes] = useState(0);
+  const [articleSaved, setArticleSaved] = useState(false);
 
   useEffect(() => {
-    // Slide in animation
+    // Smooth entry animation
     slideAnim.setValue(1);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 350,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.95);
+    
+    // Parallel animations for smooth entry
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 450,
+        easing: Easing.out(Easing.back(1.1)),
+        useNativeDriver: true,
+      })
+    ]).start();
+    
     fetchArticle();
   }, [id]);
 
@@ -48,10 +70,12 @@ export default function ArticleDetailPage() {
       token: true,
     });
     if (!response.error) {
-      setArticle(response.data?.results?.article || null);
+      const articleData = response.data?.results?.article || null;
+      setArticle(articleData);
       setComments(response.data?.results?.comments || []);
-      setArticleLiked(response.data?.results?.article?.like_status || false);
-      setArticleLikes(response.data?.results?.article?.likes_count || 0);
+      setArticleLiked(articleData?.like_status || false);
+      setArticleLikes(articleData?.likes_count || 0);
+      setArticleSaved(articleData?.save_status || false);
     } else {
       setError(response?.data?.detail || 'An error occurred');
     }
@@ -95,6 +119,28 @@ export default function ArticleDetailPage() {
     if (!response.error) {
       setArticleLiked(!articleLiked);
       setArticleLikes(articleLikes + (articleLiked ? -1 : 1));
+    }
+  };
+
+  const handleArticleSave = async () => {
+    if (!article) return;
+    try {
+      const url = articleSaved ? URLs.ARTICLE_UNSAVE(article.id) : URLs.ARTICLE_SAVE(article.id);
+      const response = await fetchAPI(url, { 
+        method: 'POST', 
+        token: true
+      });
+      
+      // Check for successful response
+      if (!response.error) {
+        setArticleSaved(!articleSaved);
+      } else {
+        console.error('Save failed:', response);
+        setError('Failed to save article. Please try again.');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      setError('Failed to save article. Please try again.');
     }
   };
 
@@ -201,164 +247,241 @@ export default function ArticleDetailPage() {
     }
   };
 
-  // Slide animation style
-  const slideStyle = {
+  // Render nested comments with proper indentation
+  const renderNestedComments = (nestedComments: any[], level: number = 1) => {
+    return nestedComments.map((nestedComment) => (
+      <View key={nestedComment.id} style={[styles.commentRow, { marginLeft: level * 20 }]}>
+        <View style={styles.commentAvatar}>
+          <Text style={styles.commentAvatarText}>{(nestedComment.user_temp_name || 'U')[0]}</Text>
+        </View>
+        <View style={styles.commentContentBox}>
+          <View style={styles.commentHeaderRow}>
+            <Text style={styles.commentAuthor}>@{nestedComment.user_temp_name || 'Unknown'}</Text>
+            <Text style={styles.commentTime}>{moment(nestedComment.created_at).fromNow()}</Text>
+          </View>
+          <Text style={styles.commentBody}>{nestedComment.body}</Text>
+          <View style={styles.commentActionsRow}>
+            <Ionicons
+              name={nestedComment.like_status ? 'heart' : 'heart-outline'}
+              size={16}
+              color={nestedComment.like_status ? '#e11d48' : '#666'}
+              style={{ marginRight: 2 }}
+              onPress={() => likeComment(nestedComment.id, nestedComment.parent_comment)}
+            />
+            <Text style={styles.commentActionText}>{nestedComment.likes_count}</Text>
+            <Text style={styles.replyButton} onPress={() => {
+              setFocusedComment(nestedComment.id);
+              setReplyPreview(nestedComment.body);
+            }}>Reply</Text>
+          </View>
+        </View>
+      </View>
+    ));
+  };
+
+  // Combined animation style
+  const animationStyle = {
     transform: [
       {
         translateX: slideAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, slideOut ? 500 : 500], // Slide in from right, out to right
+          outputRange: [0, slideOut ? 500 : 500],
         }),
       },
+      {
+        scale: scaleAnim,
+      },
     ],
+    opacity: fadeAnim,
   };
 
   const handleBack = () => {
     setSlideOut(true);
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 350,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 300,
+        easing: Easing.in(Easing.back(1.1)),
+        useNativeDriver: true,
+      })
+    ]).start(() => {
       router.back();
     });
   };
 
   return (
     <View style={styles.bg}>
-      <Animated.View style={[styles.animatedContainer, slideStyle]}>
+      <Animated.View style={[styles.animatedContainer, animationStyle]}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={80}
         >
           <View style={styles.card}>
-            <Text style={styles.backLink} onPress={handleBack}>&larr; Back to feed</Text>
-            {loading ? (
-              <ThemedText>Loading...</ThemedText>
-            ) : error ? (
-              <ThemedText type="error">{error}</ThemedText>
-            ) : article ? (
-              <>
-                <View style={styles.headerRow}>
-                  <Text style={styles.title}>{article.title}</Text>
+            <View style={styles.contentContainer}>
+              <Text style={styles.backLink} onPress={handleBack}>&larr; Back to feed</Text>
+              {loading ? (
+                <ThemedText>Loading...</ThemedText>
+              ) : error ? (
+                <ThemedText type="error">{error}</ThemedText>
+              ) : article ? (
+                <>
                   <Text style={styles.time}>{moment(article.created_at).fromNow()}</Text>
-                </View>
-                <View style={styles.authorRow}>
-                  <Text style={styles.author}>@{article.user_temp_name || 'Unknown'}</Text>
-                </View>
-                {article.image && (
-                  <View style={styles.imageContainer}>
+                  <View style={styles.headerRow}>
+                    <Text style={styles.title}>{article.title}</Text>
+                  </View>
+                  <View style={styles.authorRow}>
+                    <Text style={styles.author}>@{article.user_temp_name || 'Unknown'}</Text>
+                  </View>
+                  {article.image && (
+                    <View style={styles.imageContainer}>
+                      <FlatList
+                        data={Array.isArray(article.image) ? article.image : [article.image]}
+                        horizontal
+                        renderItem={({ item }) => (
+                          <View style={styles.imageWrapper}>
+                            <img src={item} alt="article" style={{ width: 300, height: 180, borderRadius: 12, objectFit: 'cover' }} />
+                          </View>
+                        )}
+                        keyExtractor={(_, idx) => String(idx)}
+                        showsHorizontalScrollIndicator={false}
+                      />
+                    </View>
+                  )}
+                  <Text style={styles.body}>{article.body}</Text>
+                  <View style={styles.tagsRow}>
+                    {article.course_code && article.course_code.split(',').map((tag: string) => (
+                      <View key={tag} style={styles.tagBadge}>
+                        <Text style={styles.tagText}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  
+                  {/* Divider between content and toolbar */}
+                  <View style={styles.divider} />
+                  
+                  {/* Action toolbar - removed comment button */}
+                  <View style={styles.statsRow}>
+                    <View style={styles.statIconRow}>
+                      <Ionicons
+                        name={articleLiked ? 'heart' : 'heart-outline'}
+                        size={22}
+                        color={articleLiked ? '#e11d48' : '#444'}
+                        style={{ marginRight: 4 }}
+                        onPress={handleArticleLike}
+                      />
+                      <Text style={styles.stat}>{articleLikes}</Text>
+                    </View>
+                    <View style={styles.statIconRow}>
+                      <Ionicons
+                        name={articleSaved ? 'bookmark' : 'bookmark-outline'}
+                        size={20}
+                        color={articleSaved ? '#f59e0b' : '#444'}
+                        style={{ marginRight: 4 }}
+                        onPress={handleArticleSave}
+                      />
+                    </View>
+                    <View style={styles.statIconRow}>
+                      <MaterialCommunityIcons name="share-outline" size={20} color="#444" style={{ marginRight: 4 }} />
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.commentsTitle}>Comments</Text>
+                  <View style={styles.commentsContainer}>
                     <FlatList
-                      data={Array.isArray(article.image) ? article.image : [article.image]}
-                      horizontal
+                      data={comments}
+                      keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
-                        <View style={styles.imageWrapper}>
-                          <img src={item} alt="article" style={{ width: 300, height: 180, borderRadius: 12, objectFit: 'cover' }} />
+                        <View>
+                          <View style={styles.commentRow}>
+                            <View style={styles.commentAvatar}>
+                              <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
+                            </View>
+                            <View style={styles.commentContentBox}>
+                              <View style={styles.commentHeaderRow}>
+                                <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
+                                <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
+                              </View>
+                              <Text style={styles.commentBody}>{item.body}</Text>
+                              <View style={styles.commentActionsRow}>
+                                <Ionicons
+                                  name={item.like_status ? 'heart' : 'heart-outline'}
+                                  size={18}
+                                  color={item.like_status ? '#e11d48' : '#666'}
+                                  style={{ marginRight: 2 }}
+                                  onPress={() => likeComment(item.id, null)}
+                                />
+                                <Text style={styles.commentActionText}>{item.likes_count}</Text>
+                                <Ionicons
+                                  name="chatbubble-outline"
+                                  size={18}
+                                  color="#666"
+                                  style={{ marginLeft: 12, marginRight: 2 }}
+                                  onPress={() => {
+                                    setFocusedComment(item.id);
+                                    setReplyPreview(item.body);
+                                  }}
+                                />
+                                <Text style={styles.commentActionText}>{item.comments_count}</Text>
+                                {item.comments_count > 0 && (
+                                  <Text 
+                                    style={styles.repliesButton} 
+                                    onPress={() => fetchNestedComments(item.id)}
+                                  >
+                                    {item.showReplies ? 'Hide replies' : `${item.comments_count} replies`}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+                          {/* Render nested comments with indentation */}
+                          {item.showReplies && item.nested_comments && renderNestedComments(item.nested_comments)}
                         </View>
                       )}
-                      keyExtractor={(_, idx) => String(idx)}
-                      showsHorizontalScrollIndicator={false}
+                      ListEmptyComponent={<Text style={styles.noComments}>No comments yet.</Text>}
+                      showsVerticalScrollIndicator={true}
+                      style={styles.commentsList}
+                      nestedScrollEnabled={true}
+                      contentContainerStyle={{ paddingBottom: 20 }}
                     />
                   </View>
-                )}
-                <Text style={styles.body}>{article.body}</Text>
-                <View style={styles.tagsRow}>
-                  {article.course_code && article.course_code.split(',').map((tag: string) => (
-                    <View key={tag} style={styles.tagBadge}>
-                      <Text style={styles.tagText}>{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.statsRow}>
-                  <View style={styles.statIconRow}>
-                    <Ionicons
-                      name={articleLiked ? 'heart' : 'heart-outline'}
-                      size={22}
-                      color={articleLiked ? '#e11d48' : '#444'}
-                      style={{ marginRight: 4, cursor: 'pointer' }}
-                      onPress={handleArticleLike}
-                    />
-                    <Text style={styles.stat}>{articleLikes}</Text>
-                  </View>
-                  <View style={styles.statIconRow}>
-                    <Ionicons name="chatbubble-outline" size={20} color="#444" style={{ marginRight: 4 }} />
-                    <Text style={styles.stat}>{article.comments_count}</Text>
-                  </View>
-                  <View style={styles.statIconRow}>
-                    <MaterialCommunityIcons name="share-outline" size={20} color="#444" style={{ marginRight: 4 }} />
-                  </View>
-                </View>
-                <Text style={styles.commentsTitle}>Comments</Text>
-                <View style={styles.commentsContainer}>
-                  <FlatList
-                    data={comments}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                      <View style={styles.commentRow}>
-                        <View style={styles.commentAvatar}>
-                          <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
-                        </View>
-                        <View style={styles.commentContentBox}>
-                          <View style={styles.commentHeaderRow}>
-                            <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
-                            <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
-                          </View>
-                          <Text style={styles.commentBody}>{item.body}</Text>
-                          <View style={styles.commentActionsRow}>
-                            <Ionicons
-                              name={item.like_status ? 'heart' : 'heart-outline'}
-                              size={18}
-                              color={item.like_status ? '#e11d48' : '#666'}
-                              style={{ marginRight: 2 }}
-                              onPress={() => likeComment(item.id, null)}
-                            />
-                            <Text style={styles.commentActionText}>{item.likes_count}</Text>
-                            <Ionicons
-                              name="chatbubble-outline"
-                              size={18}
-                              color="#666"
-                              style={{ marginLeft: 12, marginRight: 2 }}
-                              onPress={() => {
-                                setFocusedComment(item.id);
-                                setReplyPreview(item.body);
-                              }}
-                            />
-                            <Text style={styles.commentActionText}>{item.comments_count}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    )}
-                    ListEmptyComponent={<Text style={styles.noComments}>No comments yet.</Text>}
-                    showsVerticalScrollIndicator={true}
-                    style={styles.commentsList}
-                    nestedScrollEnabled={true}
-                  />
-                </View>
-                {replyPreview && (
-                  <View style={styles.replyPreviewBox}>
-                    <Text style={styles.replyPreviewText}>Replying to: "{replyPreview.length > 40 ? replyPreview.slice(0, 40) + '...' : replyPreview}"</Text>
-                    <Ionicons name="close" size={18} color="#888" style={{ marginLeft: 8 }} onPress={() => { setFocusedComment(null); setReplyPreview(null); }} />
-                  </View>
-                )}
-                <View style={styles.commentInputRow}>
-                  <Ionicons name="chatbubble-outline" size={22} color="#888" style={{ marginRight: 8 }} />
-                  <ThemedInput
-                    type="comment"
-                    value={newComment}
-                    onChangeText={setNewComment}
-                    placeholder={focusedComment ? 'Reply to comment...' : 'Add a comment...'}
-                    onSubmitEditing={focusedComment ? handleReplyComment : handleSendComment}
-                    returnKeyType="send"
-                    style={styles.commentInput}
-                  />
-                  <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} type="auth" style={styles.commentButton}>
-                    Post
-                  </ThemedButton>
-                </View>
-              </>
-            ) : null}
+                </>
+              ) : null}
+            </View>
+            
+            {/* Fixed comment input bar at bottom */}
+            {replyPreview && (
+              <View style={styles.replyPreviewBox}>
+                <Text style={styles.replyPreviewText}>Replying to: "{replyPreview.length > 40 ? replyPreview.slice(0, 40) + '...' : replyPreview}"</Text>
+                <Ionicons name="close" size={18} color="#888" style={{ marginLeft: 8 }} onPress={() => { setFocusedComment(null); setReplyPreview(null); }} />
+              </View>
+            )}
+            <View style={styles.fixedCommentBar}>
+              <ThemedInput
+                type="comment"
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder={focusedComment ? 'Reply to comment...' : 'Add a comment...'}
+                onSubmitEditing={focusedComment ? handleReplyComment : handleSendComment}
+                returnKeyType="send"
+                style={styles.commentInput}
+              />
+              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} type="comment">
+                <Ionicons name="checkmark-outline" size={25} color="#FFFFFF" />
+              </ThemedButton>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Animated.View>
@@ -372,7 +495,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    minHeight: '100vh',
   },
   animatedContainer: {
     flex: 1,
@@ -383,11 +505,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 24,
-    padding: 32,
     maxWidth: 700,
-    width: '100%',
-    minWidth: 320,
-    height: '90vh', // Fixed height for uniform card size
+    width: '90%',
+    minWidth: 400,
+    height: '90%',
     marginVertical: 32,
     shadowColor: '#000',
     shadowOpacity: 0.08,
@@ -395,14 +516,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     alignSelf: 'center',
-    boxSizing: 'border-box',
+    position: 'relative',
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 32,
+    paddingBottom: 80, // Space for fixed comment bar
   },
   backLink: {
     color: '#666',
     marginBottom: 16,
     fontSize: 16,
     fontWeight: '500',
-    cursor: 'pointer',
   },
   title: {
     fontSize: 26,
@@ -428,10 +553,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   body: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
     marginBottom: 16,
     textAlign: 'justify',
+    lineHeight: 20,
   },
   tagsRow: {
     flexDirection: 'row',
@@ -452,16 +578,23 @@ const styles = StyleSheet.create({
     color: '#00796b',
     fontWeight: '600',
   },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 16,
+    width: '100%',
+  },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
     gap: 24,
+    paddingVertical: 8,
   },
   statIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 24,
+    marginRight: 16,
   },
   stat: {
     fontSize: 16,
@@ -475,7 +608,6 @@ const styles = StyleSheet.create({
   },
   commentsContainer: {
     flex: 1,
-    maxHeight: 300, // Limit height to make it scrollable
     marginBottom: 16,
   },
   commentsList: {
@@ -486,12 +618,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
   },
-  commentInputRow: {
+  fixedCommentBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 8,
-    marginBottom: 0,
   },
   commentInput: {
     flex: 1,
@@ -502,15 +642,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 15,
   },
-  commentButton: {
-    borderRadius: 24,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    backgroundColor: '#57EC6B',
-    minWidth: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,9 +649,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   time: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#888',
     fontWeight: '400',
+    alignSelf: 'flex-end',
+    marginBottom: 8,
   },
   commentRow: {
     flexDirection: 'row',
@@ -577,18 +710,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginRight: 8,
   },
+  repliesButton: {
+    color: '#007AFF',
+    fontSize: 13,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  replyButton: {
+    color: '#007AFF',
+    fontSize: 13,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
   replyPreviewBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'absolute',
+    bottom: 70, // Above the fixed comment bar
+    left: 16,
+    right: 16,
     backgroundColor: '#f3f4f6',
     borderRadius: 8,
     padding: 8,
-    marginBottom: 8,
-    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
   },
   replyPreviewText: {
     color: '#444',
     fontSize: 13,
     fontStyle: 'italic',
+    flex: 1,
   },
 }); 

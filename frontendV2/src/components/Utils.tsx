@@ -3,20 +3,27 @@ import URLs from "@/constants/Urls";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Function to save data
-const setData = async (key:string, value:string) => {
+const setData = async (key: string, value: any) => {
   try {
-    await AsyncStorage.setItem(key, value);
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    await AsyncStorage.setItem(key, stringValue);
   } catch (e) {
     console.error('Error saving data', e);
   }
 };
 
 // Function to retrieve data
-const getData = async (key:string) => {
+const getData = async (key: string) => {
   try {
     const value = await AsyncStorage.getItem(key);
     if (value !== null) {
-      return value;
+      try {
+        // Try to parse as JSON first
+        return JSON.parse(value);
+      } catch {
+        // If parsing fails, return as string
+        return value;
+      }
     }
   } catch (e) {
     console.error('Error retrieving data', e);

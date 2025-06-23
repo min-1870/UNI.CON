@@ -3,7 +3,7 @@ import { Pressable, Text, StyleSheet, type ButtonProps } from 'react-native';
 import { ReactNode } from 'react';
 
 type ThemedButtonProps = Omit<ButtonProps, 'title'> & {
-  type?: 'auth' | 'feedChecked' | 'feedUnchecked' | 'toggled' | 'unToggled';
+  type?: 'auth' | 'feedChecked' | 'feedUnchecked' | 'toggled' | 'unToggled' | 'comment';
   children: ReactNode;
 };
 
@@ -29,7 +29,14 @@ export default function ThemedButton({
       alignItems: 'center',
       justifyContent: 'center',
     },
-    
+    comment: {
+      padding: 5,
+      borderRadius: 20,
+      width: '15%',
+      backgroundColor: background_color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     feed_checked: {
       paddingHorizontal: 20,
       paddingVertical: 10,
@@ -73,6 +80,7 @@ export default function ThemedButton({
         type === 'feedUnchecked' ? styles.feed_unchecked : undefined,
         type === 'toggled' ? styles.toggled : undefined,
         type === 'unToggled' ? styles.unToggled : undefined,
+        type == 'comment' ? styles.comment : undefined,
         { 
           opacity: (pressed || disabled) ? 0.5 : 1,
         }

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import ThemedText from '@/components/ThemedText';
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -79,12 +80,8 @@ const SignInComplete = () => {
         </Animated.View>
 
         <Animated.View style={textStyle}>
-          <Text style={styles.title}>
-            Welcome to{'\n'}UNI.CON
-          </Text>
-          <Text style={styles.subtitle}>
-            Your university community awaits
-          </Text>
+          <ThemedText type="Wording" style = {{textAlign:'center',color:'rgb(255, 255, 255)',}}>Registration{'\n'}Success !</ThemedText>
+        <ThemedText type="Wording" style = {{fontSize:25,color:'rgb(241, 241, 241)'}}>Redirecting to home.</ThemedText>
         </Animated.View>
       </View>
     </View>

@@ -12,13 +12,13 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
-import PostCard from '../components/PostCard';
-import { fetchAPI, getData } from '../components/Utils';
+import PostCard from '@/components/PostCard';
+import { fetchAPI, getData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { router } from 'expo-router';
-import CreatePost from '../components/CreatePost';
-import AppContainer from '../components/AppContainer';
-import BottomNav from '../components/ui/BottomNav';
+import CreatePost from '@/components/CreatePost';
+import AppContainer from '@/components/AppContainer';
+import BottomNav from '@/components/ui/BottomNav';
 
 const TAGS = ['All', 'School', 'IT'];
 
@@ -58,6 +58,10 @@ export default function Feed() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
   const isScrollingDown = useRef(false);
+  
+  // Sticky header animation state
+  const stickyHeaderOpacity = useRef(new Animated.Value(0)).current;
+  const stickyHeaderTranslateY = useRef(new Animated.Value(-60)).current;
 
   const apiEndpoints: Record<FilterType, string> = {
     All: URLs.ARTICLE(),
@@ -173,30 +177,44 @@ export default function Feed() {
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
-      useNativeDriver: false,
+      useNativeDriver: true,
       listener: (event: any) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         const scrollDirection = currentScrollY > lastScrollY.current ? 'down' : 'up';
         
-        if (scrollDirection === 'down' && currentScrollY > 50 && !isScrollingDown.current) {
-          // Hide navbar when scrolling down
+        // More responsive scroll detection - lower threshold and faster animation
+        if (scrollDirection === 'down' && currentScrollY > 30 && !isScrollingDown.current) {
+          // Hide main header and show sticky header when scrolling down
           isScrollingDown.current = true;
           Animated.parallel([
+            // Hide main header
             Animated.timing(headerOpacity, {
+              toValue: 0,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.timing(headerTranslateY, {
+              toValue: -120,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            // Show sticky header
+            Animated.timing(stickyHeaderOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(stickyHeaderTranslateY, {
               toValue: 0,
               duration: 200,
               useNativeDriver: true,
             }),
-            Animated.timing(headerTranslateY, {
-              toValue: -100,
-              duration: 200,
-              useNativeDriver: true,
-            }),
           ]).start();
-        } else if (scrollDirection === 'up' && isScrollingDown.current) {
-          // Show navbar when scrolling up
+        } else if (scrollDirection === 'up' && isScrollingDown.current && currentScrollY < 200) {
+          // Show main header and hide sticky header when scrolling up
           isScrollingDown.current = false;
           Animated.parallel([
+            // Show main header
             Animated.timing(headerOpacity, {
               toValue: 1,
               duration: 200,
@@ -205,6 +223,17 @@ export default function Feed() {
             Animated.timing(headerTranslateY, {
               toValue: 0,
               duration: 200,
+              useNativeDriver: true,
+            }),
+            // Hide sticky header
+            Animated.timing(stickyHeaderOpacity, {
+              toValue: 0,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.timing(stickyHeaderTranslateY, {
+              toValue: -60,
+              duration: 150,
               useNativeDriver: true,
             }),
           ]).start();
@@ -218,26 +247,44 @@ export default function Feed() {
   return (
     <AppContainer>
       <View style={styles.container}>
-        {/* Animated Header */}
+        {/* Sticky Mini Header - Shows when main header is hidden */}
         <Animated.View 
           style={[
-            styles.header,
+            styles.stickyHeader,
+            {
+              opacity: stickyHeaderOpacity,
+              transform: [{ 
+                translateY: stickyHeaderTranslateY
+              }],
+            }
+          ]}
+        >
+          {/* Glass effect overlay */}
+          <View style={styles.glassOverlay} />
+          <Text style={styles.stickyHeaderText}>UNI.CON</Text>
+        </Animated.View>
+
+        {/* Animated Header Container - All header elements in one container */}
+        <Animated.View 
+          style={[
+            styles.headerContainer,
             {
               opacity: headerOpacity,
               transform: [{ translateY: headerTranslateY }],
             }
           ]}
         >
-          <Text style={styles.headerTitle}>UNICON</Text>
-          <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
-        </Animated.View>
+          {/* Main Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>UNICON</Text>
+            <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
+          </View>
 
-        {/* Tags - Only show when header is visible */}
-        <Animated.View style={{ opacity: headerOpacity }}>
+          {/* Tags */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={[styles.tagsContainer, { marginTop: 120 }]}
+            style={styles.tagsContainer}
             contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
           >
             {TAGS.map(tag => (
@@ -260,39 +307,39 @@ export default function Feed() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </Animated.View>
 
-        {/* Filter Tabs and Toggle - Only show when header is visible */}
-        <Animated.View style={[styles.filterToggleContainer, { opacity: headerOpacity }]}>
-          <View style={styles.filterTabs}>
-            {FILTERS.map(filter => (
-              <TouchableOpacity
-                key={filter}
-                style={[
-                  styles.filterTab,
-                  selectedFilter === filter && styles.filterTabSelected,
-                ]}
-                onPress={() => setSelectedFilter(filter)}
-              >
-                <Text
+          {/* Filter Tabs and Toggle */}
+          <View style={styles.filterToggleContainer}>
+            <View style={styles.filterTabs}>
+              {FILTERS.map(filter => (
+                <TouchableOpacity
+                  key={filter}
                   style={[
-                    styles.filterTabText,
-                    selectedFilter === filter && styles.filterTabTextSelected,
+                    styles.filterTab,
+                    selectedFilter === filter && styles.filterTabSelected,
                   ]}
+                  onPress={() => setSelectedFilter(filter)}
                 >
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Toggle</Text>
-            <Switch
-              value={isSwitchOn}
-              onValueChange={setIsSwitchOn}
-              trackColor={{ false: '#ccc', true: '#4CAF50' }}
-              thumbColor="#fff"
-            />
+                  <Text
+                    style={[
+                      styles.filterTabText,
+                      selectedFilter === filter && styles.filterTabTextSelected,
+                    ]}
+                  >
+                    {filter}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Toggle</Text>
+              <Switch
+                value={isSwitchOn}
+                onValueChange={setIsSwitchOn}
+                trackColor={{ false: '#ccc', true: '#4CAF50' }}
+                thumbColor="#fff"
+              />
+            </View>
           </View>
         </Animated.View>
 
@@ -308,10 +355,10 @@ export default function Feed() {
             ref={flatListRef}
             data={filteredArticles}
             keyExtractor={item => String(item.id)}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 20 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 240 }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
-            scrollEventThrottle={16}
+            scrollEventThrottle={8}
             renderItem={({ item }) => (
               <PostCard
                 post={{
@@ -320,14 +367,24 @@ export default function Feed() {
                   timestamp: item.created_at,
                   title: item.title,
                   content: item.body,
-                  tags: item.course_code ? item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
+                  tags: item.course_code ? 
+                    item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
+                    ['school', 'study'], // Fallback tags for testing
                   likes: item.likes_count,
                   comments: item.comments_count,
                   bookmarks: item.save_status ? 1 : 0,
                   image: item.image,
                   like_status: item.like_status || false,
                 }}
-                onPress={() => router.push(`/article/${item.id}` as any)}
+                onPress={() => {
+                  // Debug: Log the item data to see what tags are available
+                  console.log('Article data:', {
+                    id: item.id,
+                    course_code: item.course_code,
+                    tags: item.course_code ? item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : ['school', 'study']
+                  });
+                  router.push(`/article/${item.id}` as any);
+                }}
               />
             )}
             onEndReached={fetchMoreArticles}
@@ -359,13 +416,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingTop: 50,
   },
-  header: {
+  headerContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 15,
     zIndex: 1000,
@@ -374,6 +430,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+  },
+  header: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   headerTitle: {
     fontSize: 30,
@@ -487,5 +547,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginTop: 20,
+  },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)', // More transparent base
+    backdropFilter: 'blur(20px) saturate(180%)', // Enhanced blur with saturation
+    paddingTop: 50,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    zIndex: 1001,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: 'rgba(0, 0, 0, 0.08)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 12,
+  } as any,
+  stickyHeaderText: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: 'rgba(34, 34, 34, 0.85)', // Elegant transparency
+    textAlign: 'center',
+    marginBottom: 0,
+    letterSpacing: 1,
+    zIndex: 1002, // Above the glass overlay
+  },
+  glassOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Subtle white overlay
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.4)',
   },
 });
