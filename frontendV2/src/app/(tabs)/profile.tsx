@@ -10,8 +10,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { fetchAPI, getData } from "@/components/Utils";
+import { fetchAPI, getData, removeData } from "@/components/Utils";
 import AppContainer from '@/components/AppContainer';
+import Toast from 'react-native-toast-message';
 
 import URLs from "@/constants/Urls";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -125,9 +126,31 @@ export default function ProfilePage() {
     setActiveTab(tab);
   };
 
-  const handleLogout = () => {
-    // Add logout logic here
-    router.replace('/Login');
+  const handleLogout = async () => {
+    try {
+      // Clear all stored user data
+      await removeData('id');
+      await removeData('access');
+      await removeData('email');
+      await removeData('points');
+      await removeData('university_colors');
+      await removeData('university');
+      await removeData('refresh');
+      await removeData('color');
+      await removeData('initial');
+      await removeData('is_validated');
+      
+      // Show logout message
+      Toast.show({
+        type: 'success',
+        text1: 'Logged out successfully',
+      });
+      
+      // Navigate to login page
+      router.replace('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const handleSettings = () => {
@@ -220,7 +243,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <AppContainer>
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Header with Settings */}
@@ -255,7 +278,7 @@ export default function ProfilePage() {
             </View>
 
             {/* Bio */}
-            <Text style={styles.bio}>{userData.bio}</Text>
+            <Text style={styles.bio}>Computer Science student passionate about innovation and technology.</Text>
 
             {/* Credibility Score */}
             <View style={styles.credibilitySection}>
@@ -365,7 +388,7 @@ export default function ProfilePage() {
         visible={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

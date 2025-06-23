@@ -326,7 +326,7 @@ export default function SearchPage() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <AppContainer>
         <View style={styles.content}>
           {/* Search Header */}
@@ -469,10 +469,8 @@ export default function SearchPage() {
             </>
           )}
         </View>
-
-
       </AppContainer>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -487,7 +485,8 @@ const styles = StyleSheet.create({
   searchHeader: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 60, // Add top padding for status bar
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },

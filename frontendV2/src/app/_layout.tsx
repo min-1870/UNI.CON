@@ -36,8 +36,9 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
-          animation: 'default',
+          animation: 'slide_from_right',
           headerShown: false,
+          animationDuration: 200,
         }}
       >
         <Stack.Screen name="index" />

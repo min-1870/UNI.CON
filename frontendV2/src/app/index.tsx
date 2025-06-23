@@ -1,4 +1,4 @@
-import { fetchAPI, setData } from "@/components/Utils";
+import { fetchAPI, setData, getData } from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
@@ -9,8 +9,8 @@ import { StyleSheet, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import Toast from 'react-native-toast-message';
-import { Link, router } from 'expo-router';
-import React, { useState } from "react";
+import { Link, router, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from "react";
 import URLs from "@/constants/Urls";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -20,12 +20,37 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   
   const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
   const discovery = {
     authorizationEndpoint: URLs.authorizationEndpoint,
     tokenEndpoint: URLs.tokenEndpoint,
   };
+
+  // Check if user is already logged in when component focuses
+  useFocusEffect(
+    useCallback(() => {
+      const checkLoginStatus = async () => {
+        try {
+          const accessToken = await getData('access');
+          const isValidated = await getData('is_validated');
+          
+          if (accessToken && isValidated) {
+            // User is already logged in, redirect to feed
+            router.replace("/feed");
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking login status:', error);
+        } finally {
+          setChecking(false);
+        }
+      };
+      
+      checkLoginStatus();
+    }, [])
+  );
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -53,7 +78,7 @@ export default function LoginPage() {
         text1: `Hi, ${response.data.id}!`,
       });
 
-      router.push("/feed");
+      router.replace("/feed"); // Use replace instead of push to prevent going back to login
     } else {
       setError(response?.data?.detail || "An error occurred");
       Toast.show({
@@ -109,6 +134,19 @@ export default function LoginPage() {
     
     setLoading(false);
   };
+
+  // Show loading screen while checking login status
+  if (checking) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <AppContainer>
+          <ThemedView style={styles.content}>
+            <ThemedText>Checking login status...</ThemedText>
+          </ThemedView>
+        </AppContainer>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

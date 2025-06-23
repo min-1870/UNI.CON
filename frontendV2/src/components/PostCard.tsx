@@ -184,7 +184,7 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   const tags = getTags();
-  const maxLength = 150;
+  const maxLength = 120; // Reduced for better mobile display
   const shouldTruncate = normalizedData.body.length > maxLength;
   const displayContent = shouldTruncate ? `${normalizedData.body.slice(0, maxLength)}...` : normalizedData.body;
 
@@ -358,6 +358,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     lineHeight: 20,
+    flexWrap: 'wrap', // Ensure text wraps properly
   },
   seeMoreText: {
     fontSize: 14,

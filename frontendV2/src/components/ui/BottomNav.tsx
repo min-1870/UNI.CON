@@ -55,7 +55,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={100} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+        {/* Glass effect overlay */}
+        <View style={styles.glassOverlay} />
         <View style={styles.navContainer}>
           {navItems.map((item, index) => {
             const isActive = item.path && pathname === item.path;
@@ -73,7 +75,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
                 <Ionicons 
                   name={isActive ? item.activeIcon : item.icon} 
                   size={26} 
-                  color={isActive ? '#007AFF' : '#8E8E93'} 
+                  color={isActive ? '#57EC6A' : '#666'} 
                 />
               </TouchableOpacity>
             );
@@ -97,10 +99,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.95)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
-    shadowRadius: 30,
-    elevation: 10,
+    shadowRadius: 35,
+    elevation: 25,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  glassOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 35,
   },
   navContainer: {
     flexDirection: 'row',
@@ -108,19 +121,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'transparent', // Always transparent to show glass effect
+    zIndex: 1, // Above the glass overlay
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 50,
+    width: 40,
     height: 50,
     borderRadius: 25,
     backgroundColor: 'transparent',
   },
   navItemActive: {
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(0, 122, 255, 0.15)',
+    backgroundColor: '#E7FEE7',
     transform: [{ scale: 1.1 }],
+    shadowColor: '#E7FEE7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });
 

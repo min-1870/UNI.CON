@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
@@ -332,8 +332,11 @@ export default function ArticleDetailPage() {
           <View style={styles.card}>
             <View style={styles.contentContainer}>
               <Text style={styles.backLink} onPress={handleBack}>&larr; Back to feed</Text>
-              {loading ? (
-                <ThemedText>Loading...</ThemedText>
+              {loading && !article ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#57EC6B" />
+                  <Text style={styles.loadingText}>Loading article...</Text>
+                </View>
               ) : error ? (
                 <ThemedText type="error">{error}</ThemedText>
               ) : article ? (
@@ -492,35 +495,22 @@ export default function ArticleDetailPage() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    backgroundColor: '#FFFFFF', // Changed to white for fullscreen
   },
   animatedContainer: {
     flex: 1,
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    maxWidth: 700,
-    width: '90%',
-    minWidth: 400,
-    height: '90%',
-    marginVertical: 32,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-    alignSelf: 'center',
+    flex: 1, // Fill entire screen
+    width: '100%', // Full width
     position: 'relative',
   },
   contentContainer: {
     flex: 1,
-    padding: 32,
+    padding: 20,
+    paddingTop: 60, // Add top padding for status bar
     paddingBottom: 80, // Space for fixed comment bar
   },
   backLink: {

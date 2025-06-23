@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,19 @@ import {
   Switch,
   ActivityIndicator,
   Animated,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '@/components/PostCard';
 import { fetchAPI, getData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import CreatePost from '@/components/CreatePost';
 import AppContainer from '@/components/AppContainer';
 import BottomNav from '@/components/ui/BottomNav';
+
+// Create AnimatedFlatList for native scroll events
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 const TAGS = ['All', 'School', 'IT'];
 
@@ -48,9 +52,10 @@ export default function Feed() {
   const [error, setError] = useState<string | null>(null);
   const [nextPage, setNextPage] = useState<string | null>(null);
   const fetchedPage = useRef<string | null>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
   const [createPostVisible, setCreatePostVisible] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Animation state for navbar
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -76,6 +81,16 @@ export default function Feed() {
     }
   }, [selectedFilter]);
 
+  // Auto-refresh when user returns to feed screen
+  useFocusEffect(
+    useCallback(() => {
+      // Only refresh if articles are already loaded (not initial load)
+      if (articles.length > 0) {
+        handleRefresh();
+      }
+    }, [])
+  );
+
   const fetchArticles = async () => {
     setLoading(true);
     setError(null);
@@ -96,6 +111,30 @@ export default function Feed() {
       setError("Failed to load articles");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetchAPI(apiEndpoints[selectedFilter], {
+        method: 'GET',
+        token: true,
+      });
+
+      if (!response.error) {
+        setArticles(response.data?.results?.articles || []);
+        setNextPage(response.data?.next || null);
+        fetchedPage.current = apiEndpoints[selectedFilter];
+        setError(null);
+      } else {
+        setError(response?.data?.detail || "An error occurred");
+      }
+    } catch (err) {
+      setError("Failed to refresh articles");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -177,7 +216,7 @@ export default function Feed() {
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
-      useNativeDriver: true,
+      useNativeDriver: false, // Changed to false to prevent VirtualizedList error
       listener: (event: any) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         const scrollDirection = currentScrollY > lastScrollY.current ? 'down' : 'up';
@@ -351,7 +390,7 @@ export default function Feed() {
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : (
-          <FlatList
+          <AnimatedFlatList
             ref={flatListRef}
             data={filteredArticles}
             keyExtractor={item => String(item.id)}
@@ -359,31 +398,40 @@ export default function Feed() {
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={8}
-            renderItem={({ item }) => (
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={['#57EC6B']} // Android
+                tintColor="#57EC6B" // iOS
+                progressViewOffset={240} // Offset for header
+              />
+            }
+            renderItem={({ item }: any) => (
               <PostCard
                 post={{
-                  id: String(item.id),
-                  user: item.user_temp_name || 'Unknown',
-                  timestamp: item.created_at,
-                  title: item.title,
-                  content: item.body,
-                  tags: item.course_code ? 
-                    item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
+                  id: String((item as Article).id),
+                  user: (item as Article).user_temp_name || 'Unknown',
+                  timestamp: (item as Article).created_at,
+                  title: (item as Article).title,
+                  content: (item as Article).body,
+                  tags: (item as Article).course_code ? 
+                    (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
                     ['school', 'study'], // Fallback tags for testing
-                  likes: item.likes_count,
-                  comments: item.comments_count,
-                  bookmarks: item.save_status ? 1 : 0,
-                  image: item.image,
-                  like_status: item.like_status || false,
+                  likes: (item as Article).likes_count,
+                  comments: (item as Article).comments_count,
+                  bookmarks: (item as Article).save_status ? 1 : 0,
+                  image: (item as Article).image,
+                  like_status: (item as Article).like_status || false,
                 }}
                 onPress={() => {
                   // Debug: Log the item data to see what tags are available
                   console.log('Article data:', {
-                    id: item.id,
-                    course_code: item.course_code,
-                    tags: item.course_code ? item.course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : ['school', 'study']
+                    id: (item as Article).id,
+                    course_code: (item as Article).course_code,
+                    tags: (item as Article).course_code ? (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : ['school', 'study']
                   });
-                  router.push(`/article/${item.id}` as any);
+                  router.push(`/article/${(item as Article).id}` as any);
                 }}
               />
             )}
