@@ -245,9 +245,6 @@ def get_serialized_article(request, article_instance):
     
     cache_key = ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
     user_saved_articles = cache.get(cache_key, None)
-    
-    cache_key = ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(user_instance.id)
-    user_viewed_articles = cache.get(cache_key, None)
 
     # If the cache miss fetch them
     if user_liked_articles is None:
@@ -270,15 +267,7 @@ def get_serialized_article(request, article_instance):
     save_status = user_saved_articles.get(article_instance.id, False)
     serialized_annotated_article["save_status"] = save_status
 
-    if user_viewed_articles is None:
-        user_viewed_articles = ArticleView.objects.filter(user=user_instance).values_list(
-            "article", flat=True
-        )
-        user_viewed_articles = {pk: True for pk in user_viewed_articles}
-        cache.set(cache_key, user_viewed_articles, CACHE_TIMEOUT)
-
-    view_status = user_viewed_articles.get(article_instance.id, False)
-    serialized_annotated_article["view_status"] = view_status
+    serialized_annotated_article["view_status"] = True
 
     return serialized_annotated_article
 
