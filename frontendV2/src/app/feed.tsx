@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,11 @@ import { router, useFocusEffect } from 'expo-router';
 import CreatePost from '@/components/CreatePost';
 import AppContainer from '@/components/AppContainer';
 import BottomNav from '@/components/ui/BottomNav';
+import NotificationPanel from '@/components/NotificationPanel';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import ThemedButton from '@/components/ThemedButton';
+
 
 // Create AnimatedFlatList for native scroll events
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
@@ -43,6 +48,13 @@ interface Article {
 type FilterType = 'All' | 'Hot' | 'Recommended';
 
 export default function Feed() {
+  const colorScheme = useColorScheme();
+
+  const containerBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const headerBackground = colorScheme === 'dark' ? '#1F2937' : '#FFFFFF';
+  const stickyHeaderBackground = colorScheme === 'dark' ? 'rgba(31,41,55,0.5)' : '#FFFFFF';
+  const headerTitleColor = colorScheme === 'dark' ? '#FFFFFF' : '#222';
+  const searchFilterColor = colorScheme === 'dark' ? '#1F2937' : '#222';
   const [selectedTag, setSelectedTag] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [isSwitchOn, setIsSwitchOn] = useState(false);
@@ -56,6 +68,7 @@ export default function Feed() {
   const [createPostVisible, setCreatePostVisible] = useState(false);
   const [posting, setPosting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationVisible, setNotificationVisible] = useState(false);
   
   // Animation state for navbar
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -95,19 +108,29 @@ export default function Feed() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchAPI(apiEndpoints[selectedFilter], {
+      const endpoint = apiEndpoints[selectedFilter];
+      console.log(`🔍 Fetching ${selectedFilter} articles from:`, endpoint);
+      
+      const response = await fetchAPI(endpoint, {
         method: 'GET',
         token: true,
       });
 
+      console.log(`📊 ${selectedFilter} API Response:`, response);
+
       if (!response.error) {
-        setArticles(response.data?.results?.articles || []);
+        const articles = response.data?.results?.articles || response.data?.articles || [];
+        console.log(`📝 ${selectedFilter} Articles found:`, articles.length);
+        
+        setArticles(articles);
         setNextPage(response.data?.next || null);
-        fetchedPage.current = apiEndpoints[selectedFilter];
+        fetchedPage.current = endpoint;
       } else {
+        console.error(`❌ ${selectedFilter} API Error:`, response);
         setError(response?.data?.detail || "An error occurred");
       }
     } catch (err) {
+      console.error(`💥 ${selectedFilter} Network Error:`, err);
       setError("Failed to load articles");
     } finally {
       setLoading(false);
@@ -283,6 +306,203 @@ export default function Feed() {
     }
   );
 
+  // Create memoized styles to prevent recreation on every render
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: containerBackground,
+      paddingTop: 50,
+    },
+    headerContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: headerBackground,
+      paddingTop: 60,
+      paddingBottom: 15,
+      zIndex: 1000,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 5,
+      borderBottomWidth: colorScheme === 'light' ? 1 : 0,
+      borderBottomColor: '#E5E7EB',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingHorizontal: 20,
+      marginBottom: 10,
+    },
+    headerLeft: {
+      flex: 1,
+    },
+    headerTitle: {
+      fontSize: 30,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      color: headerTitleColor,
+    },
+    headerSubtitle: {
+      fontSize: 20,
+      color: headerTitleColor,
+    },
+    tagsContainer: {
+      paddingVertical: 6,
+      maxHeight: 40,
+      marginBottom: 10,
+    },
+    tagChip: {
+      marginRight: 8,
+    },
+    tagChipSelected: {
+      backgroundColor: '#57EC6B',
+    },
+    notificationButton: {
+      position: 'relative',
+      padding: 4,
+    },
+    notificationBadge: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      backgroundColor: '#FF4444',
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    notificationBadgeText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    newPostContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+      borderWidth: 0.2,
+      borderColor: '#E5E7EB',
+      height: 50,
+      marginHorizontal: 15,
+      borderRadius: 25,
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      marginBottom: 15,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+    },
+    searchInput: {
+      marginLeft: 10,
+      flex: 1,
+      fontSize: 16,
+      color: searchFilterColor,
+    },
+    filterToggleContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginHorizontal: 15,
+      marginBottom: 15,
+    },
+    filterTabs: {
+      flexDirection: 'row',
+    },
+    filterTab: {
+      paddingHorizontal: 15,
+      height: 32,
+      borderRadius: 20,
+      backgroundColor: colorScheme === 'dark' ? '#374151' : '#F3F4F6',
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? '#4B5563' : '#E5E7EB',
+      marginRight: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    filterTabSelected: {
+      backgroundColor: '#57EC6B',
+      borderColor: '#57EC6B',
+    },
+    filterTabText: {
+      fontSize: 14,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 18,
+      color: colorScheme === 'dark' ? '#F9FAFB' : '#374151',
+    },
+    filterTabTextSelected: {
+      color: '#fff',
+    },
+    switchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    switchLabel: {
+      marginRight: 8,
+      color: '#666',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      color: 'red',
+      textAlign: 'center',
+      marginTop: 20,
+    },
+    emptyText: {
+      textAlign: 'center',
+      color: '#666',
+      marginTop: 20,
+    },
+    stickyHeader: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colorScheme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      paddingTop: 50,
+      paddingBottom: 12,
+      paddingHorizontal: 20,
+      zIndex: 1001,
+      borderBottomWidth: 0.5,
+      borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+      shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.08)',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.2,
+      shadowRadius: 16,
+      elevation: 12,
+    } as any,
+    stickyHeaderText: {
+      fontSize: 26,
+      fontWeight: '600',
+      color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(34, 34, 34, 0.85)',
+      textAlign: 'center',
+      marginBottom: 0,
+      letterSpacing: 1,
+      zIndex: 1002,
+    },
+    glassOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      borderBottomWidth: 0.5,
+      borderBottomColor: 'rgba(255, 255, 255, 0.4)',
+    },
+  }), [colorScheme, containerBackground, headerBackground, headerTitleColor, searchFilterColor]);
+
   return (
     <AppContainer>
       <View style={styles.container}>
@@ -315,8 +535,19 @@ export default function Feed() {
         >
           {/* Main Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>UNICON</Text>
-            <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>UNICON</Text>
+              <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.notificationButton}
+              onPress={() => setNotificationVisible(true)}
+            >
+              <Ionicons name="notifications-outline" size={24} color="#333" />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>2</Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Tags */}
@@ -327,23 +558,18 @@ export default function Feed() {
             contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
           >
             {TAGS.map(tag => (
-              <TouchableOpacity
+              <ThemedButton
                 key={tag}
+                variant="chip"
+                size="sm"
                 style={[
-                  styles.tagBadge,
-                  selectedTag === tag && styles.tagBadgeSelected,
+                  styles.tagChip,
+                  selectedTag === tag && styles.tagChipSelected,
                 ]}
                 onPress={() => setSelectedTag(tag)}
               >
-                <Text
-                  style={[
-                    styles.tagText,
-                    selectedTag === tag && styles.tagTextSelected,
-                  ]}
-                >
-                  {tag}
-                </Text>
-              </TouchableOpacity>
+                {tag}
+              </ThemedButton>
             ))}
           </ScrollView>
 
@@ -392,8 +618,8 @@ export default function Feed() {
         ) : (
           <AnimatedFlatList
             ref={flatListRef}
-            data={filteredArticles}
-            keyExtractor={item => String(item.id)}
+            data={filteredArticles as Article[]}
+            keyExtractor={(item) => String((item as Article).id)}
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 240 }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
@@ -454,184 +680,11 @@ export default function Feed() {
         onSubmit={handleCreatePost}
         loading={posting}
       />
+
+      <NotificationPanel 
+        visible={notificationVisible}
+        onClose={() => setNotificationVisible(false)}
+      />
     </AppContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 50,
-  },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60,
-    paddingBottom: 15,
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  header: {
-    paddingHorizontal: 20,
-    marginBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#222',
-  },
-  headerSubtitle: {
-    fontSize: 20,
-    color: '#282828',
-  },
-  tagsContainer: {
-    paddingVertical: 6,
-    maxHeight: 40,
-    marginBottom: 10,
-  },
-  tagBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    textAlign: 'center',
-  },
-  tagBadgeSelected: {
-    backgroundColor: '#57EC6B',
-  },
-  tagText: {
-    color: '#444',
-    fontWeight: '600',
-  },
-  tagTextSelected: {
-    color: '#fff',
-  },
-  newPostContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.2,
-    borderColor: '#E5E7EB',
-    height: 50,
-    marginHorizontal: 15,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginBottom: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-  },
-  searchInput: {
-    marginLeft: 10,
-    flex: 1,
-    fontSize: 16,
-    color: '#222',
-  },
-  filterToggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 15,
-    marginBottom: 15,
-  },
-  filterTabs: {
-    flexDirection: 'row',
-  },
-  filterTab: {
-    paddingHorizontal: 15,
-    height: 32,
-    borderRadius: 20,
-    backgroundColor: '#FEFEFE',
-    borderWidth: 0.2,
-    borderColor: '#E5E7EB',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterTabSelected: {
-    backgroundColor: '#57EC6B',
-  },
-  filterTabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  filterTabTextSelected: {
-    color: '#fff',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  switchLabel: {
-    marginRight: 8,
-    color: '#666',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
-  },
-  stickyHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)', // More transparent base
-    backdropFilter: 'blur(20px) saturate(180%)', // Enhanced blur with saturation
-    paddingTop: 50,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-    zIndex: 1001,
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: 'rgba(0, 0, 0, 0.08)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 12,
-  } as any,
-  stickyHeaderText: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: 'rgba(34, 34, 34, 0.85)', // Elegant transparency
-    textAlign: 'center',
-    marginBottom: 0,
-    letterSpacing: 1,
-    zIndex: 1002, // Above the glass overlay
-  },
-  glassOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Subtle white overlay
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255, 255, 255, 0.4)',
-  },
-});

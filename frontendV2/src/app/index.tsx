@@ -7,6 +7,7 @@ import AppContainer from '@/components/AppContainer';
 import * as AuthSession from 'expo-auth-session';
 import { StyleSheet, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import * as WebBrowser from 'expo-web-browser';
 import Toast from 'react-native-toast-message';
 import { Link, router, useFocusEffect } from 'expo-router';
@@ -152,7 +153,9 @@ export default function LoginPage() {
     <SafeAreaView style={styles.container}>
       <AppContainer>
         <ThemedView style={styles.content}>
-          <ThemedView style={styles.card}>
+          <BlurView intensity={80} tint="light" style={styles.blurCard}>
+            <View style={styles.glassOverlay} />
+            <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
         <ThemedText type="Wording">Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
@@ -206,6 +209,7 @@ export default function LoginPage() {
           </ThemedButton>
         </View>
           </ThemedView>
+          </BlurView>
         </ThemedView>
       </AppContainer>
     </SafeAreaView>

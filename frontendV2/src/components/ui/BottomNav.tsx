@@ -3,6 +3,8 @@ import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
@@ -11,6 +13,10 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
   const pathname = usePathname();
+  const colorScheme = useColorScheme();
+  const brandColor = useThemeColor({}, 'default_brand_color');
+  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const placeholderColor = useThemeColor({}, 'default_placeholder_color');
 
   const navItems = [
     { 
@@ -53,9 +59,74 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      position: 'absolute',
+      bottom: 34,
+      left: 20,
+      right: 20,
+      zIndex: 1000,
+    },
+    blurContainer: {
+      borderRadius: 35,
+      overflow: 'hidden',
+      backgroundColor: Platform.OS === 'ios' 
+        ? (colorScheme === 'dark' ? 'rgba(25, 25, 25, 0.2)' : 'rgba(255, 255, 255, 0.1)')
+        : (colorScheme === 'dark' ? 'rgba(25, 25, 25, 0.95)' : 'rgba(255, 255, 255, 0.95)'),
+      shadowColor: colorScheme === 'dark' ? '#000' : '#000',
+      shadowOffset: { width: 0, height: 5 },
+      shadowOpacity: colorScheme === 'dark' ? 0.4 : 0.2,
+      shadowRadius: 35,
+      elevation: 25,
+      borderWidth: 0.5,
+      borderColor: colorScheme === 'dark' 
+        ? 'rgba(255, 255, 255, 0.1)'
+        : 'rgba(255, 255, 255, 0.5)',
+    },
+    glassOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colorScheme === 'dark' 
+        ? 'rgba(25, 25, 25, 0.6)'
+        : 'rgba(255, 255, 255, 0.4)',
+      borderRadius: 35,
+    },
+    navContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      backgroundColor: 'transparent',
+      zIndex: 1,
+    },
+    navItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 40,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: 'transparent',
+    },
+    navItemActive: {
+      backgroundColor: colorScheme === 'dark' 
+        ? 'rgba(74, 222, 128, 0.2)' 
+        : '#E7FEE7',
+      transform: [{ scale: 1.1 }],
+      shadowColor: brandColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+  });
+
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.blurContainer}>
         {/* Glass effect overlay */}
         <View style={styles.glassOverlay} />
         <View style={styles.navContainer}>
@@ -75,7 +146,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
                 <Ionicons 
                   name={isActive ? item.activeIcon : item.icon} 
                   size={26} 
-                  color={isActive ? '#57EC6A' : '#666'} 
+                  color={isActive ? brandColor : placeholderColor} 
                 />
               </TouchableOpacity>
             );
@@ -85,62 +156,5 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 34,
-    left: 20,
-    right: 20,
-    zIndex: 1000,
-  },
-  blurContainer: {
-    borderRadius: 35,
-    overflow: 'hidden',
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.95)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 35,
-    elevation: 25,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  glassOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 35,
-  },
-  navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: 'transparent', // Always transparent to show glass effect
-    zIndex: 1, // Above the glass overlay
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'transparent',
-  },
-  navItemActive: {
-    backgroundColor: '#E7FEE7',
-    transform: [{ scale: 1.1 }],
-    shadowColor: '#E7FEE7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-});
 
 export default BottomNav;

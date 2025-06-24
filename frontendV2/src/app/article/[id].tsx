@@ -11,6 +11,8 @@ import { fetchAPI } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import moment from 'moment';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function ArticleDetailPage() {
   const { id } = useLocalSearchParams();
@@ -206,21 +208,38 @@ export default function ArticleDetailPage() {
       );
       return;
     } else {
-      const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
-      if (!response.error) {
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            String(comment.id) === String(commentId)
-              ? {
-                  ...comment,
-                  nested_comments: response.data.results.comments,
-                  showReplies: true,
-                }
-              : comment
-          )
-        );
-      } else {
-        setError(response?.data?.detail || 'An error occurred');
+      try {
+        console.log('Fetching nested comments for:', commentId);
+        const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
+        console.log('Nested comments response:', response);
+        
+        if (!response.error) {
+          // Try different response structures
+          const nestedComments = response.data?.results?.comments || 
+                                response.data?.comments || 
+                                response.data?.nested_comments || 
+                                response.data || [];
+          
+          console.log('Extracted nested comments:', nestedComments);
+          
+          setComments((prevComments) =>
+            prevComments.map((comment) =>
+              String(comment.id) === String(commentId)
+                ? {
+                    ...comment,
+                    nested_comments: nestedComments,
+                    showReplies: true,
+                  }
+                : comment
+            )
+          );
+        } else {
+          console.error('API error:', response);
+          setError(response?.data?.detail || 'Failed to load replies');
+        }
+      } catch (err) {
+        console.error('Network error:', err);
+        setError('Failed to load replies. Please check your connection.');
       }
     }
   };
@@ -338,7 +357,7 @@ export default function ArticleDetailPage() {
                   <Text style={styles.loadingText}>Loading article...</Text>
                 </View>
               ) : error ? (
-                <ThemedText type="error">{error}</ThemedText>
+                <ThemedText variant="error">{error}</ThemedText>
               ) : article ? (
                 <>
                   <Text style={styles.time}>{moment(article.created_at).fromNow()}</Text>
@@ -481,7 +500,7 @@ export default function ArticleDetailPage() {
                 returnKeyType="send"
                 style={styles.commentInput}
               />
-              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} type="comment">
+              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} variant="primary">
                 <Ionicons name="checkmark-outline" size={25} color="#FFFFFF" />
               </ThemedButton>
             </View>
@@ -495,7 +514,18 @@ export default function ArticleDetailPage() {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Changed to white for fullscreen
+    backgroundColor: '#FFFFFF', // Will be updated with theme
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
   animatedContainer: {
     flex: 1,

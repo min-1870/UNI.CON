@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppContainer from '@/components/AppContainer';
 import PostCard from '@/components/PostCard';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 import { fetchAPI, getData, setData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
@@ -29,29 +31,43 @@ export default function SearchPage() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
+  // Theme colors
+  const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const textColor = useThemeColor({}, 'default_text_color');
+  const placeholderColor = useThemeColor({}, 'default_placeholder_color');
+  const brandColor = useThemeColor({}, 'default_brand_color');
+  
   const searchRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const bounceAnim = useRef(new Animated.Value(0.8)).current;
 
   // Local data to avoid conflicts
   const trendingTopics = [
-    { tag: 'Computer Science', color: '#3B82F6', count: 125 },
-    { tag: 'Study Groups', color: '#10B981', count: 89 },
-    { tag: 'Campus Events', color: '#F59E0B', count: 67 },
-    { tag: 'Housing', color: '#8B5CF6', count: 45 },
-    { tag: 'Food', color: '#EF4444', count: 34 },
-    { tag: 'Internships', color: '#06B6D4', count: 28 },
+    { tag: 'Computer Science', color: '#57EC6B', bgColor: 'rgba(87, 236, 107, 0.1)', count: 125 },
+    { tag: 'Study Groups', color: '#FF6B35', bgColor: 'rgba(255, 107, 53, 0.1)', count: 89 },
+    { tag: 'Campus Events', color: '#57EC6B', bgColor: 'rgba(87, 236, 107, 0.1)', count: 67 },
+    { tag: 'Housing', color: '#FFD23F', bgColor: 'rgba(255, 210, 63, 0.1)', count: 45 },
+    { tag: 'Food', color: '#57EC6B', bgColor: 'rgba(87, 236, 107, 0.1)', count: 34 },
+    { tag: 'Internships', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)', count: 28 },
   ];
 
   const popularCategories = [
-    'Academic', 'Social', 'Career', 'Sports', 'Technology', 'Arts'
+    { name: 'Academic', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)' },
+    { name: 'Social', color: '#57EC6B', bgColor: 'rgba(87, 236, 107, 0.1)' },
+    { name: 'Events', color: '#FFD23F', bgColor: 'rgba(255, 210, 63, 0.1)' },
+    { name: 'Resources', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)' },
+    { name: 'Help', color: '#FF6B35', bgColor: 'rgba(255, 107, 53, 0.1)' },
+    { name: 'Entertainment', color: '#FF6B9D', bgColor: 'rgba(255, 107, 157, 0.1)' },
   ];
 
   useEffect(() => {
     loadRecentSearches();
     fetchTrendingArticles();
     
-    // Animate page load
+    // Animate page load with jelly effect
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -63,6 +79,19 @@ export default function SearchPage() {
         duration: 600,
         useNativeDriver: true,
       }),
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1.1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bounceAnim, {
+          toValue: 1,
+          tension: 300,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
   }, []);
 
@@ -194,13 +223,194 @@ export default function SearchPage() {
     fetchTrendingArticles();
   };
 
-  const handleSearchClick = () => {
-    // Already on search page
-  };
-
-  const handleAddClick = () => {
-    router.push('/(tabs)' as any);
-  };
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    content: {
+      flex: 1,
+    },
+    searchHeader: {
+      backgroundColor: cardBackground,
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: textColor,
+    },
+    searchContainer: {
+      marginBottom: 12,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F3F4F6',
+      borderRadius: 25,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.1)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    searchIcon: {
+      marginRight: 12,
+      color: placeholderColor,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: textColor,
+      paddingVertical: 2,
+    },
+    clearButton: {
+      padding: 8,
+      marginLeft: 4,
+    },
+    resultsCount: {
+      fontSize: 14,
+      color: placeholderColor,
+      marginTop: 8,
+    },
+    scrollContent: {
+      flex: 1,
+    },
+    section: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: textColor,
+      marginLeft: 8,
+    },
+    topicsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    topicCard: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    topicTag: {
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    topicCount: {
+      fontSize: 12,
+      color: placeholderColor,
+    },
+    recentItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F3F4F6',
+    },
+    recentText: {
+      flex: 1,
+      fontSize: 16,
+      color: textColor,
+      marginLeft: 12,
+    },
+    categoriesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    categoryButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      marginBottom: 8,
+    },
+    categoryText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 40,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: placeholderColor,
+      marginTop: 12,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 40,
+    },
+    errorText: {
+      fontSize: 16,
+      color: placeholderColor,
+      marginTop: 16,
+      textAlign: 'center',
+      marginHorizontal: 20,
+    },
+    retryButton: {
+      marginTop: 16,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      backgroundColor: brandColor,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: 'white',
+      fontWeight: '600',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 40,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: textColor,
+      marginTop: 16,
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: placeholderColor,
+      marginTop: 8,
+      textAlign: 'center',
+      marginHorizontal: 20,
+    },
+    resultsList: {
+      paddingHorizontal: 20,
+    },
+  });
 
   const renderTrendingTopics = () => (
     <Animated.View 
@@ -208,27 +418,45 @@ export default function SearchPage() {
         styles.section,
         {
           opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }]
+          transform: [
+            { translateY: slideAnim },
+            { scale: bounceAnim }
+          ]
         }
       ]}
     >
       <View style={styles.sectionHeader}>
-        <Ionicons name="trending-up" size={20} color="#EF4444" />
+        <Ionicons name="trending-up" size={20} color="#57EC6B" />
         <Text style={styles.sectionTitle}>Trending Now</Text>
       </View>
       <View style={styles.topicsGrid}>
         {trendingTopics.map((topic: any, index: number) => (
-          <TouchableOpacity
+          <Animated.View
             key={index}
-            style={[styles.topicCard, { backgroundColor: `${topic.color}15` }]}
-            onPress={() => handleTrendingClick(topic.tag)}
-            activeOpacity={0.7}
+            style={{
+              opacity: fadeAnim,
+              transform: [
+                { 
+                  translateY: Animated.add(
+                    slideAnim,
+                    new Animated.Value(index * 5)
+                  )
+                },
+                { scale: bounceAnim }
+              ]
+            }}
           >
-            <Text style={[styles.topicTag, { color: topic.color }]}>
-              #{topic.tag}
-            </Text>
-            <Text style={styles.topicCount}>{topic.count} posts</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.topicCard, { backgroundColor: topic.bgColor }]}
+              onPress={() => handleTrendingClick(topic.tag)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.topicTag, { color: topic.color }]}>
+                #{topic.tag}
+              </Text>
+              <Text style={styles.topicCount}>{topic.count} posts</Text>
+            </TouchableOpacity>
+          </Animated.View>
         ))}
       </View>
     </Animated.View>
@@ -238,53 +466,105 @@ export default function SearchPage() {
     if (recentSearches.length === 0) return null;
     
     return (
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [
+              { translateY: slideAnim },
+              { scale: bounceAnim }
+            ]
+          }
+        ]}
+      >
         <View style={styles.sectionHeader}>
-          <Ionicons name="time" size={20} color="#6B7280" />
+          <Ionicons name="time" size={20} color="#6B73FF" />
           <Text style={styles.sectionTitle}>Recent Searches</Text>
         </View>
         {recentSearches.map((search: string, index: number) => (
-          <TouchableOpacity
+          <Animated.View
             key={index}
-            style={styles.recentItem}
-            onPress={() => handleRecentClick(search)}
-            activeOpacity={0.7}
+            style={{
+              opacity: fadeAnim,
+              transform: [
+                { 
+                  translateY: Animated.add(
+                    slideAnim,
+                    new Animated.Value(index * 2)
+                  )
+                },
+                { scale: bounceAnim }
+              ]
+            }}
           >
-            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
-            <Text style={styles.recentText}>{search}</Text>
-            <Ionicons name="arrow-up-outline" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.recentItem}
+              onPress={() => handleRecentClick(search)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search-outline" size={18} color={placeholderColor} />
+              <Text style={styles.recentText}>{search}</Text>
+              <Ionicons name="arrow-up-outline" size={16} color={placeholderColor} />
+            </TouchableOpacity>
+          </Animated.View>
         ))}
-      </View>
+      </Animated.View>
     );
   };
 
   const renderPopularCategories = () => (
-    <View style={styles.section}>
+    <Animated.View 
+      style={[
+        styles.section,
+        {
+          opacity: fadeAnim,
+          transform: [
+            { translateY: slideAnim },
+            { scale: bounceAnim }
+          ]
+        }
+      ]}
+    >
       <View style={styles.sectionHeader}>
-        <Ionicons name="people" size={20} color="#10B981" />
+        <Ionicons name="people" size={20} color="#57EC6B" />
         <Text style={styles.sectionTitle}>Popular Categories</Text>
       </View>
       <View style={styles.categoriesGrid}>
-        {popularCategories.map((category: string, index: number) => (
-          <TouchableOpacity
+        {popularCategories.map((category: any, index: number) => (
+          <Animated.View
             key={index}
-            style={styles.categoryButton}
-            onPress={() => handleCategoryClick(category)}
-            activeOpacity={0.7}
+            style={{
+              opacity: fadeAnim,
+              transform: [
+                { 
+                  translateY: Animated.add(
+                    slideAnim,
+                    new Animated.Value(index * 3)
+                  )
+                },
+                { scale: bounceAnim }
+              ]
+            }}
           >
-            <Text style={styles.categoryText}>{category}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.categoryButton, { backgroundColor: category.bgColor, borderColor: category.color }]}
+              onPress={() => handleCategoryClick(category.name)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.categoryText, { color: category.color }]}>{category.name}</Text>
+            </TouchableOpacity>
+          </Animated.View>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 
   const renderSearchResults = () => {
     if (searching) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color={brandColor} />
           <Text style={styles.loadingText}>Searching...</Text>
         </View>
       );
@@ -293,7 +573,7 @@ export default function SearchPage() {
     if (error) {
       return (
         <View style={styles.errorContainer}>
-          <Ionicons name="search-outline" size={64} color="#E5E7EB" />
+          <Ionicons name="search-outline" size={64} color={placeholderColor} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => handleSearch()}>
             <Text style={styles.retryButtonText}>Try Again</Text>
@@ -305,7 +585,7 @@ export default function SearchPage() {
     if (articles.length === 0 && showResults) {
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons name="document-outline" size={64} color="#E5E7EB" />
+          <Ionicons name="document-outline" size={64} color={placeholderColor} />
           <Text style={styles.emptyText}>No results found</Text>
           <Text style={styles.emptySubtext}>Try different keywords or browse trending topics</Text>
         </View>
@@ -333,7 +613,7 @@ export default function SearchPage() {
           <View style={styles.searchHeader}>
             <View style={styles.headerRow}>
               <TouchableOpacity onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={24} color="#111827" />
+                <Ionicons name="arrow-back" size={24} color={textColor} />
               </TouchableOpacity>
               <Text style={styles.title}>Search</Text>
               <View style={{ width: 24 }} />
@@ -342,11 +622,12 @@ export default function SearchPage() {
             {/* Search Bar */}
             <View style={styles.searchContainer}>
               <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+                <Ionicons name="search" size={20} color={placeholderColor} style={styles.searchIcon} />
                 <TextInput
                   ref={searchRef}
                   style={styles.searchInput}
                   placeholder="Search posts, hashtags, or content..."
+                  placeholderTextColor={placeholderColor}
                   value={searchText}
                   onChangeText={setSearchText}
                   onSubmitEditing={() => handleSearch()}
@@ -357,17 +638,12 @@ export default function SearchPage() {
                   editable={!searching}
                 />
                 {searching && (
-                  <ActivityIndicator size="small" color="#3B82F6" style={styles.searchingIndicator} />
+                  <ActivityIndicator size="small" color={brandColor} />
                 )}
                 {searchText.length > 0 && (
-                  <>
-                    <TouchableOpacity onPress={() => handleSearch()} style={styles.searchButton}>
-                      <Ionicons name="search" size={18} color="#3B82F6" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                      <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                    </TouchableOpacity>
-                  </>
+                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                    <Ionicons name="close-circle" size={20} color={placeholderColor} />
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
@@ -376,13 +652,6 @@ export default function SearchPage() {
             {searchText && showResults && (
               <Text style={styles.resultsCount}>
                 {searching ? 'Searching...' : `${articles.length} result${articles.length !== 1 ? 's' : ''} found`}
-              </Text>
-            )}
-            
-            {/* Search Hint */}
-            {searchText.length > 0 && searchText.length <= 2 && !showResults && (
-              <Text style={styles.searchHint}>
-                Type at least 3 characters to search automatically
               </Text>
             )}
           </View>
@@ -401,7 +670,7 @@ export default function SearchPage() {
                 
                 {loading && (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
+                    <ActivityIndicator size="large" color={brandColor} />
                     <Text style={styles.loadingText}>Loading trending posts...</Text>
                   </View>
                 )}
@@ -409,7 +678,7 @@ export default function SearchPage() {
                 {articles.length > 0 && !showResults && (
                   <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                      <Ionicons name="flame" size={20} color="#F59E0B" />
+                      <Ionicons name="flame" size={20} color={brandColor} />
                       <Text style={styles.sectionTitle}>Trending Posts</Text>
                     </View>
                     <FlatList
@@ -425,326 +694,17 @@ export default function SearchPage() {
                 )}
               </>
             ) : (
-              <View style={styles.resultsSection}>
-                <View style={styles.resultsHeader}>
-                  <Text style={styles.resultsTitle}>
-                    Search Results for "{searchText}"
-                  </Text>
-                </View>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  Search Results for "{searchText}"
+                </Text>
                 {renderSearchResults()}
               </View>
             )}
           </ScrollView>
-
-          {/* Trending Tags Overlay */}
-          {searchFocused && (
-            <>
-              <TouchableOpacity 
-                style={styles.overlay}
-                onPress={() => setSearchFocused(false)}
-                activeOpacity={1}
-              />
-              <View style={styles.trendingOverlay}>
-                <View style={styles.overlayHeader}>
-                  <Ionicons name="trending-up" size={16} color="#EF4444" />
-                  <Text style={styles.overlayTitle}>Trending Tags</Text>
-                </View>
-                                 {trendingTopics.slice(0, 6).map((topic: any, index: number) => (
-                   <TouchableOpacity
-                     key={index}
-                     style={styles.overlayItem}
-                     onPress={() => handleTrendingClick(topic.tag)}
-                   >
-                     <View style={[styles.rankBadge, { 
-                       backgroundColor: index === 0 ? '#10B981' : 
-                                      index === 1 ? '#3B82F6' : 
-                                      index === 2 ? '#8B5CF6' : '#6B7280' 
-                     }]}>
-                       <Text style={styles.rankText}>{String(index + 1).padStart(2, '0')}</Text>
-                     </View>
-                     <Text style={styles.overlayItemText}>#{topic.tag}</Text>
-                   </TouchableOpacity>
-                 ))}
-              </View>
-            </>
-          )}
         </View>
       </AppContainer>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  content: {
-    flex: 1,
-  },
-  searchHeader: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 60, // Add top padding for status bar
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  searchContainer: {
-    marginBottom: 8,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#111827',
-  },
-  searchButton: {
-    padding: 4,
-    marginRight: 8,
-  },
-  searchingIndicator: {
-    marginRight: 8,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  resultsCount: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-  },
-  searchHint: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  section: {
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginLeft: 8,
-  },
-  topicsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  topicCard: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: '45%',
-    alignItems: 'center',
-  },
-  topicTag: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  topicCount: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  recentText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#374151',
-    marginLeft: 12,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryButton: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1D4ED8',
-  },
-  resultsSection: {
-    flex: 1,
-  },
-  resultsHeader: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  resultsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  resultsList: {
-    padding: 20,
-    paddingBottom: 100,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: '#EF4444',
-    textAlign: 'center',
-  },
-  retryButton: {
-    marginTop: 16,
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  emptySubtext: {
-    marginTop: 4,
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    zIndex: 30,
-  },
-  trendingOverlay: {
-    position: 'absolute',
-    top: 120,
-    left: 20,
-    right: 20,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-    zIndex: 40,
-  },
-  overlayHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  overlayTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginLeft: 8,
-  },
-  overlayItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  rankBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  rankText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  overlayItemText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-});
 

@@ -1,52 +1,46 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import React,  { useState } from "react";
-import {fetchAPI} from "@/components/Utils";
+import React, { useState } from "react";
+import { fetchAPI } from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import moment from 'moment';
 import { router } from 'expo-router';
-
+import { useTheme } from '@/contexts/ThemeContext';
 
 type ThemedArticleProps = {
   article_data: any;
   type?: string;
 };
 
-export default function ThemedArticle({ article_data, type='default' }: ThemedArticleProps) {
-  const background_color = useThemeColor({}, 'default_card_background_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
-  const time_color = useThemeColor({}, 'default_placeholder_color');
-  const points_color = useThemeColor({}, 'default_brand_color');
-  const button_color = useThemeColor({}, 'default_placeholder_color');
-  
+export default function ThemedArticle({ article_data, type = 'default' }: ThemedArticleProps) {
+  const { theme } = useTheme();
   const [article, setArticleState] = useState(article_data);
 
   const handleLike = async () => {
-      const url = article.like_status
-          ? URLs.ARTICLE_UNLIKE(article.id)
-          : URLs.ARTICLE_LIKE(article.id);
-      const response_data = await fetchAPI(url, {method: 'POST'})
-      if (response_data) {
-          setArticleState((prevState: any) => ({
-            ...prevState,
-            like_status: !prevState.like_status,
-            likes_count: prevState.likes_count + (prevState.like_status ? -1 : 1),
-          }));
-      }
+    const url = article.like_status
+      ? URLs.ARTICLE_UNLIKE(article.id)
+      : URLs.ARTICLE_LIKE(article.id);
+    const response_data = await fetchAPI(url, { method: 'POST' })
+    if (response_data) {
+      setArticleState((prevState: any) => ({
+        ...prevState,
+        like_status: !prevState.like_status,
+        likes_count: prevState.likes_count + (prevState.like_status ? -1 : 1),
+      }));
+    }
   };
-    
+
   const handleSave = async () => {
-      const url = article.save_status
+    const url = article.save_status
       ? URLs.ARTICLE_UNSAVE(article.id)
       : URLs.ARTICLE_SAVE(article.id);
-      
-      const data = await fetchAPI(url, {method: 'POST'})
-      if (data) {
-          setArticleState((prevState: any) => ({
-          ...prevState,
-          save_status: !article.save_status,
-          }));
-      }    
+
+    const data = await fetchAPI(url, { method: 'POST' })
+    if (data) {
+      setArticleState((prevState: any) => ({
+        ...prevState,
+        save_status: !article.save_status,
+      }));
+    }
   };
 
   const handleArticleDetail = () => {
@@ -55,114 +49,112 @@ export default function ThemedArticle({ article_data, type='default' }: ThemedAr
 
   const styles = StyleSheet.create({
     container: {
-      flex: 1,
-      color: background_color,
-      borderRadius: 30,
-      padding: 30, 
-      shadowColor: 'rgba(0, 0, 0, 1)',
+      backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadius['2xl'],
+      padding: theme.spacing['2xl'],
+      shadowColor: theme.computed.shadowColor,
       shadowOffset: { width: 0, height: 3 },
-      
       shadowRadius: 13,
       shadowOpacity: 0.08,
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-
-      marginBottom: type=='detail' ? 20 : 0,
+      elevation: 10,
+      marginBottom: type === 'detail' ? theme.spacing.xl : 0,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
     },
     infoContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
-      marginBottom: 20,
+      gap: theme.spacing.xs,
+      marginBottom: theme.spacing.xl,
     },
     uni: {
-      color: default_text_color,
-      fontWeight: '400',
-      fontSize: 15,
+      color: theme.colors.textSecondary,
+      fontWeight: '400' as any,
+      fontSize: theme.typography.fontSize.sm,
     },
     name: {
-      color: default_text_color,
-      fontWeight: '600',
-      fontSize: 20,
+      color: theme.colors.text,
+      fontWeight: '600' as any,
+      fontSize: theme.typography.fontSize.lg,
     },
     points: {
-      color: points_color,
-      fontWeight: '400',
-      fontSize: 15,
+      color: theme.colors.primary,
+      fontWeight: '400' as any,
+      fontSize: theme.typography.fontSize.sm,
     },
     time: {
-      color: time_color,
-      fontWeight: '400',
-      fontSize: 15,
+      color: theme.colors.textMuted,
+      fontWeight: '400' as any,
+      fontSize: theme.typography.fontSize.sm,
     },
     title: {
-      color: default_text_color,
-      fontWeight: '600',
-      fontSize: 23,
-      marginBottom: 5,
+      color: theme.colors.text,
+      fontWeight: '600' as any,
+      fontSize: theme.typography.fontSize['2xl'],
+      marginBottom: theme.spacing.xs,
     },
     body: {
-      color: default_text_color,
-      fontWeight: '400',
-      fontSize: 17,
-      marginBottom: 20,
-      textAlign: 'justify' 
+      color: theme.colors.textSecondary,
+      fontWeight: '400' as any,
+      fontSize: theme.typography.fontSize.base,
+      marginBottom: theme.spacing.xl,
+      textAlign: 'justify' as any,
+      lineHeight: theme.typography.fontSize.base * 1.5,
     },
     buttonContainer: {
       flexDirection: 'row',
       justifyContent: 'flex-start',
-      gap: 10,
+      gap: theme.spacing.sm,
     },
     button: {
-      color: button_color,
-      fontSize: 15,
+      color: theme.colors.textMuted,
+      fontSize: theme.typography.fontSize.sm,
     },
   });
 
   return (
-    
-    <View style={[styles.container]}>
+    <View style={styles.container}>
       <Pressable onPress={handleArticleDetail}>
-        <View style={[styles.infoContainer]}>
-            {article.unicon && (
-              <Text style={[styles.uni]}>
+        <View style={styles.infoContainer}>
+          {article.unicon && (
+            <Text style={styles.uni}>
               {article.user_school.toUpperCase()}
-              </Text>
-            )}
-          <Text style={[styles.name]}>
+            </Text>
+          )}
+          <Text style={styles.name}>
             {article.user_temp_name}
           </Text>
-          <Text style={[styles.points]}>
+          <Text style={styles.points}>
             {article.user_static_points}
           </Text>
-          <Text style={[styles.time]}>
+          <Text style={styles.time}>
             {moment(article.created_at).fromNow()}
           </Text>
         </View>
 
-        <Text style={[styles.title]}>{article.title}</Text>
-        <Text style={[styles.body]}>{article.body}</Text>
+        <Text style={styles.title}>{article.title}</Text>
+        <Text style={styles.body}>{article.body}</Text>
       </Pressable>
-      <View style={[styles.buttonContainer]}>
+      <View style={styles.buttonContainer}>
         <Pressable onPress={handleLike}>
-            <Text style={[styles.button]}>
-              {article.like_status ? 'Liked' : 'Like'} {article.likes_count}
-            </Text>
+          <Text style={styles.button}>
+            {article.like_status ? 'Liked' : 'Like'} {article.likes_count}
+          </Text>
         </Pressable>
         <Pressable>
-            <Text style={[styles.button]}>
-              comment {article.comments_count}
-            </Text>
+          <Text style={styles.button}>
+            comment {article.comments_count}
+          </Text>
         </Pressable>
         <Pressable>
-            <Text style={[styles.button]}>
-              view {article.views_count}
-            </Text>
+          <Text style={styles.button}>
+            view {article.views_count}
+          </Text>
         </Pressable>
         <Pressable onPress={handleSave}>
-            <Text style={[styles.button]}>
-              {article.save_status ? 'Saved' : 'Save'}
-            </Text>
+          <Text style={styles.button}>
+            {article.save_status ? 'Saved' : 'Save'}
+          </Text>
         </Pressable>
       </View>
     </View>

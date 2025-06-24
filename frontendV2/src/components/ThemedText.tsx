@@ -1,49 +1,106 @@
 import { Text, type TextProps, StyleSheet } from 'react-native';
-
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'error' | 'summaryPoints' | 'feedChecked' | 'feedUnchecked' | 'Wording';
+  variant?: 'default' | 'title' | 'subtitle' | 'caption' | 'error' | 'success' | 'warning';
+  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  weight?: 'normal' | 'medium' | 'semibold' | 'bold';
+  color?: 'text' | 'textSecondary' | 'textMuted' | 'primary' | 'error' | 'success' | 'warning';
 };
 
 export default function ThemedText({
   style,
-  type = 'default',
+  variant = 'default',
+  size = 'base',
+  weight = 'normal',
+  color = 'text',
   ...rest
 }: ThemedTextProps) {
-  const default_brand_color = useThemeColor({}, 'default_brand_color');
-  const errorColor = useThemeColor({}, 'default_error_color');
-  const defaultColor = useThemeColor({}, 'default_text_color');
-  const feed_unchecked_color = useThemeColor({}, 'default_placeholder_color');
-  // const feed_unchecked_color = useThemeColor({}, 'default_text_color');
-  
+  const { theme } = useTheme();
+
+  const getTextColor = () => {
+    switch (color) {
+      case 'text':
+        return theme.colors.text;
+      case 'textSecondary':
+        return theme.colors.textSecondary;
+      case 'textMuted':
+        return theme.colors.textMuted;
+      case 'primary':
+        return theme.colors.primary;
+      case 'error':
+        return theme.colors.error;
+      case 'success':
+        return theme.colors.success;
+      case 'warning':
+        return theme.colors.warning;
+      default:
+        return theme.colors.text;
+    }
+  };
+
+  const getVariantStyles = () => {
+    switch (variant) {
+         case 'title':
+        return {
+          fontSize: theme.typography.fontSize['4xl'],
+          fontWeight: theme.typography.fontWeight.bold,
+          lineHeight: theme.typography.fontSize['4xl'] * theme.typography.lineHeight.tight,
+        };
+      case 'title':
+        return {
+          fontSize: theme.typography.fontSize['4xl'],
+          fontWeight: theme.typography.fontWeight.bold,
+          lineHeight: theme.typography.fontSize['4xl'] * theme.typography.lineHeight.tight,
+        };
+      case 'subtitle':
+        return {
+          fontSize: theme.typography.fontSize['3xl'],
+          fontWeight: theme.typography.fontWeight.semibold,
+          lineHeight: theme.typography.fontSize['3xl'] * theme.typography.lineHeight.tight,
+        };
+      case 'caption':
+        return {
+          fontSize: theme.typography.fontSize.sm,
+          fontWeight: theme.typography.fontWeight.medium,
+          lineHeight: theme.typography.fontSize.sm * theme.typography.lineHeight.normal,
+        };
+      case 'error':
+        return {
+          fontSize: theme.typography.fontSize.base,
+          fontWeight: theme.typography.fontWeight.medium,
+          color: theme.colors.error,
+        };
+      case 'success':
+        return {
+          fontSize: theme.typography.fontSize.base,
+          fontWeight: theme.typography.fontWeight.medium,
+          color: theme.colors.success,
+        };
+      case 'warning':
+        return {
+          fontSize: theme.typography.fontSize.base,
+          fontWeight: theme.typography.fontWeight.medium,
+          color: theme.colors.warning,
+        };
+      default:
+        return {
+          fontSize: theme.typography.fontSize[size],
+          fontWeight: theme.typography.fontWeight[weight],
+          lineHeight: theme.typography.fontSize[size] * theme.typography.lineHeight.normal,
+        };
+    }
+  };
+
   return (
     <Text
       style={[
         {
-          color:
-            type === 'default'
-              ? defaultColor
-              : type === 'error'
-              ? errorColor
-              : type === 'summaryPoints'
-              ? default_brand_color
-              : type === 'feedChecked'
-              ? defaultColor
-              : type === 'feedUnchecked'
-              ? feed_unchecked_color
-              : undefined,
+          color: variant === 'error' || variant === 'success' || variant === 'warning' 
+            ? undefined 
+            : getTextColor(),
         },
-        type === 'default' ? styles.default : undefined,
-        type === 'error' ? styles.error : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        type === 'summaryPoints' ? styles.summaryPoints : undefined,
-        type === 'feedChecked' ? styles.feedChecked : undefined,
-        type === 'feedUnchecked' ? styles.feedUnchecked : undefined,
-        type === 'Wording' ? styles.Wording : undefined,
+        getVariantStyles(),
         style,
       ]}
       {...rest}

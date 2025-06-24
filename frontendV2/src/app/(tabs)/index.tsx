@@ -7,9 +7,10 @@ import React, { useState, useEffect, useRef  } from "react";
 import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
-import { useThemeColor } from '@/hooks/useThemeColor';
-export default function HomePage() {
+import { useTheme } from '@/contexts/ThemeContext';
 
+export default function HomePage() {
+  const { theme } = useTheme();
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
   const [nextArticlePage, setNextArticlePage] = useState(null);
   const [articles, setArticles] = useState<{ id: string; [key: string]: any }[]>([]);
@@ -17,7 +18,6 @@ export default function HomePage() {
   const [error, setError] = useState(false);
   const [university, setUniversity] = useState('');
   const fetchedArticlePage = useRef(null);
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
 
   const apiEndpoints = {
     all: URLs.TIME_SORTED_ARTICLES,
@@ -69,82 +69,84 @@ export default function HomePage() {
     } else {
       setError(response?.data?.detail || "An error occurred");
     }
-    
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: theme.colors.background,
     },
     titleContainer: {
-      marginTop: 20,
-      gap: 20,
-      marginBottom: 40,
+      marginTop: theme.spacing.xl,
+      gap: theme.spacing.xl,
+      marginBottom: theme.spacing['4xl'],
     },
     titleContentContainer:{
-      margin: 20,
-      gap: 20,
+      margin: theme.spacing.xl,
+      gap: theme.spacing.xl,
     },
     buttonContainer: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
-      gap: 10,
-      padding: 5,
-      borderRadius: 50,
-      backgroundColor: default_card_background_color,
-      shadowColor: 'rgba(0, 0, 0, 1)',
+      gap: theme.spacing.sm,
+      padding: theme.spacing.xs,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: theme.colors.card,
+      shadowColor: theme.computed.shadowColor,
       shadowOffset: { width: 0, height: 3 },
-      
       shadowRadius: 13,
       shadowOpacity: 0.08,
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
+      elevation: 10,
     },
     feedContainer: {
       alignItems: 'stretch',
-      marginHorizontal: 20,
-      gap: 20,
+      marginHorizontal: theme.spacing.xl,
+      gap: theme.spacing.xl,
     },
   });
 
   const renderHeader = () => (
     <>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type={'subtitle'}>UNI.CON</ThemedText>
-        <ThemedView style={styles.titleContentContainer}>
-          <ThemedText type={'title'}>{university}</ThemedText>
-          <ThemedText type={'default'} style={{ fontWeight: '500' }}>Currently, they are chatting about..</ThemedText>
+      <ThemedView variant="background" style={styles.titleContainer}>
+        <ThemedText variant="subtitle">UNI.CON</ThemedText>
+        <ThemedView variant="background" style={styles.titleContentContainer}>
+          <ThemedText variant="title">{university}</ThemedText>
+          <ThemedText weight="medium">Currently, they are chatting about..</ThemedText>
         </ThemedView>
       </ThemedView>
-      <ThemedView style={styles.buttonContainer}>
+      <ThemedView variant="transparent" style={styles.buttonContainer}>
         <ThemedButton
-          type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}
+          variant={sortOption === 'all' ? 'primary' : 'chip'}
+          size="sm"
           onPress={() => setSortOption('all')}
         >
-          <ThemedText type={sortOption === 'all' ? 'feedChecked' : 'feedUnchecked'}>All</ThemedText>
+          All
         </ThemedButton>
         <ThemedButton
-          type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'}
+          variant={sortOption === 'hot' ? 'primary' : 'chip'}
+          size="sm"
           onPress={() => setSortOption('hot')}
         >
-          <ThemedText type={sortOption === 'hot' ? 'feedChecked' : 'feedUnchecked'} >Hot</ThemedText>
+          Hot
         </ThemedButton>
         <ThemedButton
-          type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'}
+          variant={sortOption === 'recommend' ? 'primary' : 'chip'}
+          size="sm"
           onPress={() => setSortOption('recommend')}
         >
-          <ThemedText type={sortOption === 'recommend' ? 'feedChecked' : 'feedUnchecked'} >Recommend</ThemedText>
+          Recommend
         </ThemedButton>
       </ThemedView>
     </>
   );
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView variant="background" style={styles.container}>
       {loading ? (
         <ThemedText>Loading...</ThemedText>
       ) : (
         <>
-          {error || <ThemedText type="error">{error}</ThemedText>}
+          {error && <ThemedText variant="error">{error}</ThemedText>}
           <FlatList
             data={articles}
             keyExtractor={(item) => item.id}

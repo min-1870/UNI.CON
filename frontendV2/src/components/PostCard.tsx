@@ -2,6 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import moment from 'moment';
 
 function getRelativeTime(dateString: string) {
   const now = new Date();
@@ -15,21 +19,49 @@ function getRelativeTime(dateString: string) {
   return date.toLocaleDateString();
 }
 
-function getTagColor(tag: string): { backgroundColor: string; color: string } {
+function getTagColor(tag: string, isDark: boolean): { backgroundColor: string; color: string } {
   const tagLower = tag.toLowerCase();
-  if (tagLower.includes('school') || tagLower.includes('university')) 
-    return { backgroundColor: '#FEE2E2', color: '#EF4444' };
-  if (tagLower.includes('lunch') || tagLower.includes('food')) 
-    return { backgroundColor: '#DCFCE7', color: '#16A34A' };
-  if (tagLower.includes('it') || tagLower.includes('tech') || tagLower.includes('computer')) 
-    return { backgroundColor: '#DBEAFE', color: '#2563EB' };
-  if (tagLower.includes('study') || tagLower.includes('exam') || tagLower.includes('mid-term')) 
-    return { backgroundColor: '#F3E8FF', color: '#9333EA' };
-  if (tagLower.includes('event') || tagLower.includes('party')) 
-    return { backgroundColor: '#FEF3C7', color: '#D97706' };
-  if (tagLower.includes('housing') || tagLower.includes('accommodation')) 
-    return { backgroundColor: '#E0F2FE', color: '#0891B2' };
-  return { backgroundColor: '#F3F4F6', color: '#6B7280' };
+  
+  if (tagLower.includes('school') || tagLower.includes('university')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2', 
+      color: isDark ? '#FCA5A5' : '#EF4444' 
+    };
+  }
+  if (tagLower.includes('lunch') || tagLower.includes('food')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7', 
+      color: isDark ? '#86EFAC' : '#16A34A' 
+    };
+  }
+  if (tagLower.includes('it') || tagLower.includes('tech') || tagLower.includes('computer')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(37, 99, 235, 0.2)' : '#DBEAFE', 
+      color: isDark ? '#93C5FD' : '#2563EB' 
+    };
+  }
+  if (tagLower.includes('study') || tagLower.includes('exam') || tagLower.includes('mid-term')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(147, 51, 234, 0.2)' : '#F3E8FF', 
+      color: isDark ? '#C4B5FD' : '#9333EA' 
+    };
+  }
+  if (tagLower.includes('event') || tagLower.includes('party')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.2)' : '#FEF3C7', 
+      color: isDark ? '#FCD34D' : '#D97706' 
+    };
+  }
+  if (tagLower.includes('housing') || tagLower.includes('accommodation')) {
+    return { 
+      backgroundColor: isDark ? 'rgba(8, 145, 178, 0.2)' : '#E0F2FE', 
+      color: isDark ? '#67E8F9' : '#0891B2' 
+    };
+  }
+  return { 
+    backgroundColor: isDark ? 'rgba(107, 114, 128, 0.2)' : '#F3F4F6', 
+    color: isDark ? '#D1D5DB' : '#6B7280' 
+  };
 }
 
 interface Article {
@@ -80,6 +112,13 @@ const PostCard: React.FC<PostCardProps> = ({
   onSave,
   onTagClick
 }) => {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const cardBackground = colorScheme === 'dark' ? '#1F2937' : '#FFF'; // Tailwind gray-800 or white
+  const textColor = colorScheme === 'dark' ? '#FFFFFF' : '#000000';
+  const placeholderColor = useThemeColor({}, 'default_placeholder_color');
+
   // Normalize data from either article or post prop
   let normalizedData;
   
@@ -188,229 +227,155 @@ const PostCard: React.FC<PostCardProps> = ({
   const shouldTruncate = normalizedData.body.length > maxLength;
   const displayContent = shouldTruncate ? `${normalizedData.body.slice(0, maxLength)}...` : normalizedData.body;
 
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: cardBackground,
+      borderRadius: 16,
+      padding: 16,
+      marginVertical: 8,
+      shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.1)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    avatar: {
+      width: 30,
+      height: 30,
+      borderRadius: 20,
+      backgroundColor: colorScheme === 'dark' ? 'rgba(234, 179, 8, 0.8)' : '#4ade80',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarText: {
+      color: 'white',
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    userInfo: {
+      flex: 1,
+    },
+    username: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: textColor,
+    },
+    timestamp: {
+      fontSize: 10,
+      color: placeholderColor,
+      marginBottom: 5,
+      textAlign: 'right',
+      paddingLeft: 30,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: textColor,
+      marginBottom: 8,
+      lineHeight: 22,
+    },
+    body: {
+      fontSize: 14,
+      color: textColor,
+      lineHeight: 20,
+      marginBottom: 12,
+    },
+    tagsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 12,
+    },
+    tag: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginRight: 8,
+      marginBottom: 4,
+    },
+    tagText: {
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    footerItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    footerText: {
+      fontSize: 12,
+      color: placeholderColor,
+      marginLeft: 4,
+    },
+  });
+
   return (
-    <TouchableOpacity style={[
-      styles.postCard,
-      normalizedData.save_status && styles.savedCard,
-      externalStyles?.postCard
-    ]} onPress={handlePress} activeOpacity={0.7}>
-      
-      {/* Header with user info and timestamp */}
-      <View style={styles.postHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.userAvatar}>
-            <Text style={styles.userAvatarText}>
-              {normalizedData.user_temp_name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <Text style={styles.userName}>@{normalizedData.user_temp_name.toLowerCase()}</Text>
+    <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.7}>
+     
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {(normalizedData.user_temp_name || 'U')[0].toUpperCase()}
+          </Text>
         </View>
-        <Text style={styles.timestamp}>{getRelativeTime(normalizedData.created_at)}</Text>
+        <View style={styles.userInfo}>
+          <Text style={styles.username}>@{normalizedData.user_temp_name || 'Unknown'}   <Text style={styles.timestamp}>{moment(normalizedData.created_at).fromNow()}</Text></Text>
+
+        </View>
       </View>
       
-      {/* Post title */}
-      <Text style={styles.postTitle} numberOfLines={2}>
+      <Text style={styles.title} numberOfLines={2}>
         {normalizedData.title}
       </Text>
       
-      {/* Post content */}
-      <View style={styles.contentContainer}>
-        <Text style={styles.postContent} numberOfLines={shouldTruncate ? 3 : undefined}>
-          {displayContent}
-        </Text>
-        {shouldTruncate && (
-          <TouchableOpacity onPress={handlePress}>
-            <Text style={styles.seeMoreText}>See more...</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Post image */}
-      {normalizedData.image && (
-        <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: normalizedData.image }} 
-            style={styles.postImage}
-            resizeMode="cover"
-          />
-        </View>
-      )}
+      <Text style={styles.body} numberOfLines={3}>
+        {displayContent}
+      </Text>
       
-      {/* Tags */}
-      {tags.length > 0 && (
+      {normalizedData.course_code && (
         <View style={styles.tagsContainer}>
-          {tags.map((tag, index) => {
-            const tagColors = getTagColor(tag);
+          {normalizedData.course_code.split(',').map((tag: string, index: number) => {
+            const tagColors = getTagColor(tag.trim(), colorScheme === 'dark');
             return (
-              <TouchableOpacity
+              <View
                 key={index}
-                style={[styles.tagBadge, { backgroundColor: tagColors.backgroundColor }]}
-                onPress={() => handleTagPress(tag)}
-                activeOpacity={0.7}
+                style={[styles.tag, { backgroundColor: tagColors.backgroundColor }]}
               >
                 <Text style={[styles.tagText, { color: tagColors.color }]}>
-                  {tag.startsWith('#') ? tag : `#${tag}`}
+                  #{tag.trim()}
                 </Text>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
       )}
       
-      {/* Action buttons */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
-          <Ionicons
-            name={normalizedData.like_status ? 'heart' : 'heart-outline'}
-            size={16}
-            color={normalizedData.like_status ? '#EF4444' : '#9CA3AF'}
-          />
-          <Text style={[
-            styles.actionText,
-            normalizedData.like_status && { color: '#EF4444' }
-          ]}>
-            {normalizedData.likes_count}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
-          <Ionicons name="chatbubble-outline" size={16} color="#9CA3AF" />
-          <Text style={styles.actionText}>{normalizedData.comments_count}</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton} onPress={handleSave} activeOpacity={0.7}>
-          <MaterialCommunityIcons
-            name={normalizedData.save_status ? 'bookmark' : 'bookmark-outline'}
-            size={16}
-            color={normalizedData.save_status ? '#9333EA' : '#9CA3AF'}
-          />
-        </TouchableOpacity>
+      <View style={styles.footer}>
+        <View style={styles.footerItem}>
+          <Ionicons name="heart-outline" size={16} color={placeholderColor} />
+          <Text style={styles.footerText}>{normalizedData.likes_count || 0}</Text>
+        </View>
+        <View style={styles.footerItem}>
+          <Ionicons name="chatbubble-outline" size={16} color={placeholderColor} />
+          <Text style={styles.footerText}>{normalizedData.comments_count || 0}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  postCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  savedCard: {
-    borderWidth: 2,
-    borderColor: '#16A34A',
-  },
-  postHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingBottom: 12,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FDE047',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  userAvatarText: {
-    color: '#000',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    lineHeight: 24,
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  postContent: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    flexWrap: 'wrap', // Ensure text wraps properly
-  },
-  seeMoreText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  imageContainer: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  postImage: {
-    width: '100%',
-    height: 192,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 8,
-  },
-  tagBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  actionText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-});
 
 export default PostCard;
