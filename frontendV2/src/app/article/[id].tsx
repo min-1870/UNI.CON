@@ -5,6 +5,7 @@ import OverflowMenu from '@/components/ThemedOverflowMenu';
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign, Feather } from '@expo/vector-icons';
+import { useArticlesStore } from '@/store/articleStore';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedComment from '@/components/ThemedComment';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -24,7 +25,7 @@ export default function ArticlePage() {
   const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
   const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
   const [initialData, setInitialData] = useState<InitialDataType>();
-  const [article, setArticle] = useState<ArticleType | null>(null);
+  
   const [nextCommentPage, setNextCommentPage] = useState(null);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [isReply, setIsReply] = useState<boolean>(false);
@@ -32,7 +33,10 @@ export default function ArticlePage() {
   const [newComment, setNewComment] = useState('');
   const [orgComment, setOrgComment] = useState('');
   const [loading, setLoading] = useState(false);
-
+  
+  const articlesById = useArticlesStore(s => s.articlesById) || {};
+  const articleId = (useRoute().params as { id: string }).id;
+  const article = articlesById[Number(articleId)] || null;
   const background_color = useThemeColor({}, 'default_card_background_color');
   const text_color = useThemeColor({}, 'default_text_color');
 
@@ -40,7 +44,18 @@ export default function ArticlePage() {
   const fetchedCommentPage = useRef(null);
 
   const navigation = useNavigation();
-  const articleId = (useRoute().params as { id: string }).id;
+
+  useEffect(() => {
+    if (article) {
+      setHeaderContent(
+        <ThemedArticle
+          initialData={initialData}
+          type={'detail'}
+          articleData={article}
+        />
+      );
+    }
+  }, [article, initialData]);
   
   // console.log(useNavigationState(state => state.routes.map(r => r.name)))
   useLayoutEffect(() => {
@@ -88,19 +103,14 @@ export default function ArticlePage() {
       }
     );
     if (!response.error) {
-        setHeaderContent(
-          <ThemedArticle
-            initialData={initialData}
-            type={'detail'}
-            articleData={{
+      
+        useArticlesStore.getState().updateArticle(article.id, {
               ...article,
               title: '[DELETED ARTICLE]',
               body: '[DELETED CONTENT]',
               tag: [],
               deleted: true,
-          }}
-        />
-      );
+        });
       Toast.show({
         type: 'success',
         text1: `Hi, ${response.data?.detail || "Article deleted!"}`,
@@ -169,11 +179,9 @@ export default function ArticlePage() {
       token: true,
     });
     if (!response.error) {
-      setArticle(response.data?.results?.article || null);
+      useArticlesStore.getState().updateArticle(Number(articleId), response.data?.results?.article);
       setComments(response.data?.results?.comments || []);
       setNextCommentPage(response.data?.next)
-      initialData &&
-      setHeaderContent(<ThemedArticle initialData={initialData} type={'detail'} articleData={response.data?.results?.article} />);
       fetchedCommentPage.current = null
     } else {
       Toast.show({

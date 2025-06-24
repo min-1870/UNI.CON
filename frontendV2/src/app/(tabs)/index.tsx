@@ -246,7 +246,6 @@ export default function HomePage() {
     ),
     [initialData]
   );
-
   return (
     <ThemedView style={styles.container}>
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>

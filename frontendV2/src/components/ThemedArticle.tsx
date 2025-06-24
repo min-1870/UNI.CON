@@ -85,19 +85,19 @@ function parseMarkdownImages(raw: string) {
 }
 
 type ThemedArticleProps = {
-  articleData: any;
+  articleData: ArticleType;
   trendingTags?: string[];
   initialData?: InitialDataType|null;
   type?: string;
 };
 
-function ThemedArticle({ articleData, initialData, trendingTags, type='default' }: ThemedArticleProps) {
+function ThemedArticle({ articleData, initialData, trendingTags, type='default',  }: ThemedArticleProps) {
 
   const view_background_color = useThemeColor({}, 'default_view_card_background_color');
   const background_color = useThemeColor({}, 'default_card_background_color');
   const button_color = useThemeColor({}, 'default_placeholder_color');
   const [fetchedTrendingTags, setFetchedTrendingTags] = useState<string[]>(trendingTags ?? []);
-  const [article, setArticleState] = useState<ArticleType>(articleData);
+  
   const { bodies, imgUris } = useMemo(
     () => parseMarkdownImages(articleData.body),
     [articleData.body]
@@ -105,6 +105,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
   const [ratios, setRatios] = useState<number[]>(
     imgUris.map(uri => ratioCache.get(uri) || (16/9))
   );
+
 
   useEffect(() => {
     if (!trendingTags) {
@@ -138,50 +139,36 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
   }, [imgUris]);
 
   const handleLike = async () => {
-    const url = article.like_status
-        ? URLs.ARTICLE_UNLIKE(String(article.id))
-        : URLs.ARTICLE_LIKE(String(article.id));
+    const url = articleData.like_status
+        ? URLs.ARTICLE_UNLIKE(String(articleData.id))
+        : URLs.ARTICLE_LIKE(String(articleData.id));
     const response_data = await fetchAPI(url, {method: 'POST'})
     if (response_data) {
-        useArticlesStore.getState().updateArticle(article.id, {
-          like_status: !article.like_status,
-          likes_count: article.likes_count + (article.like_status ? -1 : 1),
+        useArticlesStore.getState().updateArticle(articleData.id, {
+          like_status: !articleData.like_status,
+          likes_count: articleData.likes_count + (articleData.like_status ? -1 : 1),
         });
-        setArticleState((prevState: any) => ({
-          ...prevState,
-          like_status: !prevState.like_status,
-          likes_count: prevState.likes_count + (prevState.like_status ? -1 : 1),
-        }));
     }
   };
 
   const handleSave = async () => {
-      const url = article.save_status
-      ? URLs.ARTICLE_UNSAVE(String(article.id))
-      : URLs.ARTICLE_SAVE(String(article.id));
+      const url = articleData.save_status
+      ? URLs.ARTICLE_UNSAVE(String(articleData.id))
+      : URLs.ARTICLE_SAVE(String(articleData.id));
       
       const data = await fetchAPI(url, {method: 'POST'})
       if (data) {
-        useArticlesStore.getState().updateArticle(article.id, {
+        useArticlesStore.getState().updateArticle(articleData.id, {
           save_status: !articleData.save_status,
         });
-          setArticleState((prevState: any) => ({
-          ...prevState,
-          save_status: !article.save_status,
-          }));
       }    
   };
 
   const handleArticleDetail = useCallback(() => {
-        useArticlesStore.getState().updateArticle(article.id, {
+        useArticlesStore.getState().updateArticle(articleData.id, {
           view_status: true,
-          views_count: article.views_count + 1,
+          views_count: articleData.views_count + 1,
         });
-        setArticleState((prevState: any) => ({
-          ...prevState,
-          view_status: true,
-          views_count: prevState.views_count + 1,
-        }));
     router.push({ pathname: '/article/[id]', params: { id: String(articleData.id) } });
   }, [articleData.id]);
   
@@ -189,30 +176,30 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
     <View style={[
       styles.container,
       type === 'detail' && { borderTopRightRadius: 0, borderTopLeftRadius: 0, marginHorizontal: 0, marginBottom: 20 },
-      { backgroundColor: type === 'default' ? article.view_status ? view_background_color : background_color : background_color}
+      { backgroundColor: type === 'default' ? articleData.view_status ? view_background_color : background_color : background_color}
     ]}>
-      <Pressable onPress={handleArticleDetail}>
+      <Pressable onPress={() => (type === 'default' && handleArticleDetail())}>
         <View style={[styles.infoContainer]}>
-            {article.unicon && (
-              <ThemedTag initialData={initialData} type='uni' unClickable={true} text={article.user_school.toUpperCase()}/>
+            {articleData.unicon && (
+              <ThemedTag initialData={initialData} type='uni' unClickable={true} text={articleData.user_school.toUpperCase()}/>
             )}
           <ThemedText type='articleAuthor'>
-            {article.user_temp_name}
+            {articleData.user_temp_name}
           </ThemedText>
           <ThemedText type='articlePoints'>
-            {article.user_static_points}
+            {articleData.user_static_points}
           </ThemedText>
           <ThemedText type='articleDate'>
-            {moment(article.created_at).fromNow()}
+            {moment(articleData.created_at).fromNow()}
           </ThemedText>
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
            <ThemedText type='articleDate' >
-             {article.deleted? 'deleted' : article.edited ? 'edited' : null}
+             {articleData.deleted? 'deleted' : articleData.edited ? 'edited' : null}
            </ThemedText>
           </View>
         </View>
         <View style={styles.content}>
-          <ThemedText type='articleTitle'>{article.title}</ThemedText>
+          <ThemedText type='articleTitle'>{articleData.title}</ThemedText>
             {type === 'default' ? (
               <React.Fragment>
                 <ThemedText type="articleBody">
@@ -266,7 +253,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
               ))
             )}
           <View style={styles.tagContainer}>
-            {article.tag.length > 0 && article.tag
+            {articleData.tag.length > 0 && articleData.tag
               .map((tag: string, i: number) => (
                 <ThemedTag
                   text={tag}
@@ -280,16 +267,12 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
       <View style={[styles.buttonContainer]}>
         <Pressable onPress={handleLike} style={[styles.button]}>
           <AntDesign
-            name={type == 'detail' 
-              ? article.like_status ? 'heart' : 'hearto'
-              : articleData.like_status ? 'heart' : 'hearto'}
+            name={articleData.like_status ? 'heart' : 'hearto'}
             size={15}
             color={button_color}
           />
           <ThemedText type='articleButton'>
-            {type == 'detail'
-              ? article.likes_count
-              : articleData.likes_count}
+            {articleData.likes_count}
           </ThemedText>
         </Pressable>
         <View style={[styles.button]}>
@@ -299,7 +282,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
             color={button_color}
           />
           <ThemedText type='articleButton'>
-            {article.comments_count}
+            {articleData.comments_count}
           </ThemedText>
         </View>
         <View style={[styles.button]}>
@@ -309,14 +292,12 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default' 
             color={button_color}
           />
           <ThemedText type='articleButton'>
-            {article.views_count}
+            {articleData.views_count}
           </ThemedText>
         </View>
         <Pressable onPress={handleSave} style={[styles.button]}>
           <FontAwesome
-            name={type == 'detail'
-              ? article.save_status ? 'bookmark' : 'bookmark-o'
-              : articleData.save_status ? 'bookmark' : 'bookmark-o'}
+            name={articleData.save_status ? 'bookmark' : 'bookmark-o'}
             size={15}
             color={button_color}
           />
