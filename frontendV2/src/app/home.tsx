@@ -231,10 +231,6 @@ export default function Home() {
     router.push('/search' as any);
   };
 
-  const handleAddClick = () => {
-    setCreatePostVisible(true);
-  };
-
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
@@ -719,10 +715,7 @@ export default function Home() {
             />
           )}
         </View>
-        <BottomNav 
-          onSearchClick={handleSearchClick}
-          onAddClick={handleAddClick}
-        />
+                  <BottomNav />
         
         <CreatePost
           visible={createPostVisible}

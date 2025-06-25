@@ -1,5 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { FileX } from "lucide-react";
 
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
@@ -9,6 +10,7 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <ThemedView style={styles.container}>
+        <FileX size={100} color="black" />
         <ThemedText type="Wording">Oops! 404 :(</ThemedText>
         <ThemedText type="Wording" style={{ fontSize:25 }}>This page doesn't exist.</ThemedText>
         <Link href="/" style={styles.link}>

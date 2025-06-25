@@ -152,9 +152,7 @@ export default function ProfilePage() {
     console.log('Settings clicked');
   };
 
-  const handleAddClick = () => {
-    console.log('Add clicked');
-  };
+
 
   const renderTabContent = () => {
     if (loading) {
@@ -374,7 +372,7 @@ export default function ProfilePage() {
 
         </AppContainer>
         
-        <BottomNav onAddClick={handleAddClick} />
+        <BottomNav />
         
         <ChangePasswordModal
           visible={showChangePasswordModal}

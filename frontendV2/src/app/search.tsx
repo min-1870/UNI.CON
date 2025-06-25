@@ -271,9 +271,7 @@ export default function SearchPage() {
     }
   };
 
-  const handleAddClick = () => {
-    // Handle create post
-  };
+
 
   const styles = StyleSheet.create({
     container: {
@@ -756,7 +754,7 @@ export default function SearchPage() {
           </View>
         </View>
 
-        <BottomNav onAddClick={handleAddClick} />
+                 <BottomNav />
       </AppContainer>
     </ProtectedRoute>
   );

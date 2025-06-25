@@ -7,11 +7,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface BottomNavProps {
-  onSearchClick?: () => void;
-  onAddClick?: () => void;
+  // No props needed anymore since all navigation is via routes
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
+const BottomNav: React.FC<BottomNavProps> = () => {
   const pathname = usePathname();
   const colorScheme = useColorScheme();
   const brandColor = useThemeColor({}, 'default_brand_color');
@@ -35,7 +34,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
       icon: 'add-circle-outline' as const, 
       activeIcon: 'add-circle' as const, 
       label: 'Add', 
-      action: onAddClick 
+      path: '/post' as const 
     },
     { 
       icon: 'storefront-outline' as const, 
@@ -53,9 +52,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onSearchClick, onAddClick }) => {
 
   const handleNavClick = (item: typeof navItems[0]) => {
     console.log('Navigation clicked:', item.label, 'to path:', item.path, 'from:', pathname);
-    if (item.action) {
-      item.action();
-    } else if (item.path) {
+    if (item.path) {
       // Use push for all navigation - should work reliably now that all routes are at root level
       router.push(item.path as any);
     }

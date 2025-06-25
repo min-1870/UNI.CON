@@ -1,85 +1,131 @@
-import {View, NativeSyntheticEvent, TextInputKeyPressEventData,} from 'react-native';
-import { StyleSheet, TextInput, Pressable, ScrollView } from 'react-native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import React, { useState, useLayoutEffect } from 'react';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Image,
+  Animated,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ThemedButton from '@/components/ThemedButton';
-import ThemedView from '@/components/ThemedView';
-import ThemedText from '@/components/ThemedText';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { fetchAPI } from '@/components/Utils';
+import URLs from '@/constants/Urls';
 import Toast from 'react-native-toast-message';
-import type { TabParamList } from './_layout';
-import ThemedTag from '@/components/ThemedTag';
-import {fetchAPI} from "@/components/Utils";
-import URLs from "@/constants/Urls";
+import AppContainer from '@/components/AppContainer';
 
-export default function NewArticlePage() {
-  
-  const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [unicon, setUnicon] = useState(false);
+export default function CreatePost() {
+  const [content, setContent] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [currentHashtag, setCurrentHashtag] = useState('');
   const [loading, setLoading] = useState(false);
-  const [raw, setRaw] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const place_holder_color = useThemeColor({}, 'default_placeholder_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
   
-  const handlePost = async () => {
-    setLoading(true);
-    
-    // Validate required fields
-    if (!title.trim()) {
+  // Theme colors
+  const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const textColor = useThemeColor({}, 'default_text_color');
+  const placeholderColor = useThemeColor({}, 'default_placeholder_color');
+  const brandColor = useThemeColor({}, 'default_brand_color');
+
+  // Extract hashtags from content
+  const extractHashtags = (text: string) => {
+    const hashtagPattern = /#\w+/g;
+    const foundHashtags = text.match(hashtagPattern) || [];
+    return foundHashtags.map(tag => tag.slice(1));
+  };
+
+  // Handle content change and auto-extract hashtags
+  const handleContentChange = (value: string) => {
+    setContent(value);
+    const extractedHashtags = extractHashtags(value);
+    setHashtags(extractedHashtags);
+  };
+
+  // Handle image selection
+  const handleImageUpload = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled && result.assets) {
+      const newImages = result.assets.map(asset => asset.uri);
+      setImages(prev => [...prev, ...newImages].slice(0, 4)); // Limit to 4 images
+    }
+  };
+
+  // Remove image
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add hashtag manually
+  const addHashtag = () => {
+    if (currentHashtag.trim() && !hashtags.includes(currentHashtag.trim())) {
+      const newHashtag = currentHashtag.trim();
+      setHashtags(prev => [...prev, newHashtag]);
+      setContent(prev => prev + ` #${newHashtag}`);
+      setCurrentHashtag('');
+    }
+  };
+
+  // Remove hashtag
+  const removeHashtag = (tagToRemove: string) => {
+    setHashtags(prev => prev.filter(tag => tag !== tagToRemove));
+    setContent(prev => prev.replace(new RegExp(`#${tagToRemove}\\b`, 'g'), '').trim());
+  };
+
+  // Handle post submission
+  const handleSubmit = async () => {
+    if (!content.trim() && images.length === 0) {
       Toast.show({
         type: 'error',
-        text1: `Title cannot be empty!`,
+        text1: 'Please add some content or images to your post',
       });
-      setLoading(false);
       return;
     }
 
-    if (!body.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: `Body cannot be empty!`,
-      });
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
 
     try {
-      const response = await fetchAPI(
-        URLs.ARTICLE(), 
-        {
-          method: 'POST',
-          token: true,
-          body: { 
-            title: title.trim(), 
-            body: body.trim(), 
-            unicon: unicon,
-            tag: tags // Backend expects this field
-          },
-        }
-      );
-      
-      if (!response.error){
+      // For now, we'll send the post without images since the original API doesn't support images
+      // In the future, image upload can be added when the backend supports it
+      const response = await fetchAPI(URLs.ARTICLE(), {
+        method: 'POST',
+        token: true,
+        body: {
+          title: content.split('\n')[0].substring(0, 100) || 'Untitled', // First line as title
+          body: content.trim(),
+          unicon: false, // Can be made configurable
+          tag: hashtags, // Send hashtags as tags
+        },
+      });
+
+      if (!response.error) {
         Toast.show({
           type: 'success',
           text1: 'Post created successfully!',
         });
-        
+
         // Reset form
-        setTitle('');
-        setBody('');
-        setUnicon(false);
-        setRaw('');
-        setTags([]);
-        
-        // Navigate to the created article
-        navigation.navigate('home');
+        setContent('');
+        setImages([]);
+        setHashtags([]);
+        setCurrentHashtag('');
+
+        // Navigate back to home
+        router.push('/' as any);
       } else {
         console.error('Post creation failed:', response.data);
         Toast.show({
@@ -94,205 +140,355 @@ export default function NewArticlePage() {
         text1: 'Network error. Please try again.',
       });
     }
-    
+
     setLoading(false);
-  };  
-
-  // Temporarily disabled image upload functionality
-  // const handleUploadImgs = async (imgResult: ImagePickerResult) => {
-  //   // Image upload implementation will be added later when backend endpoint is ready
-  //   return null;
-  // };
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerStyle: {
-      backgroundColor: default_card_background_color, // navbar background
-      // shadowColor: 'transparent', // remove iOS bottom border
-      elevation: 0, // remove Android shadow
-      borderWidth: 0, 
-      },
-      headerTintColor: default_text_color,
-      headerLeft: () => (
-        <Feather 
-          name="arrow-left" 
-          size={24} 
-          color={default_text_color}
-          onPress={() => {
-            setTitle('');
-            setBody('');
-            setUnicon(false);
-            setRaw('');
-            setTags([]);
-            navigation.navigate('home');
-          }}
-          style={{ marginLeft: 20 }}
-        />
-      ),
-
-      headerRight: () => (
-        <ThemedText
-          type={'default'} 
-          onPress={handlePost} 
-          disabled={loading}
-          style={{ marginRight: 30 }}
-        >
-          Post
-        </ThemedText>
-      ),
-      headerTitleAlign: 'center',
-    });
-  }, [navigation, handlePost, loading]);
-
-  // Simplified - removed complex image and multi-body functionality for now
-
-  const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key === ' ' || e.nativeEvent.key === ',') {
-      const word = raw.trim().toLocaleLowerCase();
-      if (word.length > 0 && !tags.includes(word)) {
-        setTags([...tags, word]);
-      }
-      setRaw(''); 
-    }
   };
 
-  const removeTag = (indexToRemove: number) => {
-    setTags(prev => prev.filter((_, i) => i !== indexToRemove));
+  // Handle back navigation
+  const handleBack = () => {
+    router.push('/' as any);
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: default_card_background_color,
+      backgroundColor: backgroundColor,
     },
-    cardContainer: {
-      minHeight: 500,
-      display: 'flex',
-      color: default_card_background_color,
-      borderRadius: 30,
-      padding: 20, 
-      marginBottom: 20,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-    },
-    textAreasContainer:{
-      display: 'flex',
-      flex: 1,
-    },
-    uniconContainer:{
-      display: 'flex',
+    header: {
+      backgroundColor: cardBackground,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingTop: 50,
       flexDirection: 'row',
-      gap: 10,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
     },
-    titleTextArea: {
-      borderWidth: 0,         
-      borderRadius: 4,
+    backButton: {
       padding: 8,
-      fontSize: 20,
-      color: default_text_color,
+      borderRadius: 20,
     },
-    bodyTextArea: {
-      flex: 1,
-      borderWidth: 0,
-      borderRadius: 4,
-      padding: 8,
-      fontSize: 16,
-      color: default_text_color,
-      marginBottom: 20,
-      minHeight: 120,
+    title: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: textColor,
     },
-    tagAreaContainer:{
-      padding: 20,
-      gap: 20,
-      display: 'flex',
-      minHeight: 200,
-      // flex: 1,
-    },
-    chipContainer: {
+    postButton: {
+      backgroundColor: '#10B981',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
       flexDirection: 'row',
-      flexWrap: 'wrap',
       alignItems: 'center',
     },
-    tagTextArea: {
-      flexGrow: 1,
-      minWidth: 80,
+    postButtonDisabled: {
+      backgroundColor: placeholderColor,
+      opacity: 0.5,
+    },
+    postButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    content: {
+      flex: 1,
+      padding: 20,
+    },
+    textSection: {
+      marginBottom: 24,
+    },
+    textArea: {
+      backgroundColor: cardBackground,
+      borderRadius: 16,
+      padding: 20,
       fontSize: 16,
+      color: textColor,
+      minHeight: 200,
+      textAlignVertical: 'top',
+      shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.1)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    textInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 12,
+      paddingHorizontal: 4,
+    },
+    shareText: {
+      fontSize: 14,
+      color: placeholderColor,
+    },
+    charCount: {
+      fontSize: 14,
+      color: placeholderColor,
+    },
+    charCountLimit: {
+      color: '#EF4444',
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: textColor,
+    },
+    addButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: cardBackground,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+    },
+    addButtonText: {
+      fontSize: 14,
+      color: textColor,
+      marginLeft: 8,
+    },
+    imageGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    imageItem: {
+      position: 'relative',
+      width: '47%',
+      aspectRatio: 1,
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 12,
+    },
+    removeImageButton: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      borderRadius: 12,
       padding: 4,
+    },
+    hashtagInput: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    hashtagInputField: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: cardBackground,
+      borderRadius: 25,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginRight: 8,
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+    },
+    hashtagTextInput: {
+      flex: 1,
+      fontSize: 14,
+      color: textColor,
+      marginLeft: 8,
+    },
+    hashtagAddButton: {
+      backgroundColor: '#10B981',
+      borderRadius: 20,
+      padding: 8,
+    },
+    hashtagAddButtonDisabled: {
+      backgroundColor: placeholderColor,
+      opacity: 0.5,
+    },
+    hashtagList: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    hashtagChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#DBEAFE',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    hashtagChipText: {
+      fontSize: 14,
+      color: colorScheme === 'dark' ? '#60A5FA' : '#2563EB',
+      marginRight: 4,
+    },
+    tipsSection: {
+      backgroundColor: cardBackground,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+    },
+    tipsTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: textColor,
+      marginBottom: 8,
+    },
+    tipItem: {
+      fontSize: 12,
+      color: placeholderColor,
+      marginBottom: 4,
     },
   });
 
   return (
-    <ScrollView 
-        style={{ backgroundColor: default_card_background_color }} 
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-    >
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.cardContainer}>
-        <ThemedView style={styles.textAreasContainer}>
-          <TextInput
-            style={styles.titleTextArea}
-            underlineColorAndroid="transparent" 
-            numberOfLines={6}            
-            placeholder="Title"
-            placeholderTextColor={place_holder_color}
-            value={title}
-            onChangeText={setTitle}
-            textAlignVertical="top"      
-            scrollEnabled                
-          />
-          <TextInput
-            style={styles.bodyTextArea}
-            underlineColorAndroid="transparent"
-            multiline
-            placeholder="What's on your mind?"
-            placeholderTextColor={place_holder_color}
-            value={body}
-            onChangeText={setBody}
-            textAlignVertical="top"
-            scrollEnabled={true}
-          />
-        </ThemedView>
-        <ThemedView style={styles.uniconContainer}>
-            <ThemedText>
-              By enabling the unicon option your post will be visible to other supported university students
-            </ThemedText>
-            <ThemedButton
-              type={unicon ? 'toggled' : 'unToggled'}
-              onPress={() => {setUnicon(!unicon);}}
-            >
-              <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
-            </ThemedButton>
-          </ThemedView>
-      </ThemedView>
-      <ThemedView style={styles.tagAreaContainer}>
-        <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
-        <View style={styles.chipContainer}>
-          {tags.map((tag, i) => (
-            <Pressable onPress={() => removeTag(i)} key={i}>
-              <ThemedTag text={tag} type={'default'}/>
-            </Pressable>
-          ))}
-          <TextInput
-            style={styles.tagTextArea}
-            value={raw}
-            onChangeText={setRaw}
-            onKeyPress={onKeyPress}
-            placeholder="Type and hit space"
-            placeholderTextColor={place_holder_color}
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
+    <AppContainer>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+          >
+            <Ionicons name="arrow-back" size={24} color={textColor} />
+          </TouchableOpacity>
+          
+          <Text style={styles.title}>Create Post</Text>
+          
+          <TouchableOpacity
+            style={[
+              styles.postButton,
+              (!content.trim() && images.length === 0) || loading ? styles.postButtonDisabled : null
+            ]}
+            onPress={handleSubmit}
+            disabled={(!content.trim() && images.length === 0) || loading}
+          >
+            <Ionicons name="send" size={16} color="#FFFFFF" />
+            <Text style={styles.postButtonText}>
+              {loading ? 'Posting...' : 'Post'}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </ThemedView>
-    </ThemedView>
-    </ScrollView>
+
+        {/* Main Content */}
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Text Area */}
+          <View style={styles.textSection}>
+            <TextInput
+              style={styles.textArea}
+              placeholder="What's your thoughts?"
+              placeholderTextColor={placeholderColor}
+              value={content}
+              onChangeText={handleContentChange}
+              multiline
+              textAlignVertical="top"
+            />
+            
+            <View style={styles.textInfo}>
+              <Text style={styles.shareText}>
+                Share your thoughts with the community
+              </Text>
+                              <Text style={[
+                  styles.charCount,
+                  content.length > 280 ? styles.charCountLimit : null
+                ]}>
+                  {content.length}/280
+                </Text>
+            </View>
+          </View>
+
+          {/* Images Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Images</Text>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleImageUpload}
+              >
+                <Ionicons name="image" size={16} color={textColor} />
+                <Text style={styles.addButtonText}>Add Image</Text>
+              </TouchableOpacity>
+            </View>
+
+            {images.length > 0 && (
+              <View style={styles.imageGrid}>
+                {images.map((image, index) => (
+                  <View key={index} style={styles.imageItem}>
+                    <Image source={{ uri: image }} style={styles.image} />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Hashtags Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Hashtags</Text>
+            
+            {/* Hashtag Input */}
+            <View style={styles.hashtagInput}>
+              <View style={styles.hashtagInputField}>
+                <Ionicons name="pricetag-outline" size={16} color={placeholderColor} />
+                <TextInput
+                  style={styles.hashtagTextInput}
+                  placeholder="Add hashtag"
+                  placeholderTextColor={placeholderColor}
+                  value={currentHashtag}
+                  onChangeText={setCurrentHashtag}
+                  onSubmitEditing={addHashtag}
+                  returnKeyType="done"
+                />
+              </View>
+                             <TouchableOpacity
+                 style={[
+                   styles.hashtagAddButton,
+                   !currentHashtag.trim() ? styles.hashtagAddButtonDisabled : null
+                 ]}
+                 onPress={addHashtag}
+                 disabled={!currentHashtag.trim()}
+               >
+                 <Ionicons name="pricetag" size={16} color="#FFFFFF" />
+               </TouchableOpacity>
+            </View>
+
+            {/* Display Hashtags */}
+            {hashtags.length > 0 && (
+              <View style={styles.hashtagList}>
+                {hashtags.map((tag, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.hashtagChip}
+                    onPress={() => removeHashtag(tag)}
+                  >
+                    <Text style={styles.hashtagChipText}>#{tag}</Text>
+                    <Ionicons name="close" size={12} color={colorScheme === 'dark' ? '#60A5FA' : '#2563EB'} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Tips Section */}
+        </ScrollView>
+      </View>
+    </AppContainer>
   );
 }
 
