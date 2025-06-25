@@ -15,6 +15,7 @@ import AppContainer from '@/components/AppContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/contexts/AuthContext';
+import BottomNav from '@/components/ui/BottomNav';
 
 import URLs from "@/constants/Urls";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -149,10 +150,6 @@ export default function ProfilePage() {
   const handleSettings = () => {
     // Navigate to settings or show settings modal
     console.log('Settings clicked');
-  };
-
-  const handleSearchClick = () => {
-    router.push('/search');
   };
 
   const handleAddClick = () => {
@@ -376,6 +373,8 @@ export default function ProfilePage() {
           </ScrollView>
 
         </AppContainer>
+        
+        <BottomNav onAddClick={handleAddClick} />
         
         <ChangePasswordModal
           visible={showChangePasswordModal}
@@ -656,5 +655,4 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginLeft: 4,
   },
-});
-
+}); 

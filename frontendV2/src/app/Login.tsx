@@ -35,7 +35,7 @@ export default function LoginPage() {
       });
 
       // Send token to backend or process login here if needed
-      router.push("/feed" as any);
+      router.push("/" as any);
     }
   }, [response]);
 
@@ -67,7 +67,7 @@ export default function LoginPage() {
       });
 
       // Navigate to sign up page
-      router.replace("/feed" as any);
+      router.replace("/" as any);
     } else {
       setError(response?.data?.detail || "An error occurred");
       Toast.show({

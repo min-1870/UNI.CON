@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import PostCard from '@/components/PostCard';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { fetchAPI, getData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { router, useFocusEffect } from 'expo-router';
@@ -97,10 +98,8 @@ export default function Feed() {
   // Auto-refresh when user returns to feed screen
   useFocusEffect(
     useCallback(() => {
-      // Only refresh if articles are already loaded (not initial load)
-      if (articles.length > 0) {
-        handleRefresh();
-      }
+      // Refresh articles when returning to feed to show updated likes/comments
+      handleRefresh();
     }, [])
   );
 
@@ -306,6 +305,54 @@ export default function Feed() {
     }
   );
 
+  const handleLikeArticle = async (articleId: number, currentLikeStatus: boolean) => {
+    try {
+      const url = currentLikeStatus ? URLs.ARTICLE_UNLIKE(String(articleId)) : URLs.ARTICLE_LIKE(String(articleId));
+      const response = await fetchAPI(url, { method: 'POST', token: true });
+      
+      if (!response.error) {
+        // Update the article in the local state
+        setArticles(prevArticles => 
+          prevArticles.map(article => 
+            article.id === articleId 
+              ? { 
+                  ...article, 
+                  like_status: !currentLikeStatus,
+                  likes_count: article.likes_count + (currentLikeStatus ? -1 : 1)
+                }
+              : article
+          )
+        );
+      } else {
+        console.error('Like failed:', response);
+      }
+    } catch (error) {
+      console.error('Like error:', error);
+    }
+  };
+
+  const handleSaveArticle = async (articleId: number, currentSaveStatus: boolean) => {
+    try {
+      const url = currentSaveStatus ? URLs.ARTICLE_UNSAVE(String(articleId)) : URLs.ARTICLE_SAVE(String(articleId));
+      const response = await fetchAPI(url, { method: 'POST', token: true });
+      
+      if (!response.error) {
+        // Update the article in the local state
+        setArticles(prevArticles => 
+          prevArticles.map(article => 
+            article.id === articleId 
+              ? { ...article, save_status: !currentSaveStatus }
+              : article
+          )
+        );
+      } else {
+        console.error('Save failed:', response);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+    }
+  };
+
   // Create memoized styles to prevent recreation on every render
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -504,187 +551,191 @@ export default function Feed() {
   }), [colorScheme, containerBackground, headerBackground, headerTitleColor, searchFilterColor]);
 
   return (
-    <AppContainer>
-      <View style={styles.container}>
-        {/* Sticky Mini Header - Shows when main header is hidden */}
-        <Animated.View 
-          style={[
-            styles.stickyHeader,
-            {
-              opacity: stickyHeaderOpacity,
-              transform: [{ 
-                translateY: stickyHeaderTranslateY
-              }],
-            }
-          ]}
-        >
-          {/* Glass effect overlay */}
-          <View style={styles.glassOverlay} />
-          <Text style={styles.stickyHeaderText}>UNI.CON</Text>
-        </Animated.View>
-
-        {/* Animated Header Container - All header elements in one container */}
-        <Animated.View 
-          style={[
-            styles.headerContainer,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            }
-          ]}
-        >
-          {/* Main Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>UNICON</Text>
-              <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.notificationButton}
-              onPress={() => setNotificationVisible(true)}
-            >
-              <Ionicons name="notifications-outline" size={24} color="#333" />
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>2</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Tags */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tagsContainer}
-            contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
+    <ProtectedRoute>
+      <AppContainer>
+        <View style={styles.container}>
+          {/* Sticky Mini Header - Shows when main header is hidden */}
+          <Animated.View 
+            style={[
+              styles.stickyHeader,
+              {
+                opacity: stickyHeaderOpacity,
+                transform: [{ 
+                  translateY: stickyHeaderTranslateY
+                }],
+              }
+            ]}
           >
-            {TAGS.map(tag => (
-              <ThemedButton
-                key={tag}
-                variant="chip"
-                size="sm"
-                style={[
-                  styles.tagChip,
-                  selectedTag === tag && styles.tagChipSelected,
-                ]}
-                onPress={() => setSelectedTag(tag)}
+            {/* Glass effect overlay */}
+            <View style={styles.glassOverlay} />
+            <Text style={styles.stickyHeaderText}>UNI.CON</Text>
+          </Animated.View>
+
+          {/* Animated Header Container - All header elements in one container */}
+          <Animated.View 
+            style={[
+              styles.headerContainer,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              }
+            ]}
+          >
+            {/* Main Header */}
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <Text style={styles.headerTitle}>UNICON</Text>
+                <Text style={styles.headerSubtitle}>UNSW SYDNEY</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.notificationButton}
+                onPress={() => setNotificationVisible(true)}
               >
-                {tag}
-              </ThemedButton>
-            ))}
-          </ScrollView>
+                <Ionicons name="notifications-outline" size={24} color="#333" />
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>2</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
-          {/* Filter Tabs and Toggle */}
-          <View style={styles.filterToggleContainer}>
-            <View style={styles.filterTabs}>
-              {FILTERS.map(filter => (
-                <TouchableOpacity
-                  key={filter}
+            {/* Tags */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tagsContainer}
+              contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center'}}
+            >
+              {TAGS.map(tag => (
+                <ThemedButton
+                  key={tag}
+                  variant="chip"
+                  size="sm"
                   style={[
-                    styles.filterTab,
-                    selectedFilter === filter && styles.filterTabSelected,
+                    styles.tagChip,
+                    selectedTag === tag && styles.tagChipSelected,
                   ]}
-                  onPress={() => setSelectedFilter(filter)}
+                  onPress={() => setSelectedTag(tag)}
                 >
-                  <Text
-                    style={[
-                      styles.filterTabText,
-                      selectedFilter === filter && styles.filterTabTextSelected,
-                    ]}
-                  >
-                    {filter}
-                  </Text>
-                </TouchableOpacity>
+                  {tag}
+                </ThemedButton>
               ))}
-            </View>
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Toggle</Text>
-              <Switch
-                value={isSwitchOn}
-                onValueChange={setIsSwitchOn}
-                trackColor={{ false: '#ccc', true: '#4CAF50' }}
-                thumbColor="#fff"
-              />
-            </View>
-          </View>
-        </Animated.View>
+            </ScrollView>
 
-        {/* Posts List */}
-        {loading && articles.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#57EC6B" />
-          </View>
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : (
-          <AnimatedFlatList
-            ref={flatListRef}
-            data={filteredArticles as Article[]}
-            keyExtractor={(item) => String((item as Article).id)}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 240 }}
-            showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={8}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                colors={['#57EC6B']} // Android
-                tintColor="#57EC6B" // iOS
-                progressViewOffset={240} // Offset for header
-              />
-            }
-            renderItem={({ item }: any) => (
-              <PostCard
-                post={{
-                  id: String((item as Article).id),
-                  user: (item as Article).user_temp_name || 'Unknown',
-                  timestamp: (item as Article).created_at,
-                  title: (item as Article).title,
-                  content: (item as Article).body,
-                  tags: (item as Article).course_code ? 
-                    (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
-                    ['school', 'study'], // Fallback tags for testing
-                  likes: (item as Article).likes_count,
-                  comments: (item as Article).comments_count,
-                  bookmarks: (item as Article).save_status ? 1 : 0,
-                  image: (item as Article).image,
-                  like_status: (item as Article).like_status || false,
-                }}
-                onPress={() => {
-                  // Debug: Log the item data to see what tags are available
-                  console.log('Article data:', {
-                    id: (item as Article).id,
-                    course_code: (item as Article).course_code,
-                    tags: (item as Article).course_code ? (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : ['school', 'study']
-                  });
-                  router.push(`/article/${(item as Article).id}` as any);
-                }}
-              />
-            )}
-            onEndReached={fetchMoreArticles}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No articles found.</Text>
-            }
-          />
-        )}
-      </View>
-      <BottomNav 
-        onSearchClick={handleSearchClick}
-        onAddClick={handleAddClick}
-      />
-      
-      <CreatePost
-        visible={createPostVisible}
-        onClose={() => setCreatePostVisible(false)}
-        onSubmit={handleCreatePost}
-        loading={posting}
-      />
+            {/* Filter Tabs and Toggle */}
+            <View style={styles.filterToggleContainer}>
+              <View style={styles.filterTabs}>
+                {FILTERS.map(filter => (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.filterTab,
+                      selectedFilter === filter && styles.filterTabSelected,
+                    ]}
+                    onPress={() => setSelectedFilter(filter)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterTabText,
+                        selectedFilter === filter && styles.filterTabTextSelected,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Toggle</Text>
+                <Switch
+                  value={isSwitchOn}
+                  onValueChange={setIsSwitchOn}
+                  trackColor={{ false: '#ccc', true: '#4CAF50' }}
+                  thumbColor="#fff"
+                />
+              </View>
+            </View>
+          </Animated.View>
 
-      <NotificationPanel 
-        visible={notificationVisible}
-        onClose={() => setNotificationVisible(false)}
-      />
-    </AppContainer>
+          {/* Posts List */}
+          {loading && articles.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#57EC6B" />
+            </View>
+          ) : error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : (
+            <AnimatedFlatList
+              ref={flatListRef}
+              data={filteredArticles as Article[]}
+              keyExtractor={(item) => String((item as Article).id)}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 240 }}
+              showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={8}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={['#57EC6B']} // Android
+                  tintColor="#57EC6B" // iOS
+                  progressViewOffset={240} // Offset for header
+                />
+              }
+              renderItem={({ item }: any) => (
+                <PostCard
+                  post={{
+                    id: String((item as Article).id),
+                    user: (item as Article).user_temp_name || 'Unknown',
+                    timestamp: (item as Article).created_at,
+                    title: (item as Article).title,
+                    content: (item as Article).body,
+                    tags: (item as Article).course_code ? 
+                      (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
+                      ['school', 'study'], // Fallback tags for testing
+                    likes: (item as Article).likes_count,
+                    comments: (item as Article).comments_count,
+                    bookmarks: (item as Article).save_status ? 1 : 0,
+                    image: (item as Article).image,
+                    like_status: (item as Article).like_status || false,
+                  }}
+                  onPress={() => {
+                    // Debug: Log the item data to see what tags are available
+                    console.log('Article data:', {
+                      id: (item as Article).id,
+                      course_code: (item as Article).course_code,
+                      tags: (item as Article).course_code ? (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : ['school', 'study']
+                    });
+                    router.push(`/article/${(item as Article).id}` as any);
+                  }}
+                  onLike={() => handleLikeArticle((item as Article).id, (item as Article).like_status || false)}
+                  onSave={() => handleSaveArticle((item as Article).id, (item as Article).save_status || false)}
+                />
+              )}
+              onEndReached={fetchMoreArticles}
+              onEndReachedThreshold={0.5}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No articles found.</Text>
+              }
+            />
+          )}
+        </View>
+        <BottomNav 
+          onSearchClick={handleSearchClick}
+          onAddClick={handleAddClick}
+        />
+        
+        <CreatePost
+          visible={createPostVisible}
+          onClose={() => setCreatePostVisible(false)}
+          onSubmit={handleCreatePost}
+          loading={posting}
+        />
+
+        <NotificationPanel 
+          visible={notificationVisible}
+          onClose={() => setNotificationVisible(false)}
+        />
+      </AppContainer>
+    </ProtectedRoute>
   );
 }

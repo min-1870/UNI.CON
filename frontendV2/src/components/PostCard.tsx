@@ -100,6 +100,7 @@ interface PostCardProps {
   post?: Post;
   styles?: any;
   onPress?: () => void;
+  onLike?: () => void;
   onSave?: () => void;
   onTagClick?: (tag: string) => void;
 }
@@ -109,6 +110,7 @@ const PostCard: React.FC<PostCardProps> = ({
   post, 
   styles: externalStyles, 
   onPress,
+  onLike,
   onSave,
   onTagClick
 }) => {
@@ -365,14 +367,42 @@ const PostCard: React.FC<PostCardProps> = ({
       )}
       
       <View style={styles.footer}>
-        <View style={styles.footerItem}>
-          <Ionicons name="heart-outline" size={16} color={placeholderColor} />
+        <TouchableOpacity style={styles.footerItem} onPress={() => {
+          if (onLike) {
+            onLike();
+          } else {
+            console.log('Like pressed for article:', normalizedData.id);
+          }
+        }}>
+          <Ionicons 
+            name={normalizedData.like_status ? "heart" : "heart-outline"} 
+            size={16} 
+            color={normalizedData.like_status ? "#EF4444" : placeholderColor} 
+          />
           <Text style={styles.footerText}>{normalizedData.likes_count || 0}</Text>
-        </View>
-        <View style={styles.footerItem}>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.footerItem} onPress={() => {
+          // Handle comment navigation
+          console.log('Comment pressed for article:', normalizedData.id);
+        }}>
           <Ionicons name="chatbubble-outline" size={16} color={placeholderColor} />
           <Text style={styles.footerText}>{normalizedData.comments_count || 0}</Text>
-        </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.footerItem} onPress={() => {
+          if (onSave) {
+            onSave();
+          } else {
+            console.log('Save pressed for article:', normalizedData.id);
+          }
+        }}>
+          <Ionicons 
+            name={normalizedData.save_status ? "bookmark" : "bookmark-outline"} 
+            size={16} 
+            color={normalizedData.save_status ? "#F59E0B" : placeholderColor} 
+          />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

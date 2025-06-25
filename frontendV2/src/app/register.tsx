@@ -89,7 +89,7 @@ export default function RegisterPage() {
         <ThemedView style={styles.content}>
           <ThemedView style={styles.card}>
         <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="Wording">Create Account</ThemedText>
+        <ThemedText type="Wording">Sign in</ThemedText>
         <ThemedText style={styles.subtitle}>Join our university community</ThemedText>
 
         <ThemedText>University Email</ThemedText>
