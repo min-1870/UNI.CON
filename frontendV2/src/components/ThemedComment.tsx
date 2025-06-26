@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import React,  { useState, useEffect, useCallback, useMemo  } from "react";
 import { CommentType, InitialDataType } from '@/constants/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedText from '@/components/ThemedText';
@@ -19,7 +20,7 @@ type CommentProps = {
   initialData?: InitialDataType;
 };
 
-export default function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
+function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
 
   const default_text_color = useThemeColor({}, 'default_text_color');
   const time_color = useThemeColor({}, 'default_placeholder_color');
@@ -222,9 +223,10 @@ export default function ThemedComment({ commentData, setFocusedComment, isReplyi
       </Pressable>}
     </View>
   );
+  console.log(commentData.nested_comments)
   return (
     <FlatList
-      data={commentData.nested_comments}
+      data={commentData.nested_comments ?? []}
       keyExtractor={(item) => item.id.toString()}
       renderItem={({ item }) => 
         <ThemedComment
@@ -244,3 +246,29 @@ export default function ThemedComment({ commentData, setFocusedComment, isReplyi
     />
   );
 };
+
+
+export default React.memo(
+  ThemedComment,
+  (prevProps, nextProps) =>
+    prevProps.initialData === nextProps.initialData &&
+    prevProps.commentData.id === nextProps.commentData.id &&   
+    prevProps.commentData.body === nextProps.commentData.body &&
+    prevProps.commentData.comments_count === nextProps.commentData.comments_count &&
+    prevProps.commentData.like_status === nextProps.commentData.like_status &&
+    prevProps.commentData.likes_count === nextProps.commentData.likes_count &&
+    (prevProps.commentData.showReplies ?? false) === (nextProps.commentData.showReplies ?? false) &&   
+    (prevProps.commentData.nested_comments?.length ?? 0) === (nextProps.commentData.nested_comments?.length ?? 0) &&   
+    (
+      prevProps.commentData.nested_comments?.every((prevItem, idx) => {
+        const nextItem = nextProps.commentData.nested_comments?.[idx];
+        return (
+          nextItem != null &&
+          prevItem.id === nextItem.id &&
+          prevItem.body === nextItem.body &&
+          prevItem.like_status === nextItem.like_status &&
+          prevItem.likes_count === nextItem.likes_count 
+        );
+      }) ?? true
+    ) 
+);

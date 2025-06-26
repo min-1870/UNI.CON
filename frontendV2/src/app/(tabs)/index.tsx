@@ -244,7 +244,7 @@ export default function HomePage() {
     ({ item }: { item: ArticleType }) => (
       <ThemedArticle trendingTags={tags} initialData={initialData} articleData={item} />
     ),
-    [initialData]
+    [initialData, articlesById]
   );
   return (
     <ThemedView style={styles.container}>

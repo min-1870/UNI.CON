@@ -1,4 +1,3 @@
-
 import React,  { useState, useEffect, useCallback, useMemo  } from "react";
 import { ArticleType, InitialDataType } from '@/constants/types';
 import { View, Pressable, StyleSheet } from 'react-native';

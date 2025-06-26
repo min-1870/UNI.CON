@@ -1,8 +1,10 @@
+
+import { Animated as RNAnimated } from 'react-native';
 import { ArticleType, CommentType, InitialDataType } from '@/constants/types';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
 import OverflowMenu from '@/components/ThemedOverflowMenu';
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
@@ -19,46 +21,68 @@ import { useLayoutEffect } from 'react';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
-// import { useNavigationState } from '@react-navigation/native';
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  feedContainer: {
+    alignItems: 'stretch',
+  },
+  NCF: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+  },
+  commentBarContainer: {
+    height: 70,
+    flexDirection: 'row',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    gap: 20,
+  },
+  focusedCommentContainer: {
+    height: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    gap: 15,
+  },
+});
 
 export default function ArticlePage() {
-  const [focusedComment, setFocusedComment] = useState<{parent:any; child:any}|null>(null);
-  const [headerContent, setHeaderContent] = useState<React.ReactNode>(null);
-  const [initialData, setInitialData] = useState<InitialDataType>();
-  
-  const [nextCommentPage, setNextCommentPage] = useState(null);
-  const [comments, setComments] = useState<CommentType[]>([]);
+  // Local states
+  const [focusedComment, setFocusedComment] = useState<{ parent: any; child: any } | null>(null);
   const [isReply, setIsReply] = useState<boolean>(false);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [newComment, setNewComment] = useState('');
   const [orgComment, setOrgComment] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const articlesById = useArticlesStore(s => s.articlesById) || {};
-  const articleId = (useRoute().params as { id: string }).id;
-  const article = articlesById[Number(articleId)] || null;
-  const background_color = useThemeColor({}, 'default_card_background_color');
-  const text_color = useThemeColor({}, 'default_text_color');
 
-  const contentOpacity = useRef(new Animated.Value(0)).current;
+  // Separate state for comment input:
+  const [newComment, setNewComment] = useState('');
+
+  // Article & comments data
+  const [initialData, setInitialData] = useState<InitialDataType>();
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [nextCommentPage, setNextCommentPage] = useState(null);
+
+  // UI transitions
+  const contentOpacity = useRef(new RNAnimated.Value(0)).current;
   const fetchedCommentPage = useRef(null);
 
+  // Navigation & theming
   const navigation = useNavigation();
+  const route = useRoute();
+  const background_color = useThemeColor({}, 'default_card_background_color');
+  const text_color = useThemeColor({}, 'default_text_color');
+  const articleId = (route.params as { id: string }).id;
+  const articlesById = useArticlesStore((s) => s.articlesById) || {};
+  const article = articlesById[Number(articleId)] || null;
 
-  useEffect(() => {
-    if (article) {
-      setHeaderContent(
-        <ThemedArticle
-          initialData={initialData}
-          type={'detail'}
-          articleData={article}
-        />
-      );
-    }
-  }, [article, initialData]);
-  
-  // console.log(useNavigationState(state => state.routes.map(r => r.name)))
-  useLayoutEffect(() => {
+  // Menu visibility
+  const [menuVisible, setMenuVisible] = useState(false);
+
+
+    useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
         backgroundColor: background_color, // navbar background
@@ -85,54 +109,28 @@ export default function ArticlePage() {
     });
   }, [navigation, article, initialData, loading]);
 
-  const handleDelete = async () => {
-    if (!article || !article.title || !article.body) {
-      Toast.show({
-        type: 'error',
-        text1: 'Title and body cannot be empty!',
-      });
-      return;
-    }
-    setLoading(true);
-    const response = await fetchAPI(
-      URLs.ARTICLE(String(articleId)),
-      {
-        method: 'DELETE',
-        token: true,
-        body: {},
-      }
-    );
-    if (!response.error) {
-      
-        useArticlesStore.getState().updateArticle(article.id, {
-              ...article,
-              title: '[DELETED ARTICLE]',
-              body: '[DELETED CONTENT]',
-              tag: [],
-              deleted: true,
-        });
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response.data?.detail || "Article deleted!"}`,
-      });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-      });
-    }
-    setLoading(false);
-  };
-  
+  // Fetch initial user data
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const stored = await getData('initialData');
+      if (stored) setInitialData(JSON.parse(stored));
+    };
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    // Once initialData is ready, fetch article details
+    if (initialData) fetchArticle();
+  }, [initialData]);
+
+  // Assign text to orgComment whenever user selects a comment to edit/reply
   useEffect(() => {
     let body = '';
     if (focusedComment) {
       const parentComment = comments.find(
-        comment => String(comment.id) === String(focusedComment.parent)
+        (comment) => String(comment.id) === String(focusedComment.parent)
       );
-      
       body = parentComment?.body ?? '';
-
       if (parentComment && parentComment.nested_comments && focusedComment.child) {
         const childComment = parentComment.nested_comments.find(
           (nestedComment) => String(nestedComment.id) === String(focusedComment.child)
@@ -141,76 +139,57 @@ export default function ArticlePage() {
       }
     }
     setOrgComment(body);
-    isReply 
-    ? setNewComment('')
-    : setNewComment(body);
-  }, [focusedComment, isReply]);
+    isReply ? setNewComment('') : setNewComment(body);
+  }, [focusedComment, isReply, comments]);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-  
-  useEffect(() => {
-    fetchArticle();
-  }, [initialData]);
-  
+  // Fade-in effect after loading
   useEffect(() => {
     if (loading) {
       contentOpacity.setValue(0);
     } else {
-      Animated.timing(contentOpacity, {
+      RNAnimated.timing(contentOpacity, {
         toValue: 1,
         duration: 250,
         useNativeDriver: true,
       }).start();
     }
-  }, [loading]);
+  }, [loading, contentOpacity]);
 
-  const fetchInitialData = async () => {
-    const storedInitialData = await getData('initialData');
-    storedInitialData && setInitialData(JSON.parse(storedInitialData));
-  };
-
+  // Fetch article & comments
   const fetchArticle = async () => {
     setLoading(true);
-    const response = await fetchAPI(
-      URLs.ARTICLE(articleId), {
+    const response = await fetchAPI(URLs.ARTICLE(articleId), {
       method: 'GET',
       token: true,
     });
     if (!response.error) {
-      useArticlesStore.getState().updateArticle(Number(articleId), response.data?.results?.article);
+      useArticlesStore
+        .getState()
+        .updateArticle(Number(articleId), response.data?.results?.article);
       setComments(response.data?.results?.comments || []);
-      setNextCommentPage(response.data?.next)
-      fetchedCommentPage.current = null
+      setNextCommentPage(response.data?.next);
+      fetchedCommentPage.current = null;
     } else {
       Toast.show({
         type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+        text1: `Hi, ${response?.data?.detail || 'An error occurred'}!`,
       });
     }
     setLoading(false);
   };
 
+  // Handling infinite scroll for top-level comments
   const fetchMoreComments = async () => {
-
-    if (!nextCommentPage || nextCommentPage == fetchedCommentPage.current) return;
-    
-    const response = await fetchAPI(nextCommentPage, {
-      method: 'GET',
-      token: true,
-    });
+    if (!nextCommentPage || nextCommentPage === fetchedCommentPage.current) return;
+    const response = await fetchAPI(nextCommentPage, { method: 'GET', token: true });
     if (!response.error) {
-      setComments(prevComments => [
-        ...prevComments,
-        ...(response.data?.results?.comments)
-      ]);
+      setComments((prev) => [...prev, ...response.data?.results?.comments]);
       fetchedCommentPage.current = nextCommentPage;
-      setNextCommentPage(response.data?.next)
+      setNextCommentPage(response.data?.next);
     } else {
       Toast.show({
         type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+        text1: `Hi, ${response?.data?.detail || 'An error occurred'}!`,
       });
     }
   };
@@ -249,43 +228,45 @@ export default function ArticlePage() {
     }
   };
 
-  const fetchMoreNestedComments = async (commentId: string) => {
-    
-    const nextUrl = comments.find(
-      comment => String(comment.id) === String(commentId)
-    )?.next;
+  // Load more nested comments
+   const fetchMoreNestedComments = async (commentId: string) => {
+     
+     const nextUrl = comments.find(
+       comment => String(comment.id) === String(commentId)
+     )?.next;
+ 
+     if (!nextUrl) {
+       return;
+     }
+ 
+     const response = await fetchAPI(
+       nextUrl, {
+       method: 'GET',
+       token: true,
+     });
+     if (!response.error) {
+       setComments((prevComments) =>
+         prevComments.map((comment) =>
+           String(comment.id) === String(commentId)
+             ? { ...comment,
+                 nested_comments: [
+                   ...comment.nested_comments,
+                   ...response.data.results.comments
+                 ],
+                 next: response.data.next
+               }
+             : comment
+         )
+       );
+     } else {
+       Toast.show({
+         type: 'success',
+         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+       });
+     }
+   };
 
-    if (!nextUrl) {
-      return;
-    }
-
-    const response = await fetchAPI(
-      nextUrl, {
-      method: 'GET',
-      token: true,
-    });
-    if (!response.error) {
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          String(comment.id) === String(commentId)
-            ? { ...comment,
-                nested_comments: [
-                  ...comment.nested_comments,
-                  ...response.data.results.comments
-                ],
-                next: response.data.next
-              }
-            : comment
-        )
-      );
-    } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-      });
-    }
-  };
-
+  // Send top-level comment
   const sendComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(), {
@@ -318,6 +299,7 @@ export default function ArticlePage() {
     }
   }; 
 
+  // Send nested comment
   const replyComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(), {
@@ -330,15 +312,26 @@ export default function ArticlePage() {
       }
     });
     if (!response.error) {
-
-       setComments((prevComments) => 
-        prevComments.map((comment) =>
-          String(comment.id) === String(focusedComment?.parent)
-            ? { ...comment, showReplies: false, nested_comments: [] }
-            : comment
-        )
+      const focusedCommentData = comments.find(
+        comment => String(comment.id) === String(focusedComment?.parent)
       );
-      if (focusedComment?.parent !== null) {
+      if (focusedCommentData?.showReplies) {
+        setComments(prevComments =>
+          prevComments.map(comment => {
+            if (String(comment.id) !== String(focusedComment?.parent)) return comment;
+            const nested = comment.nested_comments ?? [];
+            return {
+              ...comment,
+              showReplies: true,
+              comments_count: comment.comments_count + 1,
+              nested_comments: [
+                { ...response.data, id: response.data.id, like_status: response.data.like_status },
+                ...nested
+              ]
+            };
+          })
+        );
+      } else {
         fetchNestedComments(focusedComment?.parent.toString());
       }
       setNewComment('');
@@ -349,7 +342,8 @@ export default function ArticlePage() {
       });
     }
   };  
-  
+
+  // Edit comment
   const editComment = async () => {
     const response = await fetchAPI(
       URLs.COMMENT(
@@ -399,7 +393,8 @@ export default function ArticlePage() {
       });
     }
   };
-  
+
+  // Delete comment
   const deleteComment = async (commentId: string, parent_commentId: string | null) => {
     const response = await fetchAPI(
       URLs.COMMENT(String(commentId) + '/'), {
@@ -446,6 +441,7 @@ export default function ArticlePage() {
     }
   };
 
+  // Like/unlike comment
   const likeComment = async (commentId: string, parent_commentId: string | null) => {
     let url = '';
     if (parent_commentId) {
@@ -503,135 +499,124 @@ export default function ArticlePage() {
     }
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    feedContainer: {
-      alignItems: 'stretch',
-    },
-    focusedCommentContainer: {
-      height: 40,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical:10,
-      gap: 15,
-    },
-    commentBarContainer: {
-      height: 70,
-      flexDirection: 'row',
-      paddingHorizontal: 30,
-      paddingVertical:10,
-      gap: 20,
-    },
-    NCF: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: 200
+  // Render each comment
+  const renderItem = useCallback(
+    ({ item }: { item: CommentType }) => (
+      <ThemedComment
+        commentData={item}
+        setFocusedComment={setFocusedComment}
+        isReplying={setIsReply}
+        isUnicon={article?.unicon}
+        likeComment={likeComment}
+        deleteComment={deleteComment}
+        fetchNestedComments={fetchNestedComments}
+        fetchMoreNestedComment={fetchMoreNestedComments}
+        initialData={initialData}
+      />
+    ),
+    [comments, initialData]
+  );
+
+  // Delete article
+  const handleDelete = async () => {
+    if (!article || !article.title || !article.body) {
+      Toast.show({ type: 'error', text1: 'Title and body cannot be empty!' });
+      return;
     }
-  });
+    setLoading(true);
+    const response = await fetchAPI(URLs.ARTICLE(String(articleId)), {
+      method: 'DELETE',
+      token: true,
+      body: {},
+    });
+    if (!response.error) {
+      useArticlesStore.getState().updateArticle(article.id, {
+        ...article,
+        title: '[DELETED ARTICLE]',
+        body: '[DELETED CONTENT]',
+        tag: [],
+        deleted: true,
+      });
+      Toast.show({ type: 'success', text1: response.data?.detail || 'Article deleted!' });
+    } else {
+      Toast.show({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
+    }
+    setLoading(false);
+  };
 
   return (
     <>
       <ThemedView style={styles.container}>
         {loading ? null : (
-            <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-              <FlatList
-                data={comments}
-                keyExtractor={(item) => String(item.id)}
-                renderItem={({ item }) => (
-                <ThemedComment
-                  commentData={item}
-                  setFocusedComment={setFocusedComment}
-                  isReplying={setIsReply}
-                  isUnicon={article?.unicon}
-                  likeComment={likeComment}
-                  deleteComment={deleteComment}
-                  fetchNestedComments={fetchNestedComments}
-                  fetchMoreNestedComment={fetchMoreNestedComments}
-                  initialData={initialData}
-                />
-                )}
-                contentContainerStyle={styles.feedContainer}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                  <ThemedView style={styles.NCF}>
-                    <ThemedText type='contentPlaceholder'>No comments found.</ThemedText>
-                  </ThemedView>
-                }
-                ListHeaderComponent={() => <>{headerContent}</>}
-                
-                onEndReachedThreshold={0.5}
-                onEndReached={() => {
-                  fetchMoreComments();
-                }}
-              />
-            </Animated.View>
+          <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+            <FlatList
+              data={comments}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderItem}
+              contentContainerStyle={styles.feedContainer}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <ThemedView style={styles.NCF}>
+                  <ThemedText type="contentPlaceholder">No comments found.</ThemedText>
+                </ThemedView>
+              }
+              ListHeaderComponent={
+                article ? (
+                  <ThemedArticle initialData={initialData} type="detail" articleData={article} />
+                ) : null
+              }
+              initialNumToRender={6}
+              maxToRenderPerBatch={8}
+              windowSize={5}
+              removeClippedSubviews
+              onEndReachedThreshold={0.5}
+              onEndReached={fetchMoreComments}
+            />
+          </Animated.View>
         )}
       </ThemedView>
       {focusedComment && (
-        <ThemedView 
-          style={styles.focusedCommentContainer}
-          >
+        <ThemedView style={styles.focusedCommentContainer}>
           <ThemedText>
-            {isReply ? 'You are replying to ' : 'You are editing to '}
-            {
-              orgComment
-            }
+            {isReply ? 'You are replying to ' : 'You are editing '}
+            {orgComment}
           </ThemedText>
-          <ThemedButton
-            type={'feedChecked'}
-            onPress={() => setFocusedComment(null)}
-          >
-          <Feather
-            name='x'
-            size={13}
-            color={'#000'}
-          />
+          <ThemedButton type="feedChecked" onPress={() => setFocusedComment(null)}>
+            <Feather name="x" size={13} color="#000" />
           </ThemedButton>
         </ThemedView>
       )}
-      <ThemedView 
-        style={styles.commentBarContainer}
-        >
+      {/* Comment input bar: separated from FlatList data */}
+      <ThemedView style={styles.commentBarContainer}>
         <ThemedInput
-          type={'comment'}
-          placeholder='Add Comments'
+          type="comment"
+          placeholder="Add Comments"
           value={newComment}
           onChangeText={setNewComment}
         />
         <ThemedButton
-          type={'feedChecked'}
-          onPress={focusedComment ? isReply ? replyComment : editComment : sendComment}
+          type="feedChecked"
+          onPress={focusedComment ? (isReply ? replyComment : editComment) : sendComment}
         >
-          <AntDesign
-            name='arrowright'
-            size={25}
-            color={'#000'}
-          />
+          <AntDesign name="arrowright" size={25} color="#000" />
         </ThemedButton>
       </ThemedView>
-            <OverflowMenu
+      <OverflowMenu
         visible={menuVisible}
         onDismiss={() => setMenuVisible(false)}
         options={[
-          { 
-            label: 'Edit', 
+          {
+            label: 'Edit',
             onPress: () => {
               if (article) {
-                router.push({
-                  pathname: '/edit/[id]',
-                  params: { id: String(article.id) },
-                });
+                router.push({ pathname: '/edit/[id]', params: { id: String(article.id) } });
               }
-            }
+            },
           },
-          { 
-            label: 'Delete', 
-            onPress: handleDelete 
-          }
+          {
+            label: 'Delete',
+            onPress: handleDelete,
+          },
         ]}
       />
     </>
