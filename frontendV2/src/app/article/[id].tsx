@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity, Pressable, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
@@ -35,15 +35,16 @@ export default function ArticleDetailPage() {
 
   // Dynamic color scheme
   const backgroundColor = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
-  const cardBackground = colorScheme === 'dark' ? '#1F2937' : '#FFFFFF';
+  const cardBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const commentCardBackground = colorScheme === 'dark' ? 'rgba(16, 18, 20,0.85)' : 'rgba(255, 255, 255,0.85)';
   const textColor = colorScheme === 'dark' ? '#F9FAFB' : '#222';
   const secondaryTextColor = colorScheme === 'dark' ? '#D1D5DB' : '#666';
   const mutedTextColor = colorScheme === 'dark' ? '#9CA3AF' : '#888';
   const borderColor = colorScheme === 'dark' ? '#374151' : '#e5e7eb';
   const commentBackground = colorScheme === 'dark' ? '#374151' : '#fafbfc';
   const inputBackground = colorScheme === 'dark' ? '#4B5563' : '#f3f4f6';
-  const linkColor = colorScheme === 'dark' ? '#60A5FA' : '#007AFF';
-  const tagBackground = colorScheme === 'dark' ? '#374151' : '#F3F4F6';
+  const linkColor = colorScheme === 'dark' ? '#4ED460' : '#57EC6B';//Brand Color Green
+  const tagBackground = colorScheme === 'dark' ? '#374151' : '#F3F4F6'; 
   const tagTextColor = colorScheme === 'dark' ? '#10B981' : '#00796b';
   const iconColor = colorScheme === 'dark' ? '#9CA3AF' : '#444';
 
@@ -385,8 +386,15 @@ export default function ArticleDetailPage() {
       width: '100%',
       position: 'relative',
     },
-    contentContainer: {
+    scrollContainer: {
       flex: 1,
+    },
+    scrollContent: {
+      padding: 10,
+      paddingTop: 60,
+      paddingBottom: 80,
+    },
+    contentContainer: {
       padding: 20,
       paddingTop: 60,
       paddingBottom: 80,
@@ -480,51 +488,10 @@ export default function ArticleDetailPage() {
       flex: 1,
       marginBottom: 16,
     },
-    commentsList: {
-      flex: 1,
-    },
     noComments: {
       color: mutedTextColor,
       textAlign: 'center',
       marginVertical: 20,
-    },
-    fixedCommentBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: cardBackground,
-      padding: 16,
-      borderTopWidth: 1,
-      borderTopColor: borderColor,
-      borderBottomLeftRadius: 24,
-      borderBottomRightRadius: 24,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    commentInput: {
-      flex: 1,
-      minHeight: 40,
-      maxHeight: 80,
-      borderRadius: 24,
-      backgroundColor: inputBackground,
-      paddingHorizontal: 16,
-      fontSize: 15,
-      color: textColor,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
-    time: {
-      fontSize: 12,
-      color: mutedTextColor,
-      fontWeight: '400',
-      alignSelf: 'flex-end',
-      marginBottom: 8,
     },
     commentRow: {
       flexDirection: 'row',
@@ -615,6 +582,44 @@ export default function ArticleDetailPage() {
       fontStyle: 'italic',
       flex: 1,
     },
+    fixedCommentBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: commentCardBackground,
+      padding: 20,
+      borderTopWidth: 1,
+      borderTopColor: borderColor,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    commentInput: {
+      flex: 1,
+      minHeight: 40,
+      maxHeight: 80,
+      borderRadius: 24,
+      backgroundColor: inputBackground,
+      paddingHorizontal: 16,
+      fontSize: 15,
+      color: textColor,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    time: {
+      fontSize: 12,
+      color: mutedTextColor,
+      fontWeight: '400',
+      alignSelf: 'flex-end',
+      marginBottom: 8,
+    },
   }), [colorScheme, backgroundColor, cardBackground, textColor, secondaryTextColor, mutedTextColor, borderColor, commentBackground, inputBackground, linkColor, tagBackground, tagTextColor, iconColor]);
 
   return (
@@ -626,139 +631,147 @@ export default function ArticleDetailPage() {
           keyboardVerticalOffset={80}
         >
           <View style={styles.card}>
-            <View style={styles.contentContainer}>
-              <Text style={styles.backLink} onPress={handleBack}>&larr; Back to feed</Text>
-              {loading && !article ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#57EC6B" />
-                  <Text style={styles.loadingText}>Loading article...</Text>
-                </View>
-              ) : error ? (
-                <ThemedText type="error">{error}</ThemedText>
-              ) : article ? (
-                <>
-                  <Text style={styles.time}>{moment(article.created_at).fromNow()}</Text>
-                  <View style={styles.headerRow}>
-                    <Text style={styles.title}>{article.title}</Text>
+            {/* Single unified ScrollView for article and comments */}
+            <ScrollView 
+              style={styles.scrollContainer}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={true}
+              bounces={true}
+            >
+              <View style={{ padding: 20 }}>
+                <Text style={styles.backLink} onPress={handleBack}>&larr; Back to feed</Text>
+                {loading && !article ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#57EC6B" />
+                    <Text style={styles.loadingText}>Loading article...</Text>
                   </View>
-                  <View style={styles.authorRow}>
-                    <Text style={styles.author}>@{article.user_temp_name || 'Unknown'}</Text>
-                  </View>
-                  {article.image && (
-                    <View style={styles.imageContainer}>
-                      <FlatList
-                        data={Array.isArray(article.image) ? article.image : [article.image]}
-                        horizontal
-                        renderItem={({ item }) => (
-                          <View style={styles.imageWrapper}>
-                            <img src={item} alt="article" style={{ width: 300, height: 180, borderRadius: 12, objectFit: 'cover' }} />
-                          </View>
-                        )}
-                        keyExtractor={(_, idx) => String(idx)}
-                        showsHorizontalScrollIndicator={false}
-                      />
+                ) : error ? (
+                  <ThemedText type="error">{error}</ThemedText>
+                ) : article ? (
+                  <>
+                    <Text style={styles.time}>{moment(article.created_at).fromNow()}</Text>
+                    <View style={styles.headerRow}>
+                      <Text style={styles.title}>{article.title}</Text>
                     </View>
-                  )}
-                  <Text style={styles.body}>{article.body}</Text>
-                  <View style={styles.tagsRow}>
-                    {article.course_code && article.course_code.split(',').map((tag: string) => (
-                      <View key={tag} style={styles.tagBadge}>
-                        <Text style={styles.tagText}>{tag}</Text>
+                    <View style={styles.authorRow}>
+                      <Text style={styles.author}>@{article.user_temp_name || 'Unknown'}</Text>
+                    </View>
+                    {article.image && (
+                      <View style={styles.imageContainer}>
+                        <FlatList
+                          data={Array.isArray(article.image) ? article.image : [article.image]}
+                          horizontal
+                          renderItem={({ item }) => (
+                            <View style={styles.imageWrapper}>
+                              <img src={item} alt="article" style={{ width: 300, height: 180, borderRadius: 12, objectFit: 'cover' }} />
+                            </View>
+                          )}
+                          keyExtractor={(_, idx) => String(idx)}
+                          showsHorizontalScrollIndicator={false}
+                        />
                       </View>
-                    ))}
-                  </View>
-                  
-                  {/* Divider between content and toolbar */}
-                  <View style={styles.divider} />
-                  
-                  {/* Action toolbar - removed comment button */}
-                  <View style={styles.statsRow}>
-                    <View style={styles.statIconRow}>
-                      <Ionicons
-                        name={articleLiked ? 'heart' : 'heart-outline'}
-                        size={22}
-                        color={articleLiked ? '#e11d48' : iconColor}
-                        style={{ marginRight: 4 }}
-                        onPress={handleArticleLike}
-                      />
-                      <Text style={styles.stat}>{articleLikes}</Text>
-                    </View>
-                    <View style={styles.statIconRow}>
-                      <Ionicons
-                        name={articleSaved ? 'bookmark' : 'bookmark-outline'}
-                        size={20}
-                        color={articleSaved ? '#f59e0b' : iconColor}
-                        style={{ marginRight: 4 }}
-                        onPress={handleArticleSave}
-                      />
-                    </View>
-                    <View style={styles.statIconRow}>
-                      <MaterialCommunityIcons name="share-outline" size={20} color={iconColor} style={{ marginRight: 4 }} />
-                    </View>
-                  </View>
-                  
-                  <Text style={styles.commentsTitle}>Comments</Text>
-                  <View style={styles.commentsContainer}>
-                    <FlatList
-                      data={comments}
-                      keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <View>
-                          <View style={styles.commentRow}>
-                            <View style={styles.commentAvatar}>
-                              <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
-                            </View>
-                            <View style={styles.commentContentBox}>
-                              <View style={styles.commentHeaderRow}>
-                                <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
-                                <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
-                              </View>
-                              <Text style={styles.commentBody}>{item.body}</Text>
-                              <View style={styles.commentActionsRow}>
-                                <Ionicons
-                                  name={item.like_status ? 'heart' : 'heart-outline'}
-                                  size={18}
-                                  color={item.like_status ? '#e11d48' : iconColor}
-                                  style={{ marginRight: 2 }}
-                                  onPress={() => likeComment(item.id, null)}
-                                />
-                                <Text style={styles.commentActionText}>{item.likes_count}</Text>
-                                <Ionicons
-                                  name="chatbubble-outline"
-                                  size={18}
-                                  color={iconColor}
-                                  style={{ marginLeft: 12, marginRight: 2 }}
-                                  onPress={() => {
-                                    setFocusedComment(item.id);
-                                    setReplyPreview(item.body);
-                                  }}
-                                />
-                                <Text style={styles.commentActionText}>{item.comments_count}</Text>
-                                {item.comments_count > 0 && (
-                                  <Text 
-                                    style={styles.repliesButton} 
-                                    onPress={() => fetchNestedComments(item.id)}
-                                  >
-                                    {item.showReplies ? 'Hide replies' : `${item.comments_count} replies`}
-                                  </Text>
-                                )}
-                              </View>
-                            </View>
-                          </View>
-                          {/* Render nested comments with indentation */}
-                          {item.showReplies && item.nested_comments && renderNestedComments(item.nested_comments, 1, item.id)}
+                    )}
+                    <Text style={styles.body}>{article.body}</Text>
+                    <View style={styles.tagsRow}>
+                      {article.course_code && article.course_code.split(',').map((tag: string) => (
+                        <View key={tag} style={styles.tagBadge}>
+                          <Text style={styles.tagText}>{tag}</Text>
                         </View>
+                      ))}
+                    </View>
+                    
+                    {/* Divider between content and toolbar */}
+                    <View style={styles.divider} />
+                    
+                    {/* Action toolbar */}
+                    <View style={styles.statsRow}>
+                      <View style={styles.statIconRow}>
+                        <Ionicons
+                          name={articleLiked ? 'heart' : 'heart-outline'}
+                          size={22}
+                          color={articleLiked ? '#e11d48' : iconColor}
+                          style={{ marginRight: 4 }}
+                          onPress={handleArticleLike}
+                        />
+                        <Text style={styles.stat}>{articleLikes}</Text>
+                      </View>
+                      <View style={styles.statIconRow}>
+                        <Ionicons
+                          name={articleSaved ? 'bookmark' : 'bookmark-outline'}
+                          size={20}
+                          color={articleSaved ? '#f59e0b' : iconColor}
+                          style={{ marginRight: 4 }}
+                          onPress={handleArticleSave}
+                        />
+                      </View>
+                      <View style={styles.statIconRow}>
+                        <MaterialCommunityIcons name="share-outline" size={20} color={iconColor} style={{ marginRight: 4 }} />
+                      </View>
+                    </View>
+                    
+                    <Text style={styles.commentsTitle}>Comments</Text>
+                    
+                    {/* Comments rendered directly in ScrollView */}
+                    <View style={styles.commentsContainer}>
+                      {comments.length > 0 ? (
+                        comments.map((item) => (
+                          <View key={item.id}>
+                            <View style={styles.commentRow}>
+                              <View style={styles.commentAvatar}>
+                                <Text style={styles.commentAvatarText}>{(item.user_temp_name || 'U')[0]}</Text>
+                              </View>
+                              <View style={styles.commentContentBox}>
+                                <View style={styles.commentHeaderRow}>
+                                  <Text style={styles.commentAuthor}>@{item.user_temp_name || 'Unknown'}</Text>
+                                  <Text style={styles.commentTime}>{moment(item.created_at).fromNow()}</Text>
+                                </View>
+                                <Text style={styles.commentBody}>{item.body}</Text>
+                                <View style={styles.commentActionsRow}>
+                                  <Ionicons
+                                    name={item.like_status ? 'heart' : 'heart-outline'}
+                                    size={18}
+                                    color={item.like_status ? '#e11d48' : iconColor}
+                                    style={{ marginRight: 2 }}
+                                    onPress={() => likeComment(item.id, null)}
+                                  />
+                                  <Text style={styles.commentActionText}>{item.likes_count}</Text>
+                                  <Ionicons
+                                    name="chatbubble-outline"
+                                    size={18}
+                                    color={iconColor}
+                                    style={{ marginLeft: 12, marginRight: 2 }}
+                                    onPress={() => {
+                                      setFocusedComment(item.id);
+                                      setReplyPreview(item.body);
+                                    }}
+                                  />
+                                  <Text style={styles.commentActionText}>{item.comments_count}</Text>
+                                  {item.comments_count > 0 && (
+                                    <Text 
+                                      style={styles.repliesButton} 
+                                      onPress={() => fetchNestedComments(item.id)}
+                                    >
+                                      {item.showReplies ? 'Hide replies' : `${item.comments_count} replies`}
+                                    </Text>
+                                  )}
+                                </View>
+                              </View>
+                            </View>
+                            {/* Render nested comments with indentation */}
+                            {item.showReplies && item.nested_comments && renderNestedComments(item.nested_comments, 1, item.id)}
+                          </View>
+                        ))
+                      ) : (
+                        <Text style={styles.noComments}>No comments yet.</Text>
                       )}
-                      ListEmptyComponent={<Text style={styles.noComments}>No comments yet.</Text>}
-                      showsVerticalScrollIndicator={true}
-                      style={styles.commentsList}
-                      nestedScrollEnabled={true}
-                      contentContainerStyle={{ paddingBottom: 20 }}
-                    />
-                  </View>
-                </>
-              ) : null}
-            </View>
+                    </View>
+                    
+                    {/* Add padding at bottom for fixed comment bar */}
+                    <View style={{ height: 80 }} />
+                  </>
+                ) : null}
+              </View>
+            </ScrollView>
             
             {/* Fixed comment input bar at bottom */}
             {replyPreview && (
@@ -772,14 +785,13 @@ export default function ArticleDetailPage() {
                 type="comment"
                 value={newComment}
                 onChangeText={setNewComment}
-                placeholder={focusedComment ? 'Reply to comment...' : 'Add a comment...'}
+                placeholder={focusedComment ? 'Reply to comment...' : 'Share your thoughts'}
                 onSubmitEditing={focusedComment ? handleReplyComment : handleSendComment}
                 returnKeyType="send"
                 style={[styles.commentInput, { color: textColor }]}
                 placeholderTextColor={mutedTextColor}
               />
-              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} variant="primary">
-                <Ionicons name="checkmark-outline" size={25} color="#FFFFFF" />
+              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} variant="primary" style={{ borderRadius: 30 , width: 30 , height: 40 , alignItems: 'center' , justifyContent: 'center' }}>                  <Ionicons name="checkmark-outline" size={25} color="#FFFFFF" style={{ marginLeft: 2 }} />
               </ThemedButton>
             </View>
           </View>

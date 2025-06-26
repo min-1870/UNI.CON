@@ -37,7 +37,7 @@ const TermsAndConditions = () => {
         <ThemedView style={styles.content}>
           <ThemedView style={styles.card}>
             <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-            <ThemedText type="Wording">Terms and Conditions</ThemedText>
+            <ThemedText type="wording">Terms and Conditions</ThemedText>
             <ThemedText style={styles.subtitle}>Please read carefully before continuing</ThemedText>
 
             <ScrollView

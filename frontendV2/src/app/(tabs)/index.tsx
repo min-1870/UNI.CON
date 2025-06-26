@@ -8,6 +8,7 @@ import {fetchAPI, getData} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function HomePage() {
   const { theme } = useTheme();
@@ -107,13 +108,13 @@ export default function HomePage() {
 
   const renderHeader = () => (
     <>
-      <ThemedView variant="background" style={styles.titleContainer}>
-        <ThemedText variant="subtitle">UNI.CON</ThemedText>
-        <ThemedView variant="background" style={styles.titleContentContainer}>
-          <ThemedText variant="title">{university}</ThemedText>
-          <ThemedText weight="medium">Currently, they are chatting about..</ThemedText>
+              <ThemedView variant="background" style={styles.titleContainer}>
+          <ThemedText type="subtitle">UNI.CON</ThemedText>
+          <ThemedView variant="background" style={styles.titleContentContainer}>
+            <ThemedText type="title">{university}</ThemedText>
+            <ThemedText type="defaultSemiBold">Currently, they are chatting about..</ThemedText>
+          </ThemedView>
         </ThemedView>
-      </ThemedView>
       <ThemedView variant="transparent" style={styles.buttonContainer}>
         <ThemedButton
           variant={sortOption === 'all' ? 'primary' : 'chip'}
@@ -141,28 +142,30 @@ export default function HomePage() {
   );
 
   return (
-    <ThemedView variant="background" style={styles.container}>
-      {loading ? (
-        <ThemedText>Loading...</ThemedText>
-      ) : (
-        <>
-          {error && <ThemedText variant="error">{error}</ThemedText>}
-          <FlatList
-            data={articles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedArticle article_data={item} />}
-            contentContainerStyle={styles.feedContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
-            ListHeaderComponent={renderHeader}
-            onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              fetchMoreArticles();
-            }}
-          />
-        </>
-      )}
-    </ThemedView>
+    <ProtectedRoute>
+      <ThemedView variant="background" style={styles.container}>
+        {loading ? (
+          <ThemedText>Loading...</ThemedText>
+        ) : (
+          <>
+            {error && <ThemedText type="error">{error}</ThemedText>}
+            <FlatList
+              data={articles}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ThemedArticle article_data={item} />}
+              contentContainerStyle={styles.feedContainer}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
+              ListHeaderComponent={renderHeader}
+              onEndReachedThreshold={0.5}
+              onEndReached={() => {
+                fetchMoreArticles();
+              }}
+            />
+          </>
+        )}
+      </ThemedView>
+    </ProtectedRoute>
   );
 }
 

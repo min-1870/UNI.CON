@@ -4,7 +4,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import NewArticlePage from './post';
 import HomePage from './index';
 import SearchPage from './search';
-import ProfilePage from './profile';
+import ProfilePage from './profile (deprecated)';
 import BottomNav from '@/components/ui/BottomNav';
 import { router } from 'expo-router';
 
@@ -70,10 +70,7 @@ export default function TabLayout() {
       </Tabs.Navigator>
       
       {/* Custom Liquid Glass Navigation */}
-      <BottomNav 
-        onSearchClick={handleSearchClick}
-        onAddClick={handleAddClick}
-      />
+      <BottomNav />
     </>
   );
 }

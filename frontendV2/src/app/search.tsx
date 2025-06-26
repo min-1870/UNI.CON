@@ -752,9 +752,9 @@ export default function SearchPage() {
               </ScrollView>
             )}
           </View>
-        </View>
+                </View>
 
-                 <BottomNav />
+        <BottomNav />
       </AppContainer>
     </ProtectedRoute>
   );

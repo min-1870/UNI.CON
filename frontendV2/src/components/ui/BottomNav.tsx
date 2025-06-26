@@ -52,9 +52,20 @@ const BottomNav: React.FC<BottomNavProps> = () => {
 
   const handleNavClick = (item: typeof navItems[0]) => {
     console.log('Navigation clicked:', item.label, 'to path:', item.path, 'from:', pathname);
-    if (item.path) {
-      // Use push for all navigation - should work reliably now that all routes are at root level
-      router.push(item.path as any);
+    if (item.path && item.path !== pathname) {
+      // Determine slide direction based on tab order
+      const currentIndex = navItems.findIndex(nav => nav.path === pathname);
+      const targetIndex = navItems.findIndex(nav => nav.path === item.path);
+      
+      const direction = targetIndex > currentIndex ? 'right' : 'left';
+      console.log('Navigation direction:', { 
+        from: currentIndex, 
+        to: targetIndex, 
+        direction: direction
+      });
+      
+      // Use replace for horizontal slide effect without stacking
+      router.replace(item.path as any);
     }
   };
 
@@ -64,7 +75,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
       bottom: 34,
       left: 20,
       right: 20,
-      zIndex: 1000,
+      zIndex: 99999,
     },
     blurContainer: {
       borderRadius: 35,

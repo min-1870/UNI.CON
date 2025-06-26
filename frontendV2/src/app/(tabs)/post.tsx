@@ -20,6 +20,7 @@ import { fetchAPI } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import Toast from 'react-native-toast-message';
 import AppContainer from '@/components/AppContainer';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function CreatePost() {
   const [content, setContent] = useState('');
@@ -108,7 +109,7 @@ export default function CreatePost() {
           title: content.split('\n')[0].substring(0, 100) || 'Untitled', // First line as title
           body: content.trim(),
           unicon: false, // Can be made configurable
-          tag: hashtags, // Send hashtags as tags
+          course_code: hashtags, // Send hashtags as tags
         },
       });
 
@@ -353,142 +354,143 @@ export default function CreatePost() {
   });
 
   return (
-    <AppContainer>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-          >
-            <Ionicons name="arrow-back" size={24} color={textColor} />
-          </TouchableOpacity>
-          
-          <Text style={styles.title}>Create Post</Text>
-          
-          <TouchableOpacity
-            style={[
-              styles.postButton,
-              (!content.trim() && images.length === 0) || loading ? styles.postButtonDisabled : null
-            ]}
-            onPress={handleSubmit}
-            disabled={(!content.trim() && images.length === 0) || loading}
-          >
-            <Ionicons name="send" size={16} color="#FFFFFF" />
-            <Text style={styles.postButtonText}>
-              {loading ? 'Posting...' : 'Post'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Main Content */}
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Text Area */}
-          <View style={styles.textSection}>
-            <TextInput
-              style={styles.textArea}
-              placeholder="What's your thoughts?"
-              placeholderTextColor={placeholderColor}
-              value={content}
-              onChangeText={handleContentChange}
-              multiline
-              textAlignVertical="top"
-            />
+    <ProtectedRoute>
+      <AppContainer>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+            >
+              <Ionicons name="arrow-back" size={24} color={textColor} />
+            </TouchableOpacity>
             
-            <View style={styles.textInfo}>
-              <Text style={styles.shareText}>
-                Share your thoughts with the community
+            <Text style={styles.title}>Create Post</Text>
+            
+            <TouchableOpacity
+              style={[
+                styles.postButton,
+                (!content.trim() && images.length === 0) || loading ? styles.postButtonDisabled : null
+              ]}
+              onPress={handleSubmit}
+              disabled={(!content.trim() && images.length === 0) || loading}
+            >
+              <Text style={styles.postButtonText}>
+                {loading ? 'Posting...' : 'Post'}
               </Text>
-                              <Text style={[
-                  styles.charCount,
-                  content.length > 280 ? styles.charCountLimit : null
-                ]}>
-                  {content.length}/280
+            </TouchableOpacity>
+          </View>
+
+          {/* Main Content */}
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Text Area */}
+            <View style={styles.textSection}>
+              <TextInput
+                style={styles.textArea}
+                placeholder="What's your thoughts?"
+                placeholderTextColor={placeholderColor}
+                value={content}
+                onChangeText={handleContentChange}
+                multiline
+                textAlignVertical="top"
+              />
+              
+              <View style={styles.textInfo}>
+                <Text style={styles.shareText}>
+                  Share your thoughts with the community
                 </Text>
-            </View>
-          </View>
-
-          {/* Images Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Images</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleImageUpload}
-              >
-                <Ionicons name="image" size={16} color={textColor} />
-                <Text style={styles.addButtonText}>Add Image</Text>
-              </TouchableOpacity>
+                                  <Text style={[
+                    styles.charCount,
+                    content.length > 280 ? styles.charCountLimit : null
+                  ]}>
+                    {content.length}/280
+                  </Text>
+              </View>
             </View>
 
-            {images.length > 0 && (
-              <View style={styles.imageGrid}>
-                {images.map((image, index) => (
-                  <View key={index} style={styles.imageItem}>
-                    <Image source={{ uri: image }} style={styles.image} />
+            {/* Images Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Images</Text>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={handleImageUpload}
+                >
+                  <Ionicons name="image" size={16} color={textColor} />
+                  <Text style={styles.addButtonText}>Add Image</Text>
+                </TouchableOpacity>
+              </View>
+
+              {images.length > 0 && (
+                <View style={styles.imageGrid}>
+                  {images.map((image, index) => (
+                    <View key={index} style={styles.imageItem}>
+                      <Image source={{ uri: image }} style={styles.image} />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close" size={16} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Hashtags Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Hashtags</Text>
+              
+              {/* Hashtag Input */}
+              <View style={styles.hashtagInput}>
+                <View style={styles.hashtagInputField}>
+                  <Ionicons name="pricetag-outline" size={16} color={placeholderColor} />
+                  <TextInput
+                    style={styles.hashtagTextInput}
+                    placeholder="Add hashtag"
+                    placeholderTextColor={placeholderColor}
+                    value={currentHashtag}
+                    onChangeText={setCurrentHashtag}
+                    onSubmitEditing={addHashtag}
+                    returnKeyType="done"
+                  />
+                </View>
+                                   <TouchableOpacity
+                     style={[
+                       styles.hashtagAddButton,
+                       !currentHashtag.trim() ? styles.hashtagAddButtonDisabled : null
+                     ]}
+                     onPress={addHashtag}
+                     disabled={!currentHashtag.trim()}
+                   >
+                     <Ionicons name="pricetag" size={16} color="#FFFFFF" />
+                   </TouchableOpacity>
+              </View>
+
+              {/* Display Hashtags */}
+              {hashtags.length > 0 && (
+                <View style={styles.hashtagList}>
+                  {hashtags.map((tag, index) => (
                     <TouchableOpacity
-                      style={styles.removeImageButton}
-                      onPress={() => removeImage(index)}
+                      key={index}
+                      style={styles.hashtagChip}
+                      onPress={() => removeHashtag(tag)}
                     >
-                      <Ionicons name="close" size={16} color="#FFFFFF" />
+                      <Text style={styles.hashtagChipText}>#{tag}</Text>
+                      <Ionicons name="close" size={12} color={colorScheme === 'dark' ? '#60A5FA' : '#2563EB'} />
                     </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Hashtags Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hashtags</Text>
-            
-            {/* Hashtag Input */}
-            <View style={styles.hashtagInput}>
-              <View style={styles.hashtagInputField}>
-                <Ionicons name="pricetag-outline" size={16} color={placeholderColor} />
-                <TextInput
-                  style={styles.hashtagTextInput}
-                  placeholder="Add hashtag"
-                  placeholderTextColor={placeholderColor}
-                  value={currentHashtag}
-                  onChangeText={setCurrentHashtag}
-                  onSubmitEditing={addHashtag}
-                  returnKeyType="done"
-                />
-              </View>
-                             <TouchableOpacity
-                 style={[
-                   styles.hashtagAddButton,
-                   !currentHashtag.trim() ? styles.hashtagAddButtonDisabled : null
-                 ]}
-                 onPress={addHashtag}
-                 disabled={!currentHashtag.trim()}
-               >
-                 <Ionicons name="pricetag" size={16} color="#FFFFFF" />
-               </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
-            {/* Display Hashtags */}
-            {hashtags.length > 0 && (
-              <View style={styles.hashtagList}>
-                {hashtags.map((tag, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.hashtagChip}
-                    onPress={() => removeHashtag(tag)}
-                  >
-                    <Text style={styles.hashtagChipText}>#{tag}</Text>
-                    <Ionicons name="close" size={12} color={colorScheme === 'dark' ? '#60A5FA' : '#2563EB'} />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Tips Section */}
-        </ScrollView>
-      </View>
-    </AppContainer>
+            {/* Tips Section */}
+          </ScrollView>
+        </View>
+      </AppContainer>
+    </ProtectedRoute>
   );
 }
 

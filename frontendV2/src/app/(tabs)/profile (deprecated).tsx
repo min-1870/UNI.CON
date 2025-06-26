@@ -341,35 +341,39 @@ export default function ProfilePage() {
 
             {/* Tabs Section */}
             <View style={styles.tabsContainer}>
-              <View style={styles.tabsList}>
-                {[
-                  { key: 'posted', label: 'Posted', icon: 'document-text' },
-                  { key: 'liked', label: 'Liked', icon: 'heart' },
-                  { key: 'commented', label: 'Commented', icon: 'chatbubble' },
-                  { key: 'saved', label: 'Saved', icon: 'bookmark' },
-                ].map((tab) => (
-                  <TouchableOpacity
-                    key={tab.key}
-                    style={[
-                      styles.tabItem,
-                      activeTab === tab.key && styles.tabItemActive
-                    ]}
-                    onPress={() => handleTabChange(tab.key)}
-                  >
-                    <Ionicons 
-                      name={tab.icon as any} 
-                      size={16} 
-                      color={activeTab === tab.key ? '#fff' : '#6B7280'} 
-                      style={{ marginRight: tab.key === 'commented' ? 8 : 6 }}
-                    />
-                    <Text style={[
-                      styles.tabLabel,
-                      activeTab === tab.key && styles.tabLabelActive
-                    ]}>
-                      {tab.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.tabsWrapper}>
+                <View style={styles.tabsList}>
+                  {[
+                    { key: 'posted', label: 'Posted', icon: 'document-text' },
+                    { key: 'liked', label: 'Liked', icon: 'heart' },
+                    { key: 'commented', label: 'Commented', icon: 'chatbubble' },
+                    { key: 'saved', label: 'Saved', icon: 'bookmark' },
+                  ].map((tab, index, array) => (
+                    <TouchableOpacity
+                      key={tab.key}
+                      style={[
+                        styles.tabItem,
+                        activeTab === tab.key && styles.tabItemActive,
+                        index === 0 && styles.tabItemFirst,
+                        index === array.length - 1 && styles.tabItemLast
+                      ]}
+                      onPress={() => handleTabChange(tab.key)}
+                    >
+                      <Ionicons 
+                        name={tab.icon as any} 
+                        size={16} 
+                        color={activeTab === tab.key ? '#fff' : '#6B7280'} 
+                        style={{ marginRight: tab.key === 'commented' ? 8 : 6 }}
+                      />
+                      <Text style={[
+                        styles.tabLabel,
+                        activeTab === tab.key && styles.tabLabelActive
+                      ]}>
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
               {renderTabContent()}
             </View>
@@ -568,10 +572,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 20,
   },
-  tabsList: {
-    flexDirection: 'row',
+  tabsWrapper: {
     paddingHorizontal: 20,
     marginBottom: 20,
+  },
+  tabsList: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   tabItem: {
     flex: 1,
@@ -580,12 +589,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'transparent',
   },
   tabItemActive: {
     backgroundColor: '#3B82F6',
+  },
+  tabItemFirst: {
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  tabItemLast: {
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
   },
   tabLabel: {
     fontSize: 14,

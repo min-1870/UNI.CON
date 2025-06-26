@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   View, 
   Text, 
@@ -16,21 +16,24 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/contexts/AuthContext';
 import BottomNav from '@/components/ui/BottomNav';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 import URLs from "@/constants/Urls";
 import { LinearGradient } from 'expo-linear-gradient';
 import PostCard from '@/components/PostCard';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
+import moment from 'moment';
 
-// Mock user data - replace with real API call
+// TODO -- Mock user data - replace with real API call
 const userData = {
   id: 1,
   name: 'Michael Chen',
   username: 'michelc',
   email: 'root@unsw.edu.au',
-  university: 'University of New South Wales',
+  university: 'UNSW Sydney',
   verified: true,
-  credibilityScore: 140,
+  credibilityScore: 1247,
   joinDate: 'September 2023',
 
   avatar: '',
@@ -51,12 +54,31 @@ export default function ProfilePage() {
   const [savedPosts, setSavedPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+
   const [realStats, setRealStats] = useState({
-    posts: 0,
-    comments: 0,
-    likes: 0,
-    saved: 0
+    posts: 23,
+    comments: 157,
+    likes: 892,
+    saved: 45
   });
+
+  // Theme colors
+  const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const textColor = useThemeColor({}, 'default_text_color');
+  const placeholderColor = useThemeColor({}, 'default_placeholder_color');
+  const brandColor = useThemeColor({}, 'default_brand_color');
+
+  // Additional theme colors
+  const headerBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const secondaryTextColor = colorScheme === 'dark' ? '#D1D5DB' : '#6B7280';
+  const mutedTextColor = colorScheme === 'dark' ? '#9CA3AF' : '#9CA3AF';
+  const borderColor = colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB';
+  const profileSectionBg = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const tabBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const emptyStateColor = colorScheme === 'dark' ? '#6B7280' : '#D1D5DB';
 
   useEffect(() => {
     fetchUserData();
@@ -117,6 +139,7 @@ export default function ProfilePage() {
             setLikedPosts(articles);
             break;
         }
+        
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -138,6 +161,9 @@ export default function ProfilePage() {
         type: 'success',
         text1: 'Logged out successfully',
       });
+      
+      // Redirect to login page
+      router.replace('/Login' as any);
     } catch (error) {
       console.error('Error during logout:', error);
       Toast.show({
@@ -147,21 +173,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSettings = () => {
-    // Navigate to settings or show settings modal
-    console.log('Settings clicked');
-  };
-
-
-
   const renderTabContent = () => {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10B981" />
+          <ActivityIndicator size="large" color={brandColor} />
         </View>
       );
     }
+  
 
     switch (activeTab) {
       case 'posted':
@@ -173,7 +193,7 @@ export default function ProfilePage() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="document-outline" size={64} color="#D1D5DB" />
+                <Ionicons name="document-outline" size={64} color={emptyStateColor} />
                 <Text style={styles.emptyText}>No posts yet</Text>
                 <Text style={styles.emptySubtext}>Share your first post!</Text>
               </View>
@@ -183,13 +203,14 @@ export default function ProfilePage() {
       case 'saved':
         return (
           <View style={styles.tabContent}>
+
             {savedPosts.length > 0 ? (
               savedPosts.map((post, index) => (
                 <PostCard key={index} article={post} />
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="bookmark-outline" size={64} color="#D1D5DB" />
+                <Ionicons name="bookmark-outline" size={64} color={emptyStateColor} />
                 <Text style={styles.emptyText}>No saved posts yet</Text>
               </View>
             )}
@@ -198,13 +219,14 @@ export default function ProfilePage() {
       case 'commented':
         return (
           <View style={styles.tabContent}>
+
             {comments.length > 0 ? (
               comments.map((comment, index) => (
                 <PostCard key={index} article={comment} />
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="chatbubble-outline" size={64} color="#D1D5DB" />
+                <Ionicons name="chatbubble-outline" size={64} color={emptyStateColor} />
                 <Text style={styles.emptyText}>No comments yet</Text>
               </View>
             )}
@@ -213,13 +235,14 @@ export default function ProfilePage() {
       case 'liked':
         return (
           <View style={styles.tabContent}>
+
             {likedPosts.length > 0 ? (
               likedPosts.map((post, index) => (
                 <PostCard key={index} article={post} />
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="heart-outline" size={64} color="#D1D5DB" />
+                <Ionicons name="heart-outline" size={64} color={emptyStateColor} />
                 <Text style={styles.emptyText}>No liked posts yet</Text>
               </View>
             )}
@@ -230,6 +253,221 @@ export default function ProfilePage() {
     }
   };
 
+  // Dynamic styles based on theme
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    header: {
+      backgroundColor: headerBackground,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingTop: 50,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: borderColor,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: textColor,
+    },
+    logoutButton: {
+      padding: 8,
+      borderRadius: 20,
+    },
+    settingsButton: {
+      padding: 8,
+      borderRadius: 20,
+    },
+    content: {
+      flex: 1,
+    },
+    profileSection: {
+      backgroundColor: profileSectionBg,
+      padding: 20,
+      borderBottomWidth: colorScheme === 'dark' ? 1 : 0,
+      borderBottomColor: borderColor,
+    },
+    profileHeader: {
+      flexDirection: 'row',
+      marginBottom: 16,
+    },
+    avatarContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: '#3B82F6',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    avatarText: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    profileInfo: {
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    name: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: textColor,
+      marginRight: 8,
+    },
+    username: {
+      fontSize: 16,
+      color: secondaryTextColor,
+      marginBottom: 8,
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    },
+    university: {
+      fontSize: 14,
+      color: secondaryTextColor,
+      marginRight: 12,
+      flex: 1,
+    },
+    joinBadge: {
+      backgroundColor: colorScheme === 'dark' ? 'rgba(75, 85, 99, 0.8)' : '#F3F4F6',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 12,
+    },
+    joinText: {
+      fontSize: 12,
+      color: secondaryTextColor,
+    },
+    bio: {
+      fontSize: 14,
+      color: textColor,
+      marginBottom: 20,
+      lineHeight: 20,
+    },
+    credibilitySection: {
+      marginBottom: 20,
+    },
+    credibilityGradient: {
+      borderRadius: 20,
+      padding: 24,
+      alignItems: 'center',
+      shadowColor: '#10B981',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    credibilityLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#fff',
+      marginBottom: 4,
+      opacity: 0.9,
+    },
+    credibilityValue: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    credibilitySubtext: {
+      fontSize: 14,
+      color: '#fff',
+      opacity: 0.8,
+    },
+    statsTabsContainer: {
+      marginTop: 16,
+    },
+    tabIndicatorContainer: {
+      position: 'relative',
+      height: 3,
+      marginBottom: 10,
+    },
+    tabIndicator: {
+      position: 'absolute',
+      top: 0,
+      width: '25%',
+      height: 3,
+      backgroundColor: brandColor,
+      borderRadius: 2,
+      marginLeft: '-12.5%',
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      backgroundColor: colorScheme === 'dark' ? 'rgba(16, 18, 20, 0.6)' : '#F9FAFB',
+      borderRadius: 16,
+      padding: 20,
+    },
+    statItem: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    statItemActive: {
+      transform: [{ scale: 1.05 }],
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: textColor,
+      marginBottom: 4,
+    },
+    statValueActive: {
+      color: brandColor,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: secondaryTextColor,
+      fontWeight: '500',
+    },
+    statLabelActive: {
+      color: brandColor,
+      fontWeight: '600',
+    },
+    contentSection: {
+      backgroundColor: tabBackground,
+      paddingTop: 20,
+      borderTopWidth: colorScheme === 'dark' ? 1 : 0,
+      borderTopColor: borderColor,
+    },
+    tabContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 100,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 48,
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 48,
+    },
+    emptyText: {
+      marginTop: 16,
+      fontSize: 18,
+      fontWeight: '600',
+      color: mutedTextColor,
+    },
+    emptySubtext: {
+      marginTop: 4,
+      fontSize: 14,
+      color: mutedTextColor,
+    },
+  }), [colorScheme, backgroundColor, headerBackground, cardBackground, textColor, secondaryTextColor, mutedTextColor, borderColor, profileSectionBg, tabBackground, emptyStateColor, brandColor]);
+
   return (
     <ProtectedRoute>
       <View style={styles.container}>
@@ -238,8 +476,8 @@ export default function ProfilePage() {
             {/* Header with Settings */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>My Profile</Text>
-              <TouchableOpacity onPress={handleSettings} style={styles.settingsButton}>
-                <Ionicons name="settings-outline" size={24} color="#111827" />
+              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                <Ionicons name="log-out-outline" size={24} color="#EF4444" />
               </TouchableOpacity>
             </View>
 
@@ -267,7 +505,7 @@ export default function ProfilePage() {
               </View>
 
               {/* Bio */}
-              <Text style={styles.bio}>Computer Science student passionate about innovation and technology.</Text>
+              <Text style={styles.bio}>Computer Science student passionate about AI and web development. Always looking for interesting discussions!</Text>
 
               {/* Credibility Score */}
               <View style={styles.credibilitySection}>
@@ -277,101 +515,69 @@ export default function ProfilePage() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.credibilityLabel}>Credibility Score</Text>
+                  <Text style={styles.credibilityLabel}>Karma Points</Text>
                   <Text style={styles.credibilityValue}>{userData.credibilityScore}</Text>
-                  <Text style={styles.credibilitySubtext}>Points</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 4 }} />
+                  </View>
                 </LinearGradient>
               </View>
 
-              {/* Account Summary */}
-              <View style={styles.accountSection}>
-                <Text style={styles.sectionTitle}>Account Summary</Text>
-                <View style={styles.accountRow}>
-                  <Text style={styles.accountLabel}>University</Text>
-                  <Text style={styles.accountValue}>{userData.university}</Text>
+              {/* Stats as Tabs */}
+              <View style={styles.statsTabsContainer}>
+                {/* Tab Indicator */}
+                <View style={styles.tabIndicatorContainer}>
+                  <View style={[
+                    styles.tabIndicator,
+                    { 
+                      left: activeTab === 'posted' ? '12.5%' : 
+                            activeTab === 'commented' ? '37.5%' : 
+                            activeTab === 'liked' ? '62.5%' : '87.5%',
+                    }
+                  ]} />
                 </View>
-                <View style={styles.accountRow}>
-                  <Text style={styles.accountLabel}>Student Email</Text>
-                  <Text style={styles.accountValue}>{userData.email}</Text>
-                </View>
-                <View style={styles.accountRow}>
-                  <Text style={styles.accountLabel}>Google Account</Text>
-                  <Text style={styles.accountLink}>Connect with Google</Text>
-                </View>
-                <View style={styles.accountRow}>
-                  <Text style={styles.accountLabel}>Update Password</Text>
-                  <TouchableOpacity onPress={() => setShowChangePasswordModal(true)}>
-                    <Text style={styles.accountLink}>Change Password</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.accountRow}>
-                  <Text style={styles.accountLabel}>Logout</Text>
-                  <TouchableOpacity onPress={handleLogout}>
-                    <Text style={[styles.accountLink, { color: '#EF4444' }]}>Sign Out</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Stats */}
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{realStats.posts}</Text>
-                  <Text style={styles.statLabel}>Posts</Text>
-                </View>
-
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{realStats.likes}</Text>
-                  <Text style={styles.statLabel}>Likes</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{realStats.comments}</Text>
-                  <Text style={styles.statLabel}>Comments</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{realStats.saved}</Text>
-                  <Text style={styles.statLabel}>Saved</Text>
+                
+                {/* Stats Grid as Tabs */}
+                <View style={styles.statsGrid}>
+                  {[
+                    { key: 'posted', label: 'Posts', value: realStats.posts },
+                    { key: 'commented', label: 'Comments', value: realStats.comments },
+                    { key: 'liked', label: 'Likes', value: realStats.likes },
+                    { key: 'saved', label: 'Saved', value: realStats.saved },
+                  ].map((stat) => (
+                    <TouchableOpacity
+                      key={stat.key}
+                      style={[
+                        styles.statItem,
+                        activeTab === stat.key && styles.statItemActive
+                      ]}
+                      onPress={() => handleTabChange(stat.key)}
+                    >
+                      <Text style={[
+                        styles.statValue,
+                        activeTab === stat.key && styles.statValueActive
+                      ]}>
+                        {stat.value}
+                      </Text>
+                      <Text style={[
+                        styles.statLabel,
+                        activeTab === stat.key && styles.statLabelActive
+                      ]}>
+                        {stat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
             </View>
 
-            {/* Tabs Section */}
-            <View style={styles.tabsContainer}>
-              <View style={styles.tabsList}>
-                {[
-                  { key: 'posted', label: 'Posted', icon: 'document-text' },
-                  { key: 'liked', label: 'Liked', icon: 'heart' },
-                  { key: 'commented', label: 'Commented', icon: 'chatbubble' },
-                  { key: 'saved', label: 'Saved', icon: 'bookmark' },
-                ].map((tab) => (
-                  <TouchableOpacity
-                    key={tab.key}
-                    style={[
-                      styles.tabItem,
-                      activeTab === tab.key && styles.tabItemActive
-                    ]}
-                    onPress={() => handleTabChange(tab.key)}
-                  >
-                    <Ionicons 
-                      name={tab.icon as any} 
-                      size={16} 
-                      color={activeTab === tab.key ? '#fff' : '#6B7280'} 
-                      style={{ marginRight: tab.key === 'commented' ? 8 : 6 }}
-                    />
-                    <Text style={[
-                      styles.tabLabel,
-                      activeTab === tab.key && styles.tabLabelActive
-                    ]}>
-                      {tab.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            {/* Content Section */}
+            <View style={styles.contentSection}>
               {renderTabContent()}
             </View>
           </ScrollView>
-
         </AppContainer>
-        
+
         <BottomNav />
         
         <ChangePasswordModal
@@ -381,276 +587,4 @@ export default function ProfilePage() {
       </View>
     </ProtectedRoute>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  content: {
-    flex: 1,
-  },
-  profileSection: {
-    backgroundColor: '#fff',
-    padding: 20,
-    marginBottom: 8,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginRight: 8,
-  },
-  username: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  university: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginRight: 12,
-    flex: 1,
-  },
-  joinBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  joinText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  bio: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  credibilitySection: {
-    marginBottom: 20,
-  },
-  credibilityGradient: {
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  credibilityLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  credibilityValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  credibilitySubtext: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  accountSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  accountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  accountLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  accountValue: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  accountLink: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 20,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  tabsContainer: {
-    backgroundColor: '#fff',
-    paddingTop: 20,
-  },
-  tabsList: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  tabItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: '#F9FAFB',
-  },
-  tabItemActive: {
-    backgroundColor: '#3B82F6',
-  },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  tabLabelActive: {
-    color: '#fff',
-  },
-  tabContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#9CA3AF',
-  },
-  emptySubtext: {
-    marginTop: 4,
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  commentCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  commentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    flex: 1,
-  },
-  commentTime: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  commentText: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
-  },
-  commentFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  commentLikes: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginLeft: 4,
-  },
-}); 
+} 

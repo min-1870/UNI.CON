@@ -80,8 +80,8 @@ const SignInComplete = () => {
         </Animated.View>
 
         <Animated.View style={textStyle}>
-          <ThemedText type="Wording" style = {{textAlign:'center',color:'rgb(255, 255, 255)',}}>Registration{'\n'}Success !</ThemedText>
-        <ThemedText type="Wording" style = {{fontSize:25,color:'rgb(241, 241, 241)'}}>Redirecting to home.</ThemedText>
+          <ThemedText type="wording" style = {{textAlign:'center',color:'rgb(255, 255, 255)',}}>Registration{'\n'}Success !</ThemedText>
+        <ThemedText type="wording" style = {{fontSize:25,color:'rgb(241, 241, 241)'}}>Redirecting to home.</ThemedText>
         </Animated.View>
       </View>
     </View>

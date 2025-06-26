@@ -36,7 +36,7 @@ const Validation = () => {
         <ThemedView style={styles.content}>
           <ThemedView style={styles.card}>
             <ActivityIndicator size="large" color="#57EC6B" />
-            <ThemedText type="Wording">Validating Account</ThemedText>
+            <ThemedText type="wording">Validating Account</ThemedText>
             <ThemedText style={styles.subtitle}>Please wait while we verify your information...</ThemedText>
           </ThemedView>
         </ThemedView>

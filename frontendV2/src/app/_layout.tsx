@@ -43,11 +43,60 @@ export default function RootLayout() {
               animation: 'slide_from_right',
               headerShown: false,
               animationDuration: 200,
+              animationTypeForReplace: 'push',
+              gestureEnabled: false,
             }}
           >
             <Stack.Screen name="index" />
-            <Stack.Screen name="home" />
-            <Stack.Screen name="register" />
+            <Stack.Screen 
+              name="home" 
+              options={{ 
+                animation: 'slide_from_left',
+                animationDuration: 200
+              }} 
+            />
+            <Stack.Screen 
+              name="search" 
+              options={{ 
+                animation: 'slide_from_right',
+                animationDuration: 200
+              }} 
+            />
+            <Stack.Screen 
+              name="post" 
+              options={{ 
+                animation: 'slide_from_bottom',
+                animationDuration: 200
+              }} 
+            />
+            <Stack.Screen 
+              name="marketplace" 
+              options={{ 
+                animation: 'slide_from_right',
+                animationDuration: 200
+              }} 
+            />
+            <Stack.Screen 
+              name="profile" 
+              options={{ 
+                animation: 'slide_from_right',
+                animationDuration: 200
+              }} 
+            />
+            <Stack.Screen 
+              name="register" 
+              options={{ 
+                animation: 'none',
+                animationDuration: 0
+              }} 
+            />
+            <Stack.Screen 
+              name="Login" 
+              options={{ 
+                animation: 'none',
+                animationDuration: 0
+              }} 
+            />
             <Stack.Screen name="validation" />
             <Stack.Screen name="tnc" />
             <Stack.Screen name="(tabs)" />
@@ -58,7 +107,6 @@ export default function RootLayout() {
             <Stack.Screen name="terms" />
             <Stack.Screen name="newPassword" />
             <Stack.Screen name="notification" />
-            <Stack.Screen name="Login" />
           </Stack>
           <Toast />
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

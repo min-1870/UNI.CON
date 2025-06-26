@@ -128,7 +128,7 @@ export default function CreatePost() {
     if (!content.trim()) {
       Toast.show({
         type: 'error',
-        text1: 'Please add some content to your post',
+        text1: 'Please add a content to your post',
       });
       return;
     }
@@ -523,7 +523,6 @@ export default function CreatePost() {
               onPress={handleSubmit}
               disabled={(!title.trim() || !content.trim()) || loading}
             >
-              <Ionicons name="send" size={16} color="#FFFFFF" />
               <Text style={styles.postButtonText}>
                 {loading ? 'Posting...' : 'Post'}
               </Text>
@@ -536,7 +535,7 @@ export default function CreatePost() {
             <View style={styles.titleSection}>
               <TextInput
                 style={styles.titleInput}
-                placeholder="Add a catchy title..."
+                placeholder="Title"
                 placeholderTextColor={placeholderColor}
                 value={title}
                 onChangeText={setTitle}
@@ -549,7 +548,7 @@ export default function CreatePost() {
             <View style={styles.textSection}>
               <TextInput
                 style={styles.textArea}
-                placeholder="What's your thoughts?"
+                placeholder="Content"
                 placeholderTextColor={placeholderColor}
                 value={content}
                 onChangeText={handleContentChange}
@@ -650,7 +649,7 @@ export default function CreatePost() {
             {/* UNI.CON Toggle Section */}
             <View style={styles.uniconSection}>
               <View style={styles.uniconHeader}>
-                <Text style={styles.sectionTitle}>UNI.CON Visibility</Text>
+                <Text style={styles.sectionTitle}>Share with UNI.CON community</Text>
                 <TouchableOpacity
                   style={[styles.uniconToggle, unicon && styles.uniconToggleActive]}
                   onPress={() => setUnicon(!unicon)}
@@ -659,13 +658,14 @@ export default function CreatePost() {
                 </TouchableOpacity>
               </View>
               <Text style={styles.uniconDescription}>
-                Enable to make your post visible to other university students across UNI.CON network
+                Toggle this to share your post with other university students across UNI.CON network. <br/>
+                Still, your university community members will be able to see your post.
               </Text>
             </View>
 
-          </ScrollView>
+                    </ScrollView>
 
-                     <BottomNav />
+          <BottomNav />
         </View>
 
         {/* Loading Overlay */}

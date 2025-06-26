@@ -49,11 +49,16 @@ interface Article {
 type FilterType = 'All' | 'Hot' | 'Recommended';
 
 export default function Home() {
+    // Show last updated time at the top
+
+
   const colorScheme = useColorScheme();
 
+
+
   const containerBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
-  const headerBackground = colorScheme === 'dark' ? '#1F2937' : '#FFFFFF';
-  const stickyHeaderBackground = colorScheme === 'dark' ? 'rgba(31,41,55,0.5)' : '#FFFFFF';
+  const headerBackground = colorScheme === 'dark' ? '#101214' : '#FFFFFF';
+  const stickyHeaderBackground = colorScheme === 'dark' ? 'rgba(16, 18, 20,0.2)' : '#FFFFFF';
   const headerTitleColor = colorScheme === 'dark' ? '#FFFFFF' : '#222';
   const searchFilterColor = colorScheme === 'dark' ? '#1F2937' : '#222';
   const [selectedTag, setSelectedTag] = useState('All');
@@ -363,7 +368,7 @@ export default function Home() {
       right: 0,
       backgroundColor: headerBackground,
       paddingTop: 60,
-      paddingBottom: 15,
+      paddingBottom: 10,
       zIndex: 1000,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
@@ -399,10 +404,10 @@ export default function Home() {
       marginBottom: 10,
     },
     tagChip: {
-      marginRight: 8,
+      marginRight: 10,
     },
     tagChipSelected: {
-      backgroundColor: '#57EC6B',
+      backgroundColor:  colorScheme === 'dark' ? '#4ED460' : '#57EC6B'
     },
     notificationButton: {
       position: 'relative',
@@ -423,24 +428,6 @@ export default function Home() {
       color: '#fff',
       fontSize: 12,
       fontWeight: 'bold',
-    },
-    newPostContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-      borderWidth: 0.2,
-      borderColor: '#E5E7EB',
-      height: 50,
-      marginHorizontal: 15,
-      borderRadius: 25,
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      marginBottom: 15,
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 12,
     },
     searchInput: {
       marginLeft: 10,
@@ -470,7 +457,7 @@ export default function Home() {
       alignItems: 'center',
     },
     filterTabSelected: {
-      backgroundColor: '#57EC6B',
+      backgroundColor: colorScheme === 'dark' ? '#4ED460' : '#57EC6B',
       borderColor: '#57EC6B',
     },
     filterTabText: {
@@ -540,16 +527,15 @@ export default function Home() {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      borderBottomWidth: 0.5,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderBottomWidth: 0.2,
       borderBottomColor: 'rgba(255, 255, 255, 0.4)',
     },
   }), [colorScheme, containerBackground, headerBackground, headerTitleColor, searchFilterColor]);
 
   return (
-    <ProtectedRoute>
-      <AppContainer>
-        <View style={styles.container}>
+    <AppContainer>
+      <View style={styles.container}>
           {/* Sticky Mini Header - Shows when main header is hidden */}
           <Animated.View 
             style={[
@@ -715,7 +701,8 @@ export default function Home() {
             />
           )}
         </View>
-                  <BottomNav />
+
+        <BottomNav />
         
         <CreatePost
           visible={createPostVisible}
@@ -729,6 +716,5 @@ export default function Home() {
           onClose={() => setNotificationVisible(false)}
         />
       </AppContainer>
-    </ProtectedRoute>
   );
 } 
