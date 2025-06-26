@@ -31,6 +31,8 @@ export default function NewArticlePage() {
   const [tags, setTags] = useState<string[]>([]);
   const [ratios, setRatios] = useState<number[]>([]);
 
+  const tagInputRef = useRef<TextInput>(null);
+
   const default_card_background_color = useThemeColor({}, 'default_card_background_color');
   const place_holder_color = useThemeColor({}, 'default_placeholder_color');
   const default_text_color = useThemeColor({}, 'default_text_color');
@@ -237,6 +239,7 @@ export default function NewArticlePage() {
     setInputHeights(prev => {
       const newHeights = [...prev];
       newHeights[idx] = ((text.match(/\n/g) || []).length + 1) * 30;
+      console.log(newHeights[idx])
       return newHeights;
     });
 
@@ -288,7 +291,7 @@ export default function NewArticlePage() {
       backgroundColor: default_card_background_color,
     },
     cardContainer: {
-      minHeight: 500,
+      minHeight: 700,
       display: 'flex',
       color: default_card_background_color,
       borderRadius: 30,
@@ -332,11 +335,14 @@ export default function NewArticlePage() {
       gap: 20,
       display: 'flex',
       minHeight: 200,
+      flex: 1,
     },
     chipContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
+      gap: 5,
+      marginTop   : 10,
     },
     tagTextArea: {
       color: default_text_color,
@@ -345,6 +351,10 @@ export default function NewArticlePage() {
       fontSize: 16,
       padding: 4,
       borderWidth: 0,
+    },
+    pressableWrapper: {
+      height: '100%',
+      display: 'flex',
     },
     img: {
       width: '100%',
@@ -438,7 +448,8 @@ export default function NewArticlePage() {
             </ThemedButton>
           </ThemedView>
       </ThemedView>
-      <ThemedView style={styles.tagAreaContainer}>
+      <ThemedView style={styles.tagAreaContainer} >
+        <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >
         <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
@@ -446,7 +457,9 @@ export default function NewArticlePage() {
               <ThemedTag unClickable={true} text={tag} type={'default'} key={i}/>
             </Pressable>
           ))}
-          <ThemedInput
+          
+            
+          <TextInput
             style={[removeOutline, styles.tagTextArea]}
             value={raw}
             onChangeText={(text) => {
@@ -460,6 +473,7 @@ export default function NewArticlePage() {
                 setRaw(text);
               }
             }}
+            ref={tagInputRef}
             placeholder="Type and hit space"
             placeholderTextColor={place_holder_color}
             autoCorrect={false}
@@ -471,6 +485,7 @@ export default function NewArticlePage() {
             }}
           />
         </View>
+        </Pressable>
       </ThemedView>
     </ThemedView>
     </ScrollView>
