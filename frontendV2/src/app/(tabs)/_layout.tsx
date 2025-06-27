@@ -1,5 +1,4 @@
 import React  from 'react';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Octicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import NewArticlePage from './post';

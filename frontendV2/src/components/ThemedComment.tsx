@@ -223,7 +223,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       </Pressable>}
     </View>
   );
-  console.log(commentData.nested_comments)
+
   return (
     <FlatList
       data={commentData.nested_comments ?? []}

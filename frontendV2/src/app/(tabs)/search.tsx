@@ -59,7 +59,7 @@ type SearchRoute = RouteProp<{ Search: { tag?: string } }, "Search">;
 export default function SearchPage() {
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const route = useRoute<SearchRoute>();
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   const isFetchingMore = useRef(false);
   
   const [searchTag, setSearchTag] = useState<string | undefined>(route.params?.tag || undefined);
@@ -185,7 +185,9 @@ export default function SearchPage() {
 
   return (
     <ThemedView style={styles.container}>
+      
       {loading && feedArticles.length === 0 ? null : (
+        
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           <FlatList
             data={
@@ -211,6 +213,7 @@ export default function SearchPage() {
               <>
                 <ThemedView style={styles.headerContainer}>
                   <ThemedView style={styles.searchContainers}>
+                    <ThemedText type="contentTitle">Search</ThemedText>
                     <SearchHeader
                       value={searchContent}
                       onChange={setSearchContent}
@@ -252,6 +255,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   searchContainers:{
+    gap: 10,
   },
   trendingTagsContainers:{
     flexDirection: 'row',

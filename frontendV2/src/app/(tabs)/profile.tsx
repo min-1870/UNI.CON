@@ -13,7 +13,7 @@ import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
 import { Animated } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 
 export default function ProfilePage() {
@@ -96,14 +96,6 @@ export default function ProfilePage() {
     // setLoading(false);
   }, [sortOption, lastResetPage]);
 
-  useFocusEffect(
-  useCallback(() => {
-      if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
-        fetchArticles();
-      }
-    }, [feedIds, sortOption, fetchArticles])
-  );
-  
   const fetchMoreArticles = useCallback(async () => {
     if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
       return;

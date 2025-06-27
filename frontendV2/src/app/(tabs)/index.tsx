@@ -252,7 +252,7 @@ export default function HomePage() {
         <FlatList
           data={
             uniOnly
-              ? feedArticles.filter(a => a.unicon === true)
+              ? feedArticles.filter(a => a.unicon === false)
               : feedArticles
           }
           keyExtractor={item => String(item.id)}
