@@ -5,7 +5,7 @@ import ThemedArticle from '@/components/ThemedArticle';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList, View } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
@@ -237,42 +237,42 @@ export default function ProfilePage() {
             resizeMode="cover"
           >
           </ImageBackground>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedView style={styles.credibilityScoreContainer}>
+      <View style={styles.titleContainer}>
+        <View style={styles.credibilityScoreContainer}>
           <ThemedText type={'contentTitle'}>Credibility Score</ThemedText>
-          <ThemedView style={styles.csRowContainer}>
+          <View style={styles.csRowContainer}>
             <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
             <ThemedText type={'contentSubTitle'}>Points</ThemedText>
-          </ThemedView>
-        </ThemedView>
-        <ThemedView style={styles.summaryContainer}>
+          </View>
+        </View>
+        <View style={styles.summaryContainer}>
           <ThemedText type={'contentTitle'}>Account Summary</ThemedText>
-          <ThemedView style={styles.rowsContainer}>
-            <ThemedView style={styles.rowContainer}>
+          <View style={styles.rowsContainer}>
+            <View style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>University</ThemedText>
               <ThemedText type={'articleBody'}>{initialData?.university}</ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.rowContainer}>
+            </View>
+            <View style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Student Email</ThemedText>
               <ThemedText type={'articleBody'}>{initialData?.email}</ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.rowContainer}>
+            </View>
+            <View style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Google Account</ThemedText>
               <ThemedText type={'articleBody'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.rowContainer}>
+            </View>
+            <View style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Update Password</ThemedText>
               <ThemedText onPress={() => router.push(`/newPassword`)} type={'articleBody'}>(Click for Update)</ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.rowContainer}>
+            </View>
+            <View style={styles.rowContainer}>
               <ThemedText type={'contentSubTitle'}>Logout</ThemedText>
               <ThemedText onPress={() => router.push(`/`)} type={'articleBody'}>(Click for Update)</ThemedText>
               
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
-      <ThemedView style={styles.buttonContainer}>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View style={styles.buttonContainer}>
         <ThemedButton
           type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
           onPress={() => setSortOption('posted')}
@@ -297,7 +297,7 @@ export default function ProfilePage() {
         >
           <ThemedText type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'} >Liked</ThemedText>
         </ThemedButton>
-      </ThemedView>
+      </View>
     </>
   );
   return (

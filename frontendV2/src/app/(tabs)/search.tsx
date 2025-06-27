@@ -17,9 +17,8 @@ import ThemedTag from '@/components/ThemedTag';
 import ThemedView from '@/components/ThemedView';
 import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
-import { useFocusEffect } from '@react-navigation/native';
 import { router } from "expo-router";
-// Memoized Tag header
+
 const TagHeader = memo<{
   tags: string[];
   selectedTag?: string;
@@ -211,8 +210,8 @@ export default function SearchPage() {
             onEndReachedThreshold={0.5}
             ListHeaderComponent={
               <>
-                <ThemedView style={styles.headerContainer}>
-                  <ThemedView style={styles.searchContainers}>
+                <View style={styles.headerContainer}>
+                  <View style={styles.searchContainers}>
                     <ThemedText type="contentTitle">Search</ThemedText>
                     <SearchHeader
                       value={searchContent}
@@ -222,9 +221,9 @@ export default function SearchPage() {
                         setSearched(true);
                       }}
                     />
-                  </ThemedView>
+                  </View>
                   <ThemedText type={'contentTitle'}>Tags</ThemedText>
-                  <ThemedView style={styles.trendingTagsContainers}>
+                  <View style={styles.trendingTagsContainers}>
                     <TagHeader
                       tags={tags}
                       selectedTag={searchTag}
@@ -237,8 +236,8 @@ export default function SearchPage() {
                         }
                       }}
                     />
-                  </ThemedView>
-                </ThemedView>
+                  </View>
+                </View>
               </>
             }
           />

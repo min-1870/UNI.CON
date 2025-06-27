@@ -23,6 +23,87 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useArticlesStore } from '@/store/articleStore';
 import { useRoute } from '@react-navigation/native';
 
+  const Header = React.memo(function Header({
+    initialData,
+    tags,
+    defaultCardBg,
+    uniOnly,
+    sortOption,
+    setSortOption,
+    setUniOnly,
+  }: {
+    initialData: InitialDataType | null;
+    tags: string[];
+    defaultCardBg: string;
+    uniOnly: boolean;
+    sortOption: keyof typeof apiEndpoints;
+    setSortOption: (o: keyof typeof apiEndpoints) => void;
+    setUniOnly: (u: boolean) => void;
+  }) {
+  return (
+    <>
+      <ImageBackground
+        source={require("../../assets/images/indexBg.png")}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+      
+      <View style={styles.titleContainer}>
+        <View style={styles.titleHeaderContainer}>
+          <ThemedText type='contentTitle'>UNI.CON</ThemedText>
+          <Pressable onPress={() => router.push('/notification')}>
+            <Ionicons name='notifications-outline' size={25} />
+          </Pressable>
+        </View>
+        <View style={styles.titleContentContainer}>
+          <ThemedText type='university' style={{ marginBottom: 15 }}>
+            {initialData?.university}
+          </ThemedText>
+          <ThemedText type='contentSubTitle' style={{ marginBottom: 5 }}>
+            Currently, they are chatting about..
+          </ThemedText>
+          <View style={styles.trendingTagsContainers}>
+            {tags.map((tag, i) => (
+              <Pressable key={i}>
+                <ThemedTag text={tag} type='bigRanked' />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        <View style={styles.buttonContainer}>
+          <View style={[styles.sortingButtons, { backgroundColor: defaultCardBg }]}>
+            {(['all','hot','recommend'] as const).map(opt => (
+              <ThemedButton
+                key={opt}
+                type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
+                onPress={() => setSortOption(opt)}
+              >
+                <ThemedText type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}>
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </ThemedText>
+              </ThemedButton>
+            ))}
+          </View>
+          <ThemedButton
+            type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
+            onPress={() => setUniOnly(!uniOnly)}
+          >
+            <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'}>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
+          </ThemedButton>
+        </View>
+      </View>
+    </>
+  );
+  }, (prev, next) => {
+    // only re-render if initialData, tags, uniOnly, or sortOption actually change
+    return (
+      prev.initialData === next.initialData &&
+      prev.tags === next.tags &&
+      prev.uniOnly === next.uniOnly &&
+      prev.sortOption === next.sortOption
+    );
+  });
+
 const apiEndpoints = {
   all: URLs.TIME_SORTED_ARTICLES,
   hot: URLs.HOT_SORTED_ARTICLES,
@@ -186,60 +267,6 @@ export default function HomePage() {
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);
 
-  const renderHeader = useCallback(() => (
-    <>
-      <ImageBackground
-        source={require("../../assets/images/indexBg.png")}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
-      />
-      <ThemedView style={styles.titleContainer}>
-        <ThemedView style={styles.titleHeaderContainer}>
-          <ThemedText type='contentTitle'>UNI.CON</ThemedText>
-          <Pressable onPress={() => router.push('/notification')}>
-            <Ionicons name='notifications-outline' size={25} />
-          </Pressable>
-        </ThemedView>
-        <ThemedView style={styles.titleContentContainer}>
-          <ThemedText type='university' style={{ marginBottom: 15 }}>
-            {initialData?.university}
-          </ThemedText>
-          <ThemedText type='contentSubTitle' style={{ marginBottom: 5 }}>
-            Currently, they are chatting about..
-          </ThemedText>
-          <ThemedView style={styles.trendingTagsContainers}>
-            {tags.map((tag, i) => (
-              <Pressable key={i}>
-                <ThemedTag text={tag} type='bigRanked' />
-              </Pressable>
-            ))}
-          </ThemedView>
-        </ThemedView>
-        <View style={styles.buttonContainer}>
-          <ThemedView style={[styles.sortingButtons, { backgroundColor: defaultCardBg }]}>
-            {(['all','hot','recommend'] as const).map(opt => (
-              <ThemedButton
-                key={opt}
-                type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
-                onPress={() => setSortOption(opt)}
-              >
-                <ThemedText type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </ThemedText>
-              </ThemedButton>
-            ))}
-          </ThemedView>
-          <ThemedButton
-            type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
-            onPress={() => setUniOnly(!uniOnly)}
-          >
-            <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'}>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
-          </ThemedButton>
-        </View>
-      </ThemedView>
-    </>
-  ), [initialData, tags, sortOption, defaultCardBg, uniOnly]);
-
   const renderItem = useCallback(
     ({ item }: { item: ArticleType }) => (
       <ThemedArticle trendingTags={tags} initialData={initialData} articleData={item} />
@@ -248,7 +275,7 @@ export default function HomePage() {
   );
   return (
     <ThemedView style={styles.container}>
-      <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+      {/* <Animated.View style={{ flex: 1, opacity: contentOpacity }}> */}
         <FlatList
           data={
             uniOnly
@@ -257,7 +284,17 @@ export default function HomePage() {
           }
           keyExtractor={item => String(item.id)}
           renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={
+            <Header
+              initialData={initialData}
+              tags={tags}
+              defaultCardBg={defaultCardBg}
+              uniOnly={uniOnly}
+              sortOption={sortOption}
+              setSortOption={setSortOption}
+              setUniOnly={setUniOnly}
+            />
+          }
           ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
           contentContainerStyle={styles.feedContainer}
           showsVerticalScrollIndicator={false}
@@ -268,7 +305,7 @@ export default function HomePage() {
           windowSize={5}
           removeClippedSubviews={true}
         />
-      </Animated.View>
+      {/* </Animated.View> */}
     </ThemedView>
   );
 }
