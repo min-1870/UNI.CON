@@ -240,8 +240,10 @@ const PostCard: React.FC<PostCardProps> = ({
       shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
       shadowRadius: 8,
       elevation: 3,
-      borderWidth: 1,
-      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+      borderWidth: normalizedData.save_status ? 2 : 1,
+      borderColor: normalizedData.save_status 
+        ? '#10B981' // Green border for saved posts
+        : colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
     },
     header: {
       flexDirection: 'row',

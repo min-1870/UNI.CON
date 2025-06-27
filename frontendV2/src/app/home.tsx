@@ -41,9 +41,12 @@ interface Article {
   course_code: string;
   likes_count: number;
   comments_count: number;
+  views_count: number;
   save_status: boolean;
+  user_school: string;
   image?: string;
-  like_status?: boolean;
+  like_status: boolean;
+  tag?: string;
 }
 
 type FilterType = 'All' | 'Hot' | 'Recommended';
@@ -145,21 +148,32 @@ export default function Home() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      console.log(`🔄 Refreshing ${selectedFilter} articles...`);
+      
       const response = await fetchAPI(apiEndpoints[selectedFilter], {
         method: 'GET',
         token: true,
       });
 
       if (!response.error) {
-        setArticles(response.data?.results?.articles || []);
+        const articles = response.data?.results?.articles || [];
+        console.log(`✅ Refreshed ${articles.length} articles for ${selectedFilter}`);
+        
+        setArticles(articles);
         setNextPage(response.data?.next || null);
         fetchedPage.current = apiEndpoints[selectedFilter];
         setError(null);
       } else {
-        setError(response?.data?.detail || "An error occurred");
+        const errorMessage = typeof response.data === 'string' 
+          ? response.data 
+          : response?.data?.detail || response?.data?.error || "Failed to refresh articles";
+        
+        console.error(`❌ Refresh Error for ${selectedFilter}:`, response);
+        setError(errorMessage);
       }
-    } catch (err) {
-      setError("Failed to refresh articles");
+    } catch (err: any) {
+      console.error(`❌ Refresh Network Error for ${selectedFilter}:`, err);
+      setError(`Network error: ${err.message || 'Please check your connection'}`);
     } finally {
       setRefreshing(false);
     }
@@ -665,21 +679,12 @@ export default function Home() {
               }
               renderItem={({ item }: any) => (
                 <PostCard
-                  post={{
-                    id: String((item as Article).id),
-                    user: (item as Article).user_temp_name || 'Unknown',
-                    timestamp: (item as Article).created_at,
-                    title: (item as Article).title,
-                    content: (item as Article).body,
-                    tags: (item as Article).course_code ? 
-                      (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
-                      ['school', 'study'], // Fallback tags for testing
-                    likes: (item as Article).likes_count,
-                    comments: (item as Article).comments_count,
-                    bookmarks: (item as Article).save_status ? 1 : 0,
-                    image: (item as Article).image,
-                    like_status: (item as Article).like_status || false,
-                  }}
+                                      article={{
+                      ...item,
+                      like_status: item.like_status || false,
+                      views_count: item.views_count || 0,
+                      user_school: item.user_school || '',
+                    } as Article}
                   onPress={() => {
                     // Debug: Log the item data to see what tags are available
                     console.log('Article data:', {

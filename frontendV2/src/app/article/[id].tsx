@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Animated, Easing, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity, Pressable, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
@@ -238,22 +238,18 @@ export default function ArticleDetailPage() {
     } else {
       try {
         setLoadingReplies(commentId);
-        const requestUrl = URLs.COMMENT(commentId);
-        console.log('🔍 Fetching nested comments for comment ID:', commentId);
-        console.log('🌐 Request URL:', requestUrl);
         
-        // Debug: Test URL construction
-        console.log('🧪 URL Tests:');
-        console.log('  - URLs.COMMENT():', URLs.COMMENT());
-        console.log('  - URLs.COMMENT("123"):', URLs.COMMENT("123"));
-        console.log('  - URLs.COMMENT_LIKE("123"):', URLs.COMMENT_LIKE("123"));
+        // Ensure comment ID is properly formatted
+        const cleanCommentId = String(commentId).trim();
+        const requestUrl = URLs.COMMENT(cleanCommentId);
+        console.log('🔍 Fetching nested comments for comment ID:', cleanCommentId);
+        console.log('🔗 Generated URL:', requestUrl);
         
         // Add pagination parameter (backend expects page parameter)
         const urlWithParams = `${requestUrl}?page=1`;
-        console.log('🌐 Final URL with params:', urlWithParams);
+        console.log('🔗 Final URL with params:', urlWithParams);
         
         const response = await fetchAPI(urlWithParams, { method: 'GET', token: true });
-        console.log('📡 Raw API response:', response);
         
         if (!response.error) {
           // Try different response structures
@@ -262,15 +258,14 @@ export default function ArticleDetailPage() {
                                 response.data?.nested_comments || 
                                 response.data || [];
           
-          console.log('📝 Extracted nested comments:', nestedComments);
-          console.log('📊 Number of nested comments found:', nestedComments.length);
+          console.log('📝 Extracted nested comments:', nestedComments.length, 'found');
           
           // Reverse nested comments so latest replies appear at bottom (oldest first)
           const orderedNestedComments = Array.isArray(nestedComments) ? nestedComments.reverse() : [];
           
           setComments((prevComments) =>
             prevComments.map((comment) =>
-              String(comment.id) === String(commentId)
+              String(comment.id) === String(cleanCommentId)
                 ? {
                     ...comment,
                     nested_comments: orderedNestedComments,
@@ -280,7 +275,7 @@ export default function ArticleDetailPage() {
             )
           );
           
-          console.log('✅ Successfully loaded nested comments');
+          console.log('✅ Successfully loaded', orderedNestedComments.length, 'nested comments');
         } else {
           console.error('❌ API returned error:', response);
           
@@ -347,7 +342,7 @@ export default function ArticleDetailPage() {
   // Render nested comments with proper indentation
   const renderNestedComments = (nestedComments: any[], level: number = 1, parentCommentId?: string) => {
     return nestedComments.map((nestedComment) => (
-      <View key={nestedComment.id} style={[styles.commentRow, { marginLeft: level * 20 }]}>
+      <View key={nestedComment.id} style={[styles.commentRow, { marginLeft: level * 35 }]}>
         <View style={styles.commentAvatar}>
           <Text style={styles.commentAvatarText}>{(nestedComment.user_temp_name || 'U')[0]}</Text>
         </View>
@@ -724,7 +719,7 @@ export default function ArticleDetailPage() {
                           horizontal
                           renderItem={({ item }) => (
                             <View style={styles.imageWrapper}>
-                              <img src={item} alt="article" style={{ width: 300, height: 180, borderRadius: 12, objectFit: 'cover' }} />
+                              <Image source={{ uri: item }} style={{ width: 300, height: 180, borderRadius: 12 }} resizeMode="cover" />
                             </View>
                           )}
                           keyExtractor={(_, idx) => String(idx)}
