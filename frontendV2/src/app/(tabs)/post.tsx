@@ -9,6 +9,7 @@ import { ImagePickerResult } from 'expo-image-picker'
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedView from '@/components/ThemedView';
+import ThemedCard from '@/components/ThemedCard';
 import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
@@ -33,9 +34,9 @@ export default function NewArticlePage() {
 
   const tagInputRef = useRef<TextInput>(null);
 
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const place_holder_color = useThemeColor({}, 'default_placeholder_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
+  const default_card_background_color = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const place_holder_color = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const default_text_color = useThemeColor({}, 'DEFAULT_TEXT');
   
   const handlePost = async () => {
     setLoading(true);
@@ -288,19 +289,14 @@ export default function NewArticlePage() {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: default_card_background_color,
     },
     cardContainer: {
       minHeight: 700,
       display: 'flex',
-      color: default_card_background_color,
-      borderRadius: 30,
+      borderBottomLeftRadius: 30,
+      borderBottomRightRadius: 30,
       padding: 20, 
       marginBottom: 20,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
     },
     textAreasContainer:{
       display: 'flex',
@@ -366,15 +362,14 @@ export default function NewArticlePage() {
 
   return (
     <ScrollView 
-        style={{ backgroundColor: default_card_background_color }} 
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
     >
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.cardContainer}>
-        <ThemedView style={styles.textAreasContainer}>
+      <ThemedCard style={styles.cardContainer}>
+        <View style={styles.textAreasContainer}>
           <TextInput
             style={[removeOutline, styles.titleTextArea]}
             underlineColorAndroid="transparent" 
@@ -425,8 +420,8 @@ export default function NewArticlePage() {
               </React.Fragment>
             );
           })}
-        </ThemedView>
-        <ThemedView style={styles.uniconContainer}>
+        </View>
+        <View style={styles.uniconContainer}>
             <ThemedText>
               By enabling the unicon option your post will be visible to other supported university students
             </ThemedText>
@@ -446,9 +441,9 @@ export default function NewArticlePage() {
             >
               <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
             </ThemedButton>
-          </ThemedView>
-      </ThemedView>
-      <ThemedView style={styles.tagAreaContainer} >
+          </View>
+      </ThemedCard>
+      <View style={styles.tagAreaContainer} >
         <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >
         <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
@@ -486,7 +481,7 @@ export default function NewArticlePage() {
           />
         </View>
         </Pressable>
-      </ThemedView>
+      </View>
     </ThemedView>
     </ScrollView>
   );

@@ -20,9 +20,8 @@ export default function ThemedButton({
   type ='auth',
   ...rest
 }: ThemedButtonProps) {
-    const background_color = useThemeColor({}, 'default_brand_color');
-    const default_brand_color = useThemeColor({}, 'default_brand_color');
-    const default_card_background_color = useThemeColor({}, 'default_card_background_color');
+    const DEFAULT_TOGGLED_COLOR = useThemeColor({}, 'UNICON_BACKGROUND');
+    const DEFAULT_UNTOGGLED_COLOR = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
 
   const styles = type === 'auth'
     ? StyleSheet.create({
@@ -30,7 +29,7 @@ export default function ThemedButton({
           padding: 12,
           borderRadius: 20,
           width: '100%',
-          backgroundColor: background_color,
+          backgroundColor: DEFAULT_TOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -41,7 +40,7 @@ export default function ThemedButton({
           paddingHorizontal: 12,
           paddingVertical: 5,
           borderRadius: 50,
-          backgroundColor: background_color,
+          backgroundColor: DEFAULT_TOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -52,7 +51,7 @@ export default function ThemedButton({
           paddingHorizontal: 12,
           paddingVertical: 5,
           borderRadius: 50,
-          backgroundColor: default_card_background_color,
+          backgroundColor: DEFAULT_UNTOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -63,7 +62,7 @@ export default function ThemedButton({
           paddingHorizontal: 20,
           paddingVertical: 10,
           borderRadius: 50,
-          backgroundColor: default_brand_color,
+          backgroundColor: DEFAULT_TOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -74,7 +73,7 @@ export default function ThemedButton({
           paddingHorizontal: 20,
           paddingVertical: 10,
           borderRadius: 50,
-          backgroundColor: default_brand_color,
+          backgroundColor: DEFAULT_TOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
       
@@ -91,8 +90,8 @@ export default function ThemedButton({
           paddingVertical: 5,
           borderRadius: 50,
           borderWidth: 5,
-          borderColor: default_brand_color,
-          backgroundColor: default_card_background_color,
+          borderColor: DEFAULT_TOGGLED_COLOR,
+          backgroundColor: DEFAULT_UNTOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -104,8 +103,8 @@ export default function ThemedButton({
           paddingVertical: 5,
           borderRadius: 50,
           borderWidth: 5,
-          borderColor: default_brand_color,
-          backgroundColor: default_card_background_color,
+          borderColor: DEFAULT_TOGGLED_COLOR,
+          backgroundColor: DEFAULT_UNTOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
       
@@ -121,7 +120,7 @@ export default function ThemedButton({
           paddingVertical: 5,
           borderRadius: 50,
           borderWidth: 5,
-          borderColor: default_brand_color,
+          borderColor: DEFAULT_TOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },

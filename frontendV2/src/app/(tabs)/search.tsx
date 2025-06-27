@@ -3,7 +3,6 @@ import {
   StyleSheet,
   FlatList,
   View,
-  Animated,
   Pressable,
 } from "react-native";
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
@@ -17,7 +16,12 @@ import ThemedTag from '@/components/ThemedTag';
 import ThemedView from '@/components/ThemedView';
 import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
+import ThemedShimmer from '@/components/ThemedShimmer';
 import { router } from "expo-router";
+import { createShimmerPlaceholder } from 'react-native-shimmer-placeholder';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const ShimmerPlaceHolder = createShimmerPlaceholder(LinearGradient);
 
 const TagHeader = memo<{
   tags: string[];
@@ -56,9 +60,7 @@ const SearchHeader = memo<{
 type SearchRoute = RouteProp<{ Search: { tag?: string } }, "Search">;
 
 export default function SearchPage() {
-  const contentOpacity = useRef(new Animated.Value(0)).current;
   const route = useRoute<SearchRoute>();
-  // const navigation = useNavigation();
   const isFetchingMore = useRef(false);
   
   const [searchTag, setSearchTag] = useState<string | undefined>(route.params?.tag || undefined);
@@ -105,15 +107,6 @@ export default function SearchPage() {
   useEffect(() => {
     fetchArticles();
   },[sortOption])
-
-  useEffect(() => {
-    Animated.timing(contentOpacity, {
-      toValue: loading ? 0 : 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [loading]);
-
     
   useEffect(() => {
     if (route.params?.tag) {
@@ -145,6 +138,7 @@ export default function SearchPage() {
   }, []);
   
   const fetchArticles = useCallback(async () => {
+    setLoading(true);
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
       return;      
     }
@@ -163,6 +157,7 @@ export default function SearchPage() {
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
+    setLoading(false);
   }, [searchContent, searchTag, sortOption, lastResetPage]);
 
 
@@ -184,65 +179,70 @@ export default function SearchPage() {
 
   return (
     <ThemedView style={styles.container}>
-      
-      {loading && feedArticles.length === 0 ? null : (
-        
-        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          <FlatList
-            data={
-              searchTag
-                ? feedArticles.filter(a =>
-                    Array.isArray(a.tag)
-                      ? (a.tag as string[]).includes(searchTag)
-                      : true
-                  )
-                : feedArticles
-            }
-            keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => (
-              <ThemedArticle initialData={initialData} articleData={item} />
-            )}
-            contentContainerStyle={styles.feedContainer}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={true}
-            keyboardShouldPersistTaps="handled"
-            onEndReached={fetchMoreArticles}
-            onEndReachedThreshold={0.5}
-            ListHeaderComponent={
-              <>
-                <View style={styles.headerContainer}>
-                  <View style={styles.searchContainers}>
-                    <ThemedText type="contentTitle">Search</ThemedText>
-                    <SearchHeader
-                      value={searchContent}
-                      onChange={setSearchContent}
-                      onSubmit={() => {
-                        setSearchTag(undefined);     
-                        setSearched(true);
-                      }}
-                    />
-                  </View>
-                  <ThemedText type={'contentTitle'}>Tags</ThemedText>
-                  <View style={styles.trendingTagsContainers}>
-                    <TagHeader
-                      tags={tags}
-                      selectedTag={searchTag}
-                      onTagPress={(tag) => {
-                        if (searchTag === tag) {
-                          setSearchTag(undefined);
-                        }
-                        else {
-                          setSearchTag(tag);
-                        }
-                      }}
-                    />
-                  </View>
-                </View>
-              </>
-            }
-          />
-        </Animated.View>
-      )}
+      <FlatList
+        data={
+          searchTag
+            ? feedArticles.filter(a =>
+                Array.isArray(a.tag)
+                  ? (a.tag as string[]).includes(searchTag)
+                  : true
+              )
+            : feedArticles
+        }
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <ThemedArticle initialData={initialData} articleData={item} />
+        )}
+        contentContainerStyle={styles.feedContainer}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
+        onEndReached={fetchMoreArticles}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={loading ? (
+          <>
+            {[...Array(5)].map((_, idx) => (
+              <ThemedShimmer idx={idx} ></ThemedShimmer>
+            ))}
+          </>
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
+            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+          </View>
+        )}
+        ListHeaderComponent={
+          <>
+            <View style={styles.headerContainer}>
+              <View style={styles.searchContainers}>
+                <ThemedText type="contentTitle">Search</ThemedText>
+                <SearchHeader
+                  value={searchContent}
+                  onChange={setSearchContent}
+                  onSubmit={() => {
+                    setSearchTag(undefined);     
+                    setSearched(true);
+                  }}
+                />
+              </View>
+              <ThemedText type={'contentTitle'}>Tags</ThemedText>
+              <View style={styles.trendingTagsContainers}>
+                <TagHeader
+                  tags={tags}
+                  selectedTag={searchTag}
+                  onTagPress={(tag) => {
+                    if (searchTag === tag) {
+                      setSearchTag(undefined);
+                    }
+                    else {
+                      setSearchTag(tag);
+                    }
+                  }}
+                />
+              </View>
+            </View>
+          </>
+        }
+      />
     </ThemedView>
   );
 }
@@ -263,11 +263,6 @@ const styles = StyleSheet.create({
     marginHorizontal:15,
   },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  input: {
-    height: 50,
-    borderRadius: 50,
-    backgroundColor: "#fff",
-  },
   feedContainer: {
     alignItems: 'stretch',
     gap: 20,

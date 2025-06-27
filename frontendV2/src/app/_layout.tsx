@@ -21,7 +21,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { width } = useWindowDimensions();
-  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const DEFAULT_BACKGROUND = useThemeColor({}, 'DEFAULT_BACKGROUND');
   
   const maxContentWidth = 500;
   const containerWidth =
@@ -47,7 +47,7 @@ export default function RootLayout() {
   const styles = StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: backgroundColor,
+      backgroundColor: DEFAULT_BACKGROUND,
     },
     outer: {
       flex: 1,

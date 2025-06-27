@@ -9,10 +9,10 @@ export default function ThemedInput({
   type='auth',
   ...rest
 }: ThemedInputProps) {
-    const backgroundColor = useThemeColor({}, 'default_input_background_color');
-    const placeholderColor = useThemeColor({}, 'default_placeholder_color');
-    const textColor = useThemeColor({}, 'default_text_color');
-    const default_card_background_color = useThemeColor({}, 'default_card_background_color');
+    const DEFAULT_GRAY_BACKGROUND = useThemeColor({}, 'DEFAULT_GRAY_BACKGROUND');
+    const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+    const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+    const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
 
     const default_style = {
       ...(Platform.OS === 'web'
@@ -24,11 +24,11 @@ export default function ThemedInput({
           style: {
             padding: 12,
             paddingHorizontal: 20,
-            backgroundColor: backgroundColor,
+            backgroundColor: DEFAULT_GRAY_BACKGROUND,
             borderRadius: 50,
             alignItems: 'center',
             justifyContent: 'center',
-            color: textColor, 
+            color: DEFAULT_TEXT, 
             width: '100%',
           },
         })
@@ -37,11 +37,11 @@ export default function ThemedInput({
           style: {
             padding: 12,
             paddingHorizontal: 20,
-            backgroundColor: backgroundColor,
+            backgroundColor: DEFAULT_GRAY_BACKGROUND,
             borderRadius: 50,
             alignItems: 'center',
             justifyContent: 'center',
-            color: textColor, 
+            color: DEFAULT_TEXT, 
             width: '100%',
           },
         })
@@ -50,11 +50,11 @@ export default function ThemedInput({
           style: {
             paddingHorizontal: 30,
             paddingVertical: 18,
-            backgroundColor: default_card_background_color,
+            backgroundColor: DEFAULT_CARD_BACKGROUND,
             borderRadius: 50,
             alignItems: 'center',
             justifyContent: 'center',
-            color: textColor, 
+            color: DEFAULT_TEXT, 
             width: '100%',
             
             boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
@@ -72,7 +72,7 @@ export default function ThemedInput({
     <TextInput
       style={[default_style, styles.style, rest.style]}
       {...rest}
-      placeholderTextColor={placeholderColor}
+      placeholderTextColor={DEFAULT_GRAY_TEXT}
     />
   );
 }

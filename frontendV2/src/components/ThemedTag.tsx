@@ -21,16 +21,23 @@ export default function ThemedTag({
     textRegular: require('../assets/fonts/SF-Pro-Text-Regular.otf'),
     textBold: require('../assets/fonts/SF-Pro-Text-Bold.otf'),
   });
-  const background_color = useThemeColor({}, 'default_tag_background_color');
-  const textColor = useThemeColor({}, 'default_text_color');
-  const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
-  const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
-  const uniTextColor = useThemeColor({}, 'uniTagTextColor');
+
+  const DEFAULT_TAG_BG = useThemeColor({}, 'DEFAULT_TAG_BACKGROUND');
+  const DEFAULT_TEXT_COLOR = useThemeColor({}, 'DEFAULT_TEXT');
+  const RANKED_TAG_BG = useThemeColor({}, 'RANKED_TAG_BACKGROUND');
+  const RANKED_TAG_TEXT = useThemeColor({}, 'RANKED_TAG_TEXT');
+  const ALWAYS_WHILE = useThemeColor({}, 'ALWAYS_WHITE');
+
+  // const background_color = useThemeColor({}, 'default_tag_background_color');
+  // const textColor = useThemeColor({}, 'default_text_color');
+  // const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
+  // const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
+  // const uniTextColor = useThemeColor({}, 'uniTagTextColor');
 
   const styles = type === 'bigRanked' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: rankedBackgroundColor,
+        backgroundColor: RANKED_TAG_BG,
         borderRadius: 16,
         paddingHorizontal: 13,
         paddingVertical: 4,
@@ -38,31 +45,31 @@ export default function ThemedTag({
         },
         Text: {
         fontSize: 14,
-        color: rankedTextColor,
+        color: RANKED_TAG_TEXT,
         fontFamily: 'textRegular',
         },
     })
     : type === 'selectedRanked' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: rankedBackgroundColor,
+        backgroundColor: RANKED_TAG_BG,
         borderRadius: 16,
         paddingHorizontal: 9,
         paddingVertical: 4,
         marginRight: 8,
         borderWidth: 1.5,
-        borderColor: rankedTextColor,
+        borderColor: RANKED_TAG_TEXT,
         },
         Text: {
         fontSize: 12,
-        color: rankedTextColor,
+        color: RANKED_TAG_TEXT,
         fontFamily: 'textRegular',
         },
     })    
     : type === 'ranked' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: rankedBackgroundColor,
+        backgroundColor: RANKED_TAG_BG,
         borderRadius: 16,
         paddingHorizontal: 9,
         paddingVertical: 4,
@@ -70,31 +77,31 @@ export default function ThemedTag({
         },
         Text: {
         fontSize: 12,
-        color: rankedTextColor,
+        color: RANKED_TAG_TEXT,
         fontFamily: 'textRegular',
         },
     })
     : type === 'uni' ?
     StyleSheet.create({
         tag: {
-        backgroundColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color,
+        backgroundColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : DEFAULT_TAG_BG,
         borderRadius: 16,
         paddingHorizontal: 5,
         paddingVertical: 3,
 
-        boxShadow: `0px 0px 13px ${initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : background_color}`,
+        boxShadow: `0px 0px 13px ${initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : DEFAULT_TAG_BG}`,
         backdropFilter: 'blur(10px)', // For web platforms
         elevation: 10, // For Android shadow
         },
         Text: {
         fontSize: 8,
-        color: uniTextColor,
+        color: ALWAYS_WHILE,
         fontFamily: 'textBold',
         },
     })
     : StyleSheet.create({ //default tag
         tag: {
-        backgroundColor: background_color,
+        backgroundColor: DEFAULT_TAG_BG,
         borderRadius: 16,
         paddingHorizontal: 9,
         paddingVertical: 4,
@@ -102,7 +109,7 @@ export default function ThemedTag({
         },
         Text: {
         fontSize: 12,
-        color: textColor,
+        color: DEFAULT_TEXT_COLOR,
         fontFamily: 'textRegular',
         },
     });
@@ -126,15 +133,5 @@ export default function ThemedTag({
         </View>
       )}
     </>
-    // <Pressable onPress={() => {
-    //     type !== 'uni' && !searchPage &&
-    //     router.push({
-    //       pathname: '/(tabs)/search',
-    //       params: { tag: String(text) }, 
-    //     });}}>
-    //   <View style={styles.tag}>
-    //       <Text style={styles.Text}>{text}</Text>
-    //   </View>
-    // </Pressable>
   );
 }

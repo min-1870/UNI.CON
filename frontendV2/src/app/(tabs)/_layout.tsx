@@ -21,7 +21,7 @@ const Tabs = createBottomTabNavigator<TabParamList>();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const default_brand_color = useThemeColor({}, 'default_brand_color');
+  const UNICON_BACKGROUND = useThemeColor({}, 'UNICON_BACKGROUND');
   const routeName = useRef('');
   const tabBarOptions = {
     style: {
@@ -31,7 +31,7 @@ export default function TabLayout() {
       paddingTop: 8,
       paddingHorizontal: 16,
     },
-    activeTintColor: default_brand_color, 
+    activeTintColor: UNICON_BACKGROUND, 
     inactiveTintColor: colorScheme === 'dark' ? '#a1a1aa' : '#6b7280',
   };
 

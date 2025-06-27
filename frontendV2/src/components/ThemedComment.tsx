@@ -22,10 +22,9 @@ type CommentProps = {
 
 function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
 
-  const default_text_color = useThemeColor({}, 'default_text_color');
-  const time_color = useThemeColor({}, 'default_placeholder_color');
-  const points_color = useThemeColor({}, 'default_brand_color');
-  const button_color = useThemeColor({}, 'default_placeholder_color');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const DEFAULT_UNICON = useThemeColor({}, 'UNICON_BACKGROUND');
 
   const styles = StyleSheet.create({
     container: {
@@ -54,27 +53,27 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       gap: 5,
     },
     uni: {
-      color: default_text_color,
+      color: DEFAULT_TEXT,
       fontWeight: '400',
       fontSize: 15,
     },
     name: {
-      color: default_text_color,
+      color: DEFAULT_TEXT,
       fontWeight: '600',
       fontSize: 18,
     },
     points: {
-      color: points_color,
+      color: DEFAULT_UNICON,
       fontWeight: '400',
       fontSize: 15,
     },
     time: {
-      color: time_color,
+      color: DEFAULT_GRAY_TEXT,
       fontWeight: '400',
       fontSize: 15,
     },
     body: {
-      color: default_text_color,
+      color: DEFAULT_TEXT,
       fontWeight: '400',
       fontSize: 17,
     },
@@ -186,7 +185,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
             <AntDesign
               name={commentData.like_status ? 'heart' : 'hearto'} 
               size={15}
-              color={button_color} 
+              color={DEFAULT_GRAY_TEXT} 
             />
             <ThemedText type='articleButton'>
               {commentData.likes_count}

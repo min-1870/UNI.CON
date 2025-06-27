@@ -8,6 +8,7 @@ import {fetchAPI, getData} from "@/components/Utils";
 import Markdown from 'react-native-markdown-display'
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedCard from '@/components/ThemedCard';
 import { Image } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
@@ -16,14 +17,9 @@ import moment from 'moment';
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      // backgroundColor: background_color,
       borderRadius: 20,
       marginHorizontal: 15,
       padding: 16, 
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
     },
     infoContainer: {
       flexDirection: 'row',
@@ -92,9 +88,7 @@ type ThemedArticleProps = {
 
 function ThemedArticle({ articleData, initialData, trendingTags, type='default',  }: ThemedArticleProps) {
 
-  const view_background_color = useThemeColor({}, 'default_view_card_background_color');
-  const background_color = useThemeColor({}, 'default_card_background_color');
-  const button_color = useThemeColor({}, 'default_placeholder_color');
+  const button_color = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const [fetchedTrendingTags, setFetchedTrendingTags] = useState<string[]>(trendingTags ?? []);
   
   const { bodies, imgUris } = useMemo(
@@ -172,10 +166,9 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
   }, [articleData.id]);
   
   return (
-    <View style={[
+    <ThemedCard viewed={articleData.view_status && type === 'default'} style={[
       styles.container,
       type === 'detail' && { borderTopRightRadius: 0, borderTopLeftRadius: 0, marginHorizontal: 0, marginBottom: 20 },
-      { backgroundColor: type === 'default' ? articleData.view_status ? view_background_color : background_color : background_color}
     ]}>
       <Pressable onPress={() => (type === 'default' && handleArticleDetail())}>
         <View style={[styles.infoContainer]}>
@@ -302,7 +295,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
           />
         </Pressable>
       </View>
-    </View>
+    </ThemedCard>
   );
 };
 
@@ -319,216 +312,3 @@ export default React.memo(
     prevProps.articleData.likes_count === nextProps.articleData.likes_count &&
     prevProps.articleData.save_status === nextProps.articleData.save_status
 );
-
-
-
-// import React, {
-//   useState,
-//   useEffect,
-//   useMemo,
-//   useCallback
-// } from "react";
-// import {
-//   View,
-//   Pressable,
-//   StyleSheet,
-//   Image
-// } from "react-native";
-// import { AntDesign, FontAwesome } from '@expo/vector-icons';
-// import moment from 'moment';
-// import Markdown from 'react-native-markdown-display';
-// import { useThemeColor } from '@/hooks/useThemeColor';
-// import { fetchAPI } from "@/components/Utils";
-// import { ArticleType, InitialDataType } from '@/constants/types';
-// import URLs from "@/constants/Urls";
-// import ThemedText from '@/components/ThemedText';
-// import ThemedTag from '@/components/ThemedTag';
-// import { router } from 'expo-router';
-
-// // Hoist and cache regex once
-// const IMG_REGEX = new RegExp(
-//   `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
-//   'g'
-// );
-
-// // Module‐level cache for aspect ratios
-// const ratioCache = new Map<string, number>();
-
-// function parseMarkdownImages(raw: string) {
-//   const bodies: string[] = [];
-//   const imgUris: string[] = [];
-//   let lastIndex = 0;
-//   let m: RegExpExecArray | null;
-//   while ((m = IMG_REGEX.exec(raw)) !== null) {
-//     bodies.push(raw.slice(lastIndex, m.index));
-//     imgUris.push(m[1]);
-//     lastIndex = m.index + m[0].length;
-//   }
-//   bodies.push(raw.slice(lastIndex));
-//   return { bodies, imgUris };
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     borderRadius: 20,
-//     marginHorizontal: 15,
-//     padding: 16,
-//     backgroundColor: "#fff",
-//     elevation: 2,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.1,
-//     shadowRadius: 8,
-//     marginBottom: 20,
-//   },
-//   infoRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     marginBottom: 12,
-//     justifyContent: "space-between",
-//   },
-//   content: { marginBottom: 12 },
-//   buttonsRow: { flexDirection: "row", gap: 16, marginTop: 12 },
-//   image: {
-//     width: "100%",
-//     borderRadius: 12,
-//     marginVertical: 8,
-//   },
-//   tagContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-// });
-
-// type Props = {
-//   articleData: ArticleType;
-//   initialData?: InitialDataType | null;
-//   trendingTags: string[];
-// };
-
-// function ThemedArticle({
-//   articleData,
-//   initialData,
-//   trendingTags
-// }: Props) {
-//   const bg = useThemeColor({}, 'default_card_background_color');
-//   const textColor = useThemeColor({}, 'default_text_color');
-//   const iconColor = useThemeColor({}, 'default_placeholder_color');
-
-//   // Memoize parsed markdown
-//   const { bodies, imgUris } = useMemo(
-//     () => parseMarkdownImages(articleData.body),
-//     [articleData.body]
-//   );
-
-//   // Compute ratios, but cache to avoid repeated work
-//   const [ratios, setRatios] = useState<number[]>(
-//     imgUris.map(uri => ratioCache.get(uri) || (16/9))
-//   );
-//   useEffect(() => {
-//     imgUris.forEach((uri, i) => {
-//       if (!ratioCache.has(uri)) {
-//         Image.getSize(
-//           uri,
-//           (w, h) => {
-//             const r = w/h;
-//             ratioCache.set(uri, r);
-//             setRatios(rArr => {
-//               const copy = [...rArr];
-//               copy[i] = r;
-//               return copy;
-//             });
-//           },
-//           () => {}
-//         );
-//       }
-//     });
-//   }, [imgUris]);
-
-//   // Handlers memoized
-//   const handleLike = useCallback(async () => {
-//     const url = articleData.like_status
-//       ? URLs.ARTICLE_UNLIKE(String(articleData.id))
-//       : URLs.ARTICLE_LIKE(String(articleData.id));
-//     const res = await fetchAPI(url, { method: "POST" });
-//     if (res) {
-//       // You’d want to lift state up or use context
-//     }
-//   }, [articleData.id, articleData.like_status]);
-
-//   const handleSave = useCallback(async () => {
-//     const url = articleData.save_status
-//       ? URLs.ARTICLE_UNSAVE(String(articleData.id))
-//       : URLs.ARTICLE_SAVE(String(articleData.id));
-//     await fetchAPI(url, { method: "POST" });
-//   }, [articleData.id, articleData.save_status]);
-
-//   const goDetail = useCallback(() => {
-//     router.push({ pathname: '/article/[id]', params: { id: String(articleData.id) } });
-//   }, [articleData.id]);
-
-//   return (
-//     <Pressable onPress={goDetail} style={[styles.container, { backgroundColor: bg }]}>
-//       <View style={styles.infoRow}>
-//         <ThemedText type="articleAuthor">{articleData.user_temp_name}</ThemedText>
-//         <ThemedText type="articleDate">
-//           {moment(articleData.created_at).fromNow()}
-//         </ThemedText>
-//       </View>
-
-//       <View style={styles.content}>
-//         <ThemedText type="articleTitle">{articleData.title}</ThemedText>
-//         <ThemedText type="articleBody">
-//           {bodies[0].length > 150
-//             ? bodies[0].slice(0, 150).trimEnd() + "…"
-//             : bodies[0]}
-//         </ThemedText>
-//         {imgUris[0] && (
-//           <Image
-//             source={{ uri: imgUris[0] }}
-//             style={[styles.image, { aspectRatio: ratios[0] }]}
-//             resizeMode="cover"
-//           />
-//         )}
-//         <View style={styles.tagContainer}>
-//           {articleData.tag.map((t, i) => (
-//             <ThemedTag
-//               key={i}
-//               text={t}
-//               type={trendingTags.includes(t) ? "ranked" : "default"}
-//             />
-//           ))}
-//         </View>
-//       </View>
-
-//       <View style={styles.buttonsRow}>
-//         <Pressable onPress={handleLike} style={{ flexDirection: "row", gap: 4 }}>
-//           <AntDesign
-//             name={articleData.like_status ? "heart" : "hearto"}
-//             size={16}
-//             color={iconColor}
-//           />
-//           <ThemedText type="articleButton">{articleData.likes_count}</ThemedText>
-//         </Pressable>
-//         <Pressable style={{ flexDirection: "row", gap: 4 }}>
-//           <AntDesign name="message1" size={16} color={iconColor} />
-//           <ThemedText type="articleButton">{articleData.comments_count}</ThemedText>
-//         </Pressable>
-//         <Pressable onPress={handleSave} style={{ flexDirection: "row", gap: 4 }}>
-//           <FontAwesome
-//             name={articleData.save_status ? "bookmark" : "bookmark-o"}
-//             size={16}
-//             color={iconColor}
-//           />
-//         </Pressable>
-//       </View>
-//     </Pressable>
-//   );
-// }
-
-// // Only re-render when the few primitive props actually change
-// export default React.memo(
-//   ThemedArticle,
-//   (a, b) =>
-//     a.articleData.id === b.articleData.id &&
-//     a.articleData.like_status === b.articleData.like_status &&
-//     a.articleData.likes_count === b.articleData.likes_count &&
-//     a.articleData.save_status === b.articleData.save_status &&
-//     a.trendingTags.join(",") === b.trendingTags.join(",")
-// );

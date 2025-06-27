@@ -8,10 +8,10 @@ import ThemedButton from '@/components/ThemedButton';
 import { StyleSheet, FlatList, View } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
+import ThemedShimmer from '@/components/ThemedShimmer';
 import * as AuthSession from 'expo-auth-session';
 import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
-import { Animated } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
@@ -21,7 +21,6 @@ export default function ProfilePage() {
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
 
-  const contentOpacity = useRef(new Animated.Value(0)).current;
   const isFetchingMore = useRef(false);
   const route = useRoute();
   
@@ -32,7 +31,7 @@ export default function ProfilePage() {
   const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
   const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   
   const discovery = {
     authorizationEndpoint: URLs.authorizationEndpoint,
@@ -66,22 +65,10 @@ export default function ProfilePage() {
       fetchArticles();
     }
   }, [sortOption]);
-    
-  useEffect(() => {
-    if (loading) {
-      contentOpacity.setValue(0);
-    } else {
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [loading]);
 
 
   const fetchArticles = useCallback(async () => {
-    // setLoading(true);
+    setLoading(true);
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
       return;
     }
@@ -93,7 +80,7 @@ export default function ProfilePage() {
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
-    // setLoading(false);
+    setLoading(false);
   }, [sortOption, lastResetPage]);
 
   const fetchMoreArticles = useCallback(async () => {
@@ -216,7 +203,7 @@ export default function ProfilePage() {
       // justifyContent: 'space-between',
       padding: 3,
       borderRadius: 50,
-      backgroundColor: default_card_background_color,
+      backgroundColor: DEFAULT_CARD_BACKGROUND,
       marginHorizontal: 15,
       
       boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
@@ -301,24 +288,30 @@ export default function ProfilePage() {
     </>
   );
   return (
-    <ThemedView style={styles.container}>
-      {loading ? null : (
-        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          <FlatList
-            data={feedArticles}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
-            contentContainerStyle={styles.feedContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<ThemedText type='contentPlaceholder'>No articles found.</ThemedText>}
-            ListHeaderComponent={renderHeader}
-            onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              fetchMoreArticles();
-            }}
-          />
-        </Animated.View>
-      )}
+    <ThemedView style={styles.container}>        
+      <FlatList
+        data={feedArticles}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
+        contentContainerStyle={styles.feedContainer}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={loading ? (
+          <>
+            {[...Array(5)].map((_, idx) => (
+              <ThemedShimmer key={idx} type="article"/>
+            ))}
+          </>
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
+            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+          </View>
+        )}
+        ListHeaderComponent={renderHeader}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          fetchMoreArticles();
+        }}
+      />
     </ThemedView>
   );
 }

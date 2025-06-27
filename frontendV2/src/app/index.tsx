@@ -19,10 +19,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const backgroundColor = useThemeColor({}, 'DEFAULT_BACKGROUND');
   const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
   
-  const cardBackgroundColor = useThemeColor({}, 'default_card_background_color');
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   
 
   const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -133,7 +133,7 @@ export default function LoginPage() {
       width: '100%',
       padding: 24,
       borderRadius: 20,
-      backgroundColor: cardBackgroundColor,
+      backgroundColor: DEFAULT_CARD_BACKGROUND,
       
       boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
       backdropFilter: 'blur(10px)', // For web platforms

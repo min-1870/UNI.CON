@@ -6,7 +6,6 @@ import {
   Pressable,
   ImageBackground,
   View,
-  Animated,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -18,91 +17,98 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedShimmer from '@/components/ThemedShimmer';
 import Toast from 'react-native-toast-message';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useArticlesStore } from '@/store/articleStore';
 import { useRoute } from '@react-navigation/native';
 
-  const Header = React.memo(function Header({
-    initialData,
-    tags,
-    defaultCardBg,
-    uniOnly,
-    sortOption,
-    setSortOption,
-    setUniOnly,
-  }: {
-    initialData: InitialDataType | null;
-    tags: string[];
-    defaultCardBg: string;
-    uniOnly: boolean;
-    sortOption: keyof typeof apiEndpoints;
-    setSortOption: (o: keyof typeof apiEndpoints) => void;
-    setUniOnly: (u: boolean) => void;
-  }) {
-  return (
-    <>
-      <ImageBackground
-        source={require("../../assets/images/indexBg.png")}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
-      />
-      
-      <View style={styles.titleContainer}>
-        <View style={styles.titleHeaderContainer}>
-          <ThemedText type='contentTitle'>UNI.CON</ThemedText>
-          <Pressable onPress={() => router.push('/notification')}>
-            <Ionicons name='notifications-outline' size={25} />
-          </Pressable>
-        </View>
-        <View style={styles.titleContentContainer}>
-          <ThemedText type='university' style={{ marginBottom: 15 }}>
-            {initialData?.university}
-          </ThemedText>
-          <ThemedText type='contentSubTitle' style={{ marginBottom: 5 }}>
-            Currently, they are chatting about..
-          </ThemedText>
-          <View style={styles.trendingTagsContainers}>
-            {tags.map((tag, i) => (
-              <Pressable key={i}>
-                <ThemedTag text={tag} type='bigRanked' />
-              </Pressable>
-            ))}
-          </View>
-        </View>
-        <View style={styles.buttonContainer}>
-          <View style={[styles.sortingButtons, { backgroundColor: defaultCardBg }]}>
-            {(['all','hot','recommend'] as const).map(opt => (
-              <ThemedButton
-                key={opt}
-                type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
-                onPress={() => setSortOption(opt)}
-              >
-                <ThemedText type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </ThemedText>
-              </ThemedButton>
-            ))}
-          </View>
-          <ThemedButton
-            type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
-            onPress={() => setUniOnly(!uniOnly)}
-          >
-            <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'}>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
-          </ThemedButton>
+const Header = React.memo(function Header({
+  initialData,
+  tags,
+  DEFAULT_CARD_BACKGROUND,
+  DEFAULT_TEXT,
+  uniOnly,
+  sortOption,
+  setSortOption,
+  setUniOnly,
+}: {
+  initialData: InitialDataType | null;
+  tags: string[];
+  DEFAULT_CARD_BACKGROUND: string;
+  DEFAULT_TEXT: string;
+  uniOnly: boolean;
+  sortOption: keyof typeof apiEndpoints;
+  setSortOption: (o: keyof typeof apiEndpoints) => void;
+  setUniOnly: (u: boolean) => void;
+}) {
+return (
+  <>
+    <ImageBackground
+      // source={require("../../assets/images/indexBg.png")}
+      source={
+        // Use different images based on theme
+        (require('react-native').useColorScheme?.() ?? 'light') === 'dark'
+          ? require("../../assets/images/indexBgDark.png")
+          : require("../../assets/images/indexBg.png")
+      }
+      style={StyleSheet.absoluteFillObject}
+      resizeMode="cover"
+    />      
+    <View style={styles.titleContainer}>
+      <View style={styles.titleHeaderContainer}>
+        <ThemedText type='contentTitle'>UNI.CON</ThemedText>
+        <Pressable onPress={() => router.push('/notification')}>
+          <Ionicons name='notifications-outline' size={25} color={DEFAULT_TEXT}/>
+        </Pressable>
+      </View>
+      <View style={styles.titleContentContainer}>
+        <ThemedText type='university' style={{ marginBottom: 15 }}>
+          {initialData?.university}
+        </ThemedText>
+        <ThemedText type='contentSubTitle' style={{ marginBottom: 5 }}>
+          Currently, they are chatting about..
+        </ThemedText>
+        <View style={styles.trendingTagsContainers}>
+          {tags.map((tag, i) => (
+            <Pressable key={i}>
+              <ThemedTag text={tag} type='bigRanked' />
+            </Pressable>
+          ))}
         </View>
       </View>
-    </>
+      <View style={styles.buttonContainer}>
+        <View style={[styles.sortingButtons, { backgroundColor: DEFAULT_CARD_BACKGROUND }]}>
+          {(['all','hot','recommend'] as const).map(opt => (
+            <ThemedButton
+              key={opt}
+              type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
+              onPress={() => setSortOption(opt)}
+            >
+              <ThemedText type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}>
+                {opt.charAt(0).toUpperCase() + opt.slice(1)}
+              </ThemedText>
+            </ThemedButton>
+          ))}
+        </View>
+        <ThemedButton
+          type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
+          onPress={() => setUniOnly(!uniOnly)}
+        >
+          <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'}>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
+        </ThemedButton>
+      </View>
+    </View>
+  </>
   );
-  }, (prev, next) => {
-    // only re-render if initialData, tags, uniOnly, or sortOption actually change
-    return (
-      prev.initialData === next.initialData &&
-      prev.tags === next.tags &&
-      prev.uniOnly === next.uniOnly &&
-      prev.sortOption === next.sortOption
-    );
-  });
+}, (prev, next) => {
+  return (
+    prev.initialData === next.initialData &&
+    prev.tags === next.tags &&
+    prev.uniOnly === next.uniOnly &&
+    prev.sortOption === next.sortOption
+  );
+});
 
 const apiEndpoints = {
   all: URLs.TIME_SORTED_ARTICLES,
@@ -164,7 +170,9 @@ const styles = StyleSheet.create({
 });
 
 export default function HomePage() {
-  const defaultCardBg = useThemeColor({}, 'default_card_background_color');
+  
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const route = useRoute();
   
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
@@ -174,7 +182,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const isFetchingMore = useRef(false);
-  const contentOpacity = useRef(new Animated.Value(0)).current;
 
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
@@ -221,22 +228,10 @@ export default function HomePage() {
     }
   }, [sortOption]);
 
-  // Animate content opacity based on loading state
-  useEffect(() => {
-    if (loading) {
-      contentOpacity.setValue(0);
-    } else {
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [loading, contentOpacity]);
-
   // FETCH ARTICLES on mount & sortOption change
   const fetchArticles = useCallback(async () => {
-    // setLoading(true);
+    setLoading(true);
+    // await new Promise(resolve => setTimeout(resolve, 5000));
     if (feedIds && (feedIds[sortOption]||[]).length > 0) {
       return;
     }
@@ -247,7 +242,7 @@ export default function HomePage() {
     } else {
       Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
-    // setLoading(false);
+    setLoading(false);
   }, [sortOption, lastResetPage]);
 
 
@@ -275,37 +270,46 @@ export default function HomePage() {
   );
   return (
     <ThemedView style={styles.container}>
-      {/* <Animated.View style={{ flex: 1, opacity: contentOpacity }}> */}
-        <FlatList
-          data={
-            uniOnly
-              ? feedArticles.filter(a => a.unicon === false)
-              : feedArticles
-          }
-          keyExtractor={item => String(item.id)}
-          renderItem={renderItem}
-          ListHeaderComponent={
-            <Header
-              initialData={initialData}
-              tags={tags}
-              defaultCardBg={defaultCardBg}
-              uniOnly={uniOnly}
-              sortOption={sortOption}
-              setSortOption={setSortOption}
-              setUniOnly={setUniOnly}
-            />
-          }
-          ListEmptyComponent={<ThemedText>No articles found.</ThemedText>}
-          contentContainerStyle={styles.feedContainer}
-          showsVerticalScrollIndicator={false}
-          onEndReachedThreshold={0.5}
-          onEndReached={fetchMoreArticles}
-          initialNumToRender={6}
-          maxToRenderPerBatch={8}
-          windowSize={5}
-          removeClippedSubviews={true}
-        />
-      {/* </Animated.View> */}
+      <FlatList
+        data={
+          uniOnly
+            ? feedArticles.filter(a => a.unicon === false)
+            : feedArticles
+        }
+        keyExtractor={item => String(item.id)}
+        renderItem={renderItem}
+        ListHeaderComponent={
+          <Header
+            initialData={initialData}
+            tags={tags}
+            DEFAULT_CARD_BACKGROUND={DEFAULT_CARD_BACKGROUND}
+            DEFAULT_TEXT={DEFAULT_TEXT}
+            uniOnly={uniOnly}
+            sortOption={sortOption}
+            setSortOption={setSortOption}
+            setUniOnly={setUniOnly}
+          />
+        }
+        ListEmptyComponent={loading ? (
+          <>
+            {[...Array(5)].map((_, idx) => (
+              <ThemedShimmer idx={idx} ></ThemedShimmer>
+            ))}
+          </>
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
+            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+          </View>
+        )}
+        contentContainerStyle={styles.feedContainer}
+        showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.5}
+        onEndReached={fetchMoreArticles}
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={true}
+      />
     </ThemedView>
   );
 }

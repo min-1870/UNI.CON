@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import ThemedText from '@/components/ThemedText';
 import Toast from 'react-native-toast-message';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedCard from '@/components/ThemedCard';
 import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 
@@ -33,9 +34,9 @@ export default function EditArticlePage() {
   const [raw, setRaw] = useState('');
   
   
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const place_holder_color = useThemeColor({}, 'default_placeholder_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const articleId = (useRoute().params as { id: string }).id;
 
   function parseMarkdownImages(raw: string): {
@@ -244,19 +245,19 @@ export default function EditArticlePage() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
-      backgroundColor: default_card_background_color, // navbar background
+      backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
       // shadowColor: 'transparent', // remove iOS bottom border
       elevation: 0, // remove Android shadow
       borderWidth: 0, 
       },
-      headerTintColor: default_text_color,
+      headerTintColor: DEFAULT_TEXT,
       headerTitleAlign: 'center',
       headerTitle: 'Edit Article',
       headerLeft: () => (
         <Feather 
           name="arrow-left" 
           size={24} 
-          color={default_text_color}
+          color={DEFAULT_TEXT}
           onPress={() => {
             setTitle('');
             setBodies(['']);
@@ -357,20 +358,14 @@ export default function EditArticlePage() {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: default_card_background_color,
     },
     cardContainer: {
       minHeight: 500,
       display: 'flex',
-      color: default_card_background_color,
-      borderRadius: 30,
+      borderBottomLeftRadius: 30,
+      borderBottomRightRadius: 30,
       padding: 20, 
       marginBottom: 20,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-
     },
     textAreasContainer:{
       display: 'flex',
@@ -386,7 +381,7 @@ export default function EditArticlePage() {
       borderRadius: 4,
       padding: 8,
       fontSize: 20,
-      color: default_text_color,
+      color: DEFAULT_TEXT,
     },
     activeBodyTextArea: {
       marginBottom: 20, 
@@ -397,7 +392,7 @@ export default function EditArticlePage() {
     borderRadius: 4,
     paddingHorizontal: 8,
     fontSize: 16,
-    color: default_text_color,
+    color: DEFAULT_TEXT,
     lineHeight: 30
   },
     tagAreaContainer:{
@@ -428,21 +423,21 @@ export default function EditArticlePage() {
 
   return (
     <ScrollView 
-        style={{ backgroundColor: default_card_background_color }} 
+        style={{ backgroundColor: DEFAULT_CARD_BACKGROUND }} 
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
     >
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.cardContainer}>
+      <ThemedCard style={styles.cardContainer}>
         <ThemedView style={styles.textAreasContainer}>
           <TextInput
             style={styles.titleTextArea}
             underlineColorAndroid="transparent" 
             numberOfLines={6}            
             placeholder="Title"
-            placeholderTextColor={place_holder_color}
+            placeholderTextColor={DEFAULT_GRAY_TEXT}
             value={title}
             onChangeText={setTitle}
             textAlignVertical="top"      
@@ -464,7 +459,7 @@ export default function EditArticlePage() {
                     underlineColorAndroid="transparent"
                     multiline
                     placeholder={isLastBlock ? "Continue writing..." : ""}
-                    placeholderTextColor={place_holder_color}
+                    placeholderTextColor={DEFAULT_GRAY_TEXT}
                     value={bodyText}
                     onChangeText={(text) => handleCurrentBody(text, idx)}
                     textAlignVertical="top"
@@ -507,7 +502,7 @@ export default function EditArticlePage() {
               <MaterialIcons
                 name="add-to-photos" 
                 size={17} 
-                color={default_text_color}
+                color={DEFAULT_TEXT}
               />
             </ThemedButton>
             <ThemedButton
@@ -516,8 +511,8 @@ export default function EditArticlePage() {
             >
               <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
             </ThemedButton>
-          </ThemedView>
-      </ThemedView>
+        </ThemedView>
+      </ThemedCard>
       <ThemedView style={styles.tagAreaContainer}>
         <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
@@ -532,7 +527,7 @@ export default function EditArticlePage() {
             onChangeText={setRaw}
             onKeyPress={onKeyPress}
             placeholder="Type and hit space"
-            placeholderTextColor={place_holder_color}
+            placeholderTextColor={DEFAULT_GRAY_TEXT}
             autoCorrect={false}
             autoCapitalize="none"
           />

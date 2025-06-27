@@ -19,8 +19,8 @@ export default function NotificationPage() {
   const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const default_card_background_color = useThemeColor({}, 'default_card_background_color');
-  const default_text_color = useThemeColor({}, 'default_text_color');
+  const default_card_background_color = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const default_text_color = useThemeColor({}, 'DEFAULT_TEXT');
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const fetchedNewNotificationPage = useRef(null);

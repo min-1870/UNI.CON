@@ -3,39 +3,53 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-const custom_colors = {
+const LIGHT_MODE = {
     UNICON_BACKGROUND: '#81ef90',
     UNICON_CONTENT: '#2c9669',
 
-    default_brand_color: '#81ef90',
-    default_card_background_color:  '#fafafa', //#f7f7f7
-    default_view_card_background_color:  '#ececec',
-    default_title_color: '#232835',
-    default_text_color: '#474854',
-    default_background_color: '#f8f9f7',
-    default_placeholder_color: '#a2a9b2',
-    default_input_background_color: '#f2f2f2',
-    default_error_color: '#f92665',
-    default_tag_background_color: '#e4e6e8',
+    DEFAULT_TEXT: '#232835',
+    DEFAULT_CARD_BACKGROUND: '#fafafa',
+    DEFAULT_VIEWED_CARD_BACKGROUND: '#ececec',
+    DEFAULT_BACKGROUND: '#f8f9f7',
 
-    //Tags
-    rankedTagBackgroundColor: '#E2F7E3',
-    rankedTagTextColor: '#3CC94F',
-    uniTagTextColor: '#ffffff',
+    DEFAULT_GRAY_TEXT: '#a2a9b2',
+    DEFAULT_GRAY_BACKGROUND: '#f2f2f2',
 
-    //
+    ALWAYS_BLACK: '#000000',
+    ALWAYS_WHITE: '#ffffff',
 
+    DEFAULT_TAG_BACKGROUND: '#e4e6e8',
+    RANKED_TAG_BACKGROUND: '#E2F7E3',
+    RANKED_TAG_TEXT: '#3CC94F',
+
+    SKIMMER_PRIMARY: '#4ecca3', // new skimmer color for light mode
+    SKIMMER_SECONDARY: '#e0f7ef', // new skimmer color for light mode
   };
+
+const DARK_MODE = {
+  UNICON_BACKGROUND: '#81ef90',
+  UNICON_CONTENT: '#2c9669',
+
+  DEFAULT_TEXT: '#e4e6e8',
+  DEFAULT_CARD_BACKGROUND: '#232835',
+  DEFAULT_VIEWED_CARD_BACKGROUND: '#2c2f3a',
+  DEFAULT_BACKGROUND: '#181a20',
+
+  DEFAULT_GRAY_TEXT: '#6c7380',
+  DEFAULT_GRAY_BACKGROUND: '#232835',
+
+  ALWAYS_BLACK: '#000000',
+  ALWAYS_WHITE: '#ffffff',
+
+  DEFAULT_TAG_BACKGROUND: '#2c2f3a',
+  RANKED_TAG_BACKGROUND: '#233b2a',
+  RANKED_TAG_TEXT: '#81ef90',
+
+  SKIMMER_PRIMARY: '#4ecca3', // new skimmer color
+  SKIMMER_SECONDARY: '#393e46', // new skimmer color
+};
   
 export const Colors = {
-  light: custom_colors,
-  dark: custom_colors
-  // dark: {
-  //   text: '#ECEDEE',
-  //   background: '#151718',
-  //   tint: tintColorDark,
-  //   icon: '#9BA1A6',
-  //   tabIconDefault: '#9BA1A6',
-  //   tabIconSelected: tintColorDark,
-  // },
+  light: LIGHT_MODE,
+  dark: DARK_MODE
 };

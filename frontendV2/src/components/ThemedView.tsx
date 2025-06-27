@@ -9,7 +9,7 @@ export default function ThemedView({
   style,
   ...rest
 }: ThemedViewProps) {
-  const backgroundColor = useThemeColor({}, 'default_background_color');
+  const backgroundColor = useThemeColor({}, 'DEFAULT_BACKGROUND');
 
   return <View style={[{ backgroundColor }, style]} {...rest} />;
 }

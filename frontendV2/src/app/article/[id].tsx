@@ -72,8 +72,9 @@ export default function ArticlePage() {
   // Navigation & theming
   const navigation = useNavigation();
   const route = useRoute();
-  const background_color = useThemeColor({}, 'default_card_background_color');
-  const text_color = useThemeColor({}, 'default_text_color');
+
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const articleId = (route.params as { id: string }).id;
   const articlesById = useArticlesStore((s) => s.articlesById) || {};
   const article = articlesById[Number(articleId)] || null;
@@ -85,12 +86,12 @@ export default function ArticlePage() {
     useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
-        backgroundColor: background_color, // navbar background
+        backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
         // shadowColor: 'transparent', // remove iOS bottom border
         elevation: 0, // remove Android shadow
         borderWidth: 0, 
       },
-      headerTintColor: text_color,
+      headerTintColor: DEFAULT_TEXT,
       headerTitleAlign: 'center',
       headerTitle: 'Article',    
             headerRight: () =>
@@ -101,7 +102,7 @@ export default function ArticlePage() {
           <Feather
             name="more-vertical"
             size={24}
-            color={text_color}
+            color={DEFAULT_TEXT}
             style={{ marginRight: 16 }}
             onPress={() => setMenuVisible(true)}
           />

@@ -44,21 +44,17 @@ export default function ThemedText({
     displayBold: require('../assets/fonts/SF-Pro-Display-Bold.otf'),
   });
 
-  const defaultBrandColor = useThemeColor({}, 'default_brand_color');
-  const defaultTitleColor = useThemeColor({}, 'default_title_color');
-  const defaultTextColor = useThemeColor({}, 'default_text_color');
-
-  
-  const errorColor = useThemeColor({}, 'default_error_color');
-  const defaultColor = useThemeColor({}, 'default_text_color');
-  const feed_unchecked_color = useThemeColor({}, 'default_placeholder_color');
+  const DEFAULT_UNICON_COLOR = useThemeColor({}, 'UNICON_BACKGROUND');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   
   const styles = type === 'university' ?
     StyleSheet.create({
       text: {
         fontSize: 32,
         lineHeight: 32,
-        color: defaultTitleColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'displayBold',
       }
     }) 
@@ -66,7 +62,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 20,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textSemibold',
       }
     }) 
@@ -74,7 +70,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 20,
-        color: defaultTitleColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textSemibold',
       }
     }) 
@@ -82,7 +78,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 16,
-        color: defaultTitleColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textMedium',
       }
     }) 
@@ -90,7 +86,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 14,
-        color: defaultTextColor,
+        color: ALWAYS_BLACK,
         fontFamily: 'textRegular',
       }
     })
@@ -98,7 +94,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 14,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textRegular',
       }
     })
@@ -106,7 +102,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 14,
-        color: defaultTitleColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textSemibold',
       }
     }) 
@@ -114,7 +110,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 10,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textRegular',
       }
     }) 
@@ -122,7 +118,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 10,
-        color: defaultBrandColor,
+        color: DEFAULT_UNICON_COLOR,
         fontFamily: 'textRegular',
       }
     }) 
@@ -130,7 +126,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 18,
-        color: defaultTitleColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textMedium',
       }
     }) 
@@ -138,7 +134,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 12,
-        color: defaultTextColor,
+        color: DEFAULT_TEXT,
         textAlign: 'justify',
         fontFamily: 'textRegular',
       }
@@ -147,7 +143,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 12,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textMedium',
       }
     }) 
@@ -155,7 +151,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 12,
-        color: defaultTextColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textRegular',
       }
     }) 
@@ -163,7 +159,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 12,
-        color: defaultTextColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textMedium',
       }
     }) 
@@ -171,7 +167,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 10,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textRegular',
       }
     }) 
@@ -179,7 +175,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 10,
-        color: feed_unchecked_color,
+        color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textMedium',
       }
     }) 
@@ -187,7 +183,7 @@ export default function ThemedText({
     StyleSheet.create({
       text: {
         fontSize: 24,
-        color: defaultBrandColor,
+        color: DEFAULT_UNICON_COLOR,
         fontFamily: 'displayBold',
       }
     })
@@ -210,7 +206,7 @@ export default function ThemedText({
   : StyleSheet.create({
       text: {
         fontSize: 12,
-        color: defaultColor,
+        color: DEFAULT_TEXT,
         fontFamily: 'textRegular',
       }
   });
