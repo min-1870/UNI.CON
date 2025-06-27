@@ -44,8 +44,9 @@ export default function ThemedText({
     },
 
     subtitle: {
-      fontSize: 30,
+      fontSize: 20,
       fontWeight: '600',
+      color: defaultTitleColor,
     },
     link: {
       lineHeight: 30,

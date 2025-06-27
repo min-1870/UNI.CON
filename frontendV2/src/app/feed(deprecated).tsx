@@ -41,12 +41,9 @@ interface Article {
   course_code: string;
   likes_count: number;
   comments_count: number;
-  views_count: number;
   save_status: boolean;
-  user_school: string;
   image?: string;
-  like_status: boolean;
-  tag?: string;
+  like_status?: boolean;
 }
 
 type FilterType = 'All' | 'Hot' | 'Recommended';
@@ -686,12 +683,21 @@ export default function Feed() {
               }
               renderItem={({ item }: any) => (
                 <PostCard
-                  article={{
-                    ...item,
-                    like_status: item.like_status || false,
-                    views_count: item.views_count || 0,
-                    user_school: item.user_school || '',
-                  } as Article}
+                  post={{
+                    id: String((item as Article).id),
+                    user: (item as Article).user_temp_name || 'Unknown',
+                    timestamp: (item as Article).created_at,
+                    title: (item as Article).title,
+                    content: (item as Article).body,
+                    tags: (item as Article).course_code ? 
+                      (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
+                      ['school', 'study'], // Fallback tags for testing
+                    likes: (item as Article).likes_count,
+                    comments: (item as Article).comments_count,
+                    bookmarks: (item as Article).save_status ? 1 : 0,
+                    image: (item as Article).image,
+                    like_status: (item as Article).like_status || false,
+                  }}
                   onPress={() => {
                     // Debug: Log the item data to see what tags are available
                     console.log('Article data:', {

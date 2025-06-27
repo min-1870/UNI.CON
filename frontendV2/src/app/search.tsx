@@ -37,7 +37,7 @@ export default function SearchPage() {
   // Theme colors
   const colorScheme = useColorScheme();
   const backgroundColor = useThemeColor({}, 'default_background_color');
-  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const cardBackground = 'FFFFFF';
   const textColor = useThemeColor({}, 'default_text_color');
   const placeholderColor = useThemeColor({}, 'default_placeholder_color');
   const brandColor = useThemeColor({}, 'default_brand_color');
@@ -296,8 +296,6 @@ export default function SearchPage() {
       justifyContent: 'space-between',
       marginBottom: 16,
     },
-
-
     searchContainer: {
       marginBottom: 12,
     },

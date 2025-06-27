@@ -21,7 +21,7 @@ function getRelativeTime(dateString: string) {
 
 function getTagColor(tag: string, isDark: boolean): { backgroundColor: string; color: string } {
   const tagLower = tag.toLowerCase();
-  th
+  
   if (tagLower.includes('school') || tagLower.includes('university')) {
     return { 
       backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2', 
@@ -240,10 +240,8 @@ const PostCard: React.FC<PostCardProps> = ({
       shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
       shadowRadius: 8,
       elevation: 3,
-      borderWidth: normalizedData.save_status ? 2 : 1,
-      borderColor: normalizedData.save_status 
-        ? '#10B981' // Green border for saved posts
-        : colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+      borderWidth: 1,
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
     },
     header: {
       flexDirection: 'row',

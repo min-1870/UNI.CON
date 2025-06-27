@@ -19,9 +19,9 @@ const URLS = {
     NEW_TOKEN: `${domain}/account/token/refresh`,
 
     // Feed (main feed)
-    TIME_SORTED_ARTICLES: `${domain}/community/article/`,
-    HOT_SORTED_ARTICLES: `${domain}/community/article/hot/`,
-    PREFERENCE_SORTED_ARTICLES: `${domain}/community/article/preference/`,
+    TIME_SORTED_ARTICLES: `${domain}/community/article`,
+    HOT_SORTED_ARTICLES: `${domain}/community/article/hot`,
+    PREFERENCE_SORTED_ARTICLES: `${domain}/community/article/preference`,
 
     // Feed (profile feed)
     POSTED_ARTICLES: `${domain}/community/article/posted_articles/`,
@@ -39,15 +39,15 @@ const URLS = {
     // CRUDE Article
     ARTICLE: (articleId?: string) => `${domain}/community/article${articleId ? `/${articleId}/` : '/'}`,
     ARTICLE_IMG: (queryParams?: string) => `${domain}/community/article/image${queryParams || ''}`,
-    ARTICLE_HOT: `${domain}/community/article/hot/`,
-    ARTICLE_PREFERENCE: `${domain}/community/article/preference/`,
+    ARTICLE_HOT: `${domain}/community/article/hot`,
+    ARTICLE_PREFERENCE: `${domain}/community/article/preference`,
     ARTICLE_LIKE: (articleId: string) => `${domain}/community/article/${articleId}/like/`,
     ARTICLE_UNLIKE: (articleId: string) => `${domain}/community/article/${articleId}/unlike/`,
     ARTICLE_SAVE: (articleId: string) => `${domain}/community/article/${articleId}/save/`,
     ARTICLE_UNSAVE: (articleId: string) => `${domain}/community/article/${articleId}/unsave/`,
 
     // CRUDE comment
-    COMMENT: (commentId: string = '') => `${domain}/community/comment/${commentId ? `${commentId}/` : ''}`,
+    COMMENT: (commentId: string = '') => `${domain}/community/comment/${commentId}`,
     COMMENT_LIKE: (commentId: string) => `${domain}/community/comment/${commentId}/like/`,
     COMMENT_UNLIKE: (commentId: string) => `${domain}/community/comment/${commentId}/unlike/`,
 

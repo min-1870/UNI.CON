@@ -66,10 +66,6 @@ const fetchNewAccessToken = async () => {
 type fetchAPIPProm = {error: boolean; data?: any };
 const fetchAPI = async (url: string, { token = true, method = "GET", body = {} } = {}): Promise<fetchAPIPProm> => {
   const access = await getData('access');
-  
-  // Clean and encode URL for iOS compatibility
-  const cleanUrl = url.trim().replace(/([^:]\/)\/+/g, "$1");
-  
   const headers = {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${access}` }),
@@ -77,20 +73,15 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
 
   const request = async () => {
       try {
-          console.log(`🌐 ${method} ${cleanUrl}`);
-          
           const response = await axios({
               method,
-              url: cleanUrl,
+              url,
               headers,
-              timeout: 15000, // 15 second timeout
               ...(method !== "GET" && { data: body }), // Only add body for non-GET requests
           });
-          
-          console.log(`✅ ${method} ${cleanUrl} - Success`);
+          // console.log(response.data)
           return { error: false, data: response.data };
       } catch (error) {
-          console.error(`❌ ${method} ${cleanUrl} - Error:`, error);
           throw error; // Throw to be caught in the outer try-catch
       }
   };
@@ -99,20 +90,13 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
       return await request();
   } catch (error) {
       try {
-          console.log('🔄 Refreshing token and retrying...');
-          const newToken = await fetchNewAccessToken();
-          if (newToken) {
-            return await request();
-          } else {
-            throw new Error('Token refresh failed');
-          }
+          await fetchNewAccessToken();
+          return await request();
       } catch (error: unknown) {
           const err = error as any; // Explicitly cast error to any
-          console.error('❌ Final error:', err);
-          
           return {
               error: true,
-              data: err.response?.data || err.message || "An error occurred",
+              data: err.response?.data || "An error occurred",
           };
       }
   }

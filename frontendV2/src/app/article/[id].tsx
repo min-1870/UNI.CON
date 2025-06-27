@@ -858,7 +858,8 @@ export default function ArticleDetailPage() {
                 style={[styles.commentInput, { color: textColor }]}
                 placeholderTextColor={mutedTextColor}
               />
-              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} variant="primary" style={{ borderRadius: 30 , width: 30 , height: 40 , alignItems: 'center' , justifyContent: 'center' }}>                  <Ionicons name="checkmark-outline" size={25} color="#FFFFFF" style={{ marginLeft: 2 }} />
+              <ThemedButton onPress={focusedComment ? handleReplyComment : handleSendComment} variant="primary" style={{ borderRadius: 20, minWidth: 40, height: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}>                  
+                <Ionicons name="arrow-up-outline" size={22} color={'#FFFFFF'} style={{alignSelf: 'center' , justifyContent: 'center', alignContent: 'center'}} />
               </ThemedButton>
             </View>
           </View>
