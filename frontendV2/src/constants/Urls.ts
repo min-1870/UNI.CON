@@ -47,7 +47,7 @@ const URLS = {
     ARTICLE_UNSAVE: (articleId: string) => `${domain}/community/article/${articleId}/unsave/`,
 
     // CRUDE comment
-    COMMENT: (commentId: string = '') => `${domain}/community/comment/${commentId}`,
+    COMMENT: (commentId: string = '') => `${domain}/community/comment/${commentId ? `${commentId}/` : ''}`,
     COMMENT_LIKE: (commentId: string) => `${domain}/community/comment/${commentId}/like/`,
     COMMENT_UNLIKE: (commentId: string) => `${domain}/community/comment/${commentId}/unlike/`,
 

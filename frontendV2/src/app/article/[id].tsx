@@ -29,6 +29,7 @@ export default function ArticleDetailPage() {
   const [scaleAnim] = useState(new Animated.Value(0.95));
   const [slideOut, setSlideOut] = useState(false);
   const [replyPreview, setReplyPreview] = useState<string | null>(null);
+  const [loadingReplies, setLoadingReplies] = useState<string | null>(null);
   const [articleLiked, setArticleLiked] = useState(false);
   const [articleLikes, setArticleLikes] = useState(0);
   const [articleSaved, setArticleSaved] = useState(false);
@@ -90,7 +91,9 @@ export default function ArticleDetailPage() {
     if (!response.error) {
       const articleData = response.data?.results?.article || null;
       setArticle(articleData);
-      setComments(response.data?.results?.comments || []);
+      // Reverse comments so latest appears at bottom (oldest first)
+      const commentsData = response.data?.results?.comments || [];
+      setComments(commentsData.reverse());
       setArticleLiked(articleData?.like_status || false);
       setArticleLikes(articleData?.likes_count || 0);
       setArticleSaved(articleData?.save_status || false);
@@ -112,7 +115,12 @@ export default function ArticleDetailPage() {
       }
     });
     if (!response.error) {
+      // Clear any previous errors
+      setError(null);
+      
+      // Add new comment to the bottom (end of array) instead of top
       setComments((prevComments) => [
+        ...prevComments,
         {
           ...response.data,
           id: response.data.id,
@@ -121,8 +129,12 @@ export default function ArticleDetailPage() {
           user_static_points: response.data.user_static_points,
           user_school: response.data.user_school,
           like_status: response.data.like_status,
+          likes_count: response.data.likes_count || 0,
+          comments_count: response.data.comments_count || 0,
+          created_at: response.data.created_at,
+          nested_comments: [],
+          showReplies: false,
         },
-        ...prevComments,
       ]);
       setNewComment('');
     } else {
@@ -225,9 +237,23 @@ export default function ArticleDetailPage() {
       return;
     } else {
       try {
-        console.log('Fetching nested comments for:', commentId);
-        const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
-        console.log('Nested comments response:', response);
+        setLoadingReplies(commentId);
+        const requestUrl = URLs.COMMENT(commentId);
+        console.log('🔍 Fetching nested comments for comment ID:', commentId);
+        console.log('🌐 Request URL:', requestUrl);
+        
+        // Debug: Test URL construction
+        console.log('🧪 URL Tests:');
+        console.log('  - URLs.COMMENT():', URLs.COMMENT());
+        console.log('  - URLs.COMMENT("123"):', URLs.COMMENT("123"));
+        console.log('  - URLs.COMMENT_LIKE("123"):', URLs.COMMENT_LIKE("123"));
+        
+        // Add pagination parameter (backend expects page parameter)
+        const urlWithParams = `${requestUrl}?page=1`;
+        console.log('🌐 Final URL with params:', urlWithParams);
+        
+        const response = await fetchAPI(urlWithParams, { method: 'GET', token: true });
+        console.log('📡 Raw API response:', response);
         
         if (!response.error) {
           // Try different response structures
@@ -236,49 +262,85 @@ export default function ArticleDetailPage() {
                                 response.data?.nested_comments || 
                                 response.data || [];
           
-          console.log('Extracted nested comments:', nestedComments);
+          console.log('📝 Extracted nested comments:', nestedComments);
+          console.log('📊 Number of nested comments found:', nestedComments.length);
+          
+          // Reverse nested comments so latest replies appear at bottom (oldest first)
+          const orderedNestedComments = Array.isArray(nestedComments) ? nestedComments.reverse() : [];
           
           setComments((prevComments) =>
             prevComments.map((comment) =>
               String(comment.id) === String(commentId)
                 ? {
                     ...comment,
-                    nested_comments: nestedComments,
+                    nested_comments: orderedNestedComments,
                     showReplies: true,
                   }
                 : comment
             )
           );
+          
+          console.log('✅ Successfully loaded nested comments');
         } else {
-          console.error('API error:', response);
-          setError(response?.data?.detail || 'Failed to load replies');
+          console.error('❌ API returned error:', response);
+          
+          // Check if it's an HTML error page (like 404)
+          if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+            console.error('❌ Received HTML error page instead of JSON');
+            setError('API endpoint not found. Please check if the backend is running correctly.');
+          } else {
+            setError(response?.data?.detail || response?.data?.error || 'Failed to load replies');
+          }
         }
       } catch (err) {
-        console.error('Network error:', err);
-        setError('Failed to load replies. Please check your connection.');
+        console.error('❌ Network/Parse error:', err);
+        setError('Failed to load replies. Please check your connection and try again.');
+      } finally {
+        setLoadingReplies(null);
       }
     }
   };
 
   const handleReplyComment = async () => {
     if (!newComment.trim() || !focusedComment) return;
-    const response = await fetchAPI(
-      URLs.COMMENT(), {
-      method: 'POST',
-      token: true,
-      body: {
-        article: id,
-        parent_comment: focusedComment,
-        body: newComment,
+    
+    console.log('🔄 Posting reply to comment:', focusedComment);
+    console.log('🔄 Reply text:', newComment);
+    
+    try {
+      const response = await fetchAPI(
+        URLs.COMMENT(), {
+        method: 'POST',
+        token: true,
+        body: {
+          article: id,
+          parent_comment: focusedComment,
+          body: newComment,
+        }
+      });
+      
+      console.log('🔄 Reply response:', response);
+      
+      if (!response.error) {
+        console.log('✅ Reply posted successfully');
+        
+        // Clear any previous errors and input
+        setError(null);
+        setNewComment('');
+        setFocusedComment(null);
+        setReplyPreview(null);
+        
+        // Refresh nested comments to show the new reply
+        await fetchNestedComments(focusedComment);
+        
+        console.log('✅ Reply handling complete');
+      } else {
+        console.error('❌ Reply failed:', response);
+        setError(response?.data?.detail || response?.data?.error || 'Failed to post reply');
       }
-    });
-    if (!response.error) {
-      fetchNestedComments(focusedComment);
-      setNewComment('');
-      setFocusedComment(null);
-      setReplyPreview(null);
-    } else {
-      setError(response?.data?.detail || 'An error occurred');
+    } catch (err) {
+      console.error('❌ Network error posting reply:', err);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -553,7 +615,6 @@ export default function ArticleDetailPage() {
     repliesButton: {
       color: linkColor,
       fontSize: 13,
-      marginLeft: 12,
       fontWeight: '500',
     },
     replyButton: {
@@ -747,12 +808,23 @@ export default function ArticleDetailPage() {
                                   />
                                   <Text style={styles.commentActionText}>{item.comments_count}</Text>
                                   {item.comments_count > 0 && (
-                                    <Text 
-                                      style={styles.repliesButton} 
+                                    <TouchableOpacity 
+                                      style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 12 }}
                                       onPress={() => fetchNestedComments(item.id)}
+                                      disabled={loadingReplies === item.id}
                                     >
-                                      {item.showReplies ? 'Hide replies' : `${item.comments_count} replies`}
-                                    </Text>
+                                      {loadingReplies === item.id && (
+                                        <ActivityIndicator size="small" color={linkColor} style={{ marginRight: 4 }} />
+                                      )}
+                                      <Text style={styles.repliesButton}>
+                                        {loadingReplies === item.id 
+                                          ? 'Loading...' 
+                                          : item.showReplies 
+                                            ? 'Hide replies' 
+                                            : `${item.comments_count} replies`
+                                        }
+                                      </Text>
+                                    </TouchableOpacity>
                                   )}
                                 </View>
                               </View>
