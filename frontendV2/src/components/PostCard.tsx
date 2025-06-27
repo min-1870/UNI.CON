@@ -271,11 +271,9 @@ const PostCard: React.FC<PostCardProps> = ({
       color: textColor,
     },
     timestamp: {
-      fontSize: 10,
+      fontSize: 12,
       color: placeholderColor,
-      marginBottom: 5,
-      textAlign: 'right',
-      paddingLeft: 30,
+      fontWeight: '500',
     },
     title: {
       fontSize: 16,
@@ -335,9 +333,9 @@ const PostCard: React.FC<PostCardProps> = ({
           </Text>
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.username}>@{normalizedData.user_temp_name || 'Unknown'}   <Text style={styles.timestamp}>{moment(normalizedData.created_at).fromNow()}</Text></Text>
-
+          <Text style={styles.username}>@{normalizedData.user_temp_name || 'Unknown'}</Text>
         </View>
+        <Text style={styles.timestamp}>{moment(normalizedData.created_at).fromNow()}</Text>
       </View>
       
       <Text style={styles.title} numberOfLines={2}>

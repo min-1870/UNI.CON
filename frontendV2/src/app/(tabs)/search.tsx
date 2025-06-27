@@ -52,7 +52,7 @@ export default function SearchPage() {
     { tag: 'Housing', color: '#FFD23F', bgColor: 'rgba(255, 210, 63, 0.1)', count: 45 },
     { tag: 'Food', color: '#57EC6B', bgColor: 'rgba(87, 236, 107, 0.1)', count: 34 },
     { tag: 'Internships', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)', count: 28 },
-  ];
+  ];//TODO : Implement the trendingToipics from the backend
 
   const popularCategories = [
     { name: 'Academic', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)' },
@@ -61,7 +61,7 @@ export default function SearchPage() {
     { name: 'Resources', color: '#6B73FF', bgColor: 'rgba(107, 115, 255, 0.1)' },
     { name: 'Help', color: '#FF6B35', bgColor: 'rgba(255, 107, 53, 0.1)' },
     { name: 'Entertainment', color: '#FF6B9D', bgColor: 'rgba(255, 107, 157, 0.1)' },
-  ];
+  ]; //TODO : Implement the categories from the backend
 
   useEffect(() => {
     loadRecentSearches();
@@ -272,9 +272,8 @@ export default function SearchPage() {
     },
     searchInput: {
       flex: 1,
-      fontSize: 16,
+      fontSize: 13,
       color: textColor,
-      paddingVertical: 2,
     },
     clearButton: {
       padding: 8,

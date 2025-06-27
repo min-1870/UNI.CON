@@ -17,6 +17,9 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const cardBackground = useThemeColor({}, 'default_card_background_color');
   const placeholderColor = useThemeColor({}, 'default_placeholder_color');
 
+  // Define navbar sequence for relative animations
+  const navSequence = ['/', '/search', '/post', '/marketplace', '/profile'];
+  
   const navItems = [
     { 
       icon: 'home-outline' as const, 
@@ -50,22 +53,77 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     },
   ];
 
+  const getRouteWithAnimation = (targetPath: string, currentPath: string) => {
+    const currentIndex = navSequence.indexOf(currentPath);
+    const targetIndex = navSequence.indexOf(targetPath);
+    
+    // Determine animation direction
+    if (currentIndex !== -1 && targetIndex !== -1) {
+      if (targetIndex < currentIndex) {
+        // Moving left - need slide from left animation
+        return targetPath + '?anim=left';
+      } else if (targetIndex > currentIndex) {
+        // Moving right - need slide from right animation  
+        return targetPath + '?anim=right';
+      }
+    }
+    
+    // Special case for post - always from bottom
+    if (targetPath === '/post') {
+      return targetPath + '?anim=bottom';
+    }
+    
+    return targetPath;
+  };
+
   const handleNavClick = (item: typeof navItems[0]) => {
     console.log('Navigation clicked:', item.label, 'to path:', item.path, 'from:', pathname);
-    if (item.path && item.path !== pathname) {
-      // Determine slide direction based on tab order
-      const currentIndex = navItems.findIndex(nav => nav.path === pathname);
-      const targetIndex = navItems.findIndex(nav => nav.path === item.path);
+    if (item.path) {
+      const currentIndex = navSequence.indexOf(pathname);
+      const targetIndex = navSequence.indexOf(item.path);
       
-      const direction = targetIndex > currentIndex ? 'right' : 'left';
-      console.log('Navigation direction:', { 
-        from: currentIndex, 
-        to: targetIndex, 
-        direction: direction
-      });
+      console.log(`🧭 Navigation: ${pathname} (${currentIndex}) → ${item.path} (${targetIndex})`);
       
-      // Use replace for horizontal slide effect without stacking
-      router.replace(item.path as any);
+      // Add visual feedback for debugging
+      console.log(`📍 Current: ${pathname} at navbar position ${currentIndex}`);
+      console.log(`🎯 Target: ${item.path} at navbar position ${targetIndex}`);
+      
+      // Special handling for post - always slide from bottom
+      if (item.path === '/post') {
+        console.log('🎬 Animation: slide from BOTTOM (new screen comes from bottom)');
+        router.replace({
+          pathname: item.path,
+          params: { animDirection: 'bottom' }
+        });
+        return; // Exit early for post
+      }
+      
+      // For relative animations, we'll use a custom navigation approach
+      if (currentIndex !== -1 && targetIndex !== -1) {
+        if (targetIndex < currentIndex) {
+          // Moving left in navbar (e.g., Profile → Home)
+          // New screen should slide FROM the left
+          console.log('🎬 Animation: slide from LEFT (new screen comes from left side)');
+          router.replace({
+            pathname: item.path,
+            params: { animDirection: 'left' }
+          });
+        } else if (targetIndex > currentIndex) {
+          // Moving right in navbar (e.g., Home → Search)  
+          // New screen should slide FROM the right
+          console.log('🎬 Animation: slide from RIGHT (new screen comes from right side)');
+          router.replace({
+            pathname: item.path, 
+            params: { animDirection: 'right' }
+          });
+        } else {
+          // Same position
+          router.replace(item.path);
+        }
+      } else {
+        // Default navigation
+        router.replace(item.path);
+      }
     }
   };
 
@@ -75,7 +133,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
       bottom: 34,
       left: 20,
       right: 20,
-      zIndex: 99999,
+      zIndex: 1000,
     },
     blurContainer: {
       borderRadius: 35,

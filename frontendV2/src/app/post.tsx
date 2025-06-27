@@ -166,9 +166,9 @@ export default function CreatePost() {
 
         // Navigate to the created article page
         if (articleId) {
-          router.push(`/article/${articleId}` as any);
+          router.push(`/article/${articleId}`);
         } else {
-          router.push('/' as any);
+          router.push('/');
         }
       } else {
         console.error('Post creation failed:', response.data);
@@ -190,7 +190,7 @@ export default function CreatePost() {
 
   // Handle back navigation
   const handleBack = () => {
-    router.push('/' as any);
+    router.push('/');
   };
 
 
@@ -663,9 +663,7 @@ export default function CreatePost() {
               </Text>
             </View>
 
-                    </ScrollView>
-
-          <BottomNav />
+          </ScrollView>
         </View>
 
         {/* Loading Overlay */}

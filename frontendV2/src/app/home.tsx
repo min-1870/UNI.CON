@@ -701,8 +701,7 @@ export default function Home() {
             />
           )}
         </View>
-
-        <BottomNav />
+                  <BottomNav />
         
         <CreatePost
           visible={createPostVisible}

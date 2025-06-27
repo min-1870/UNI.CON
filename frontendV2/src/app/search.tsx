@@ -327,7 +327,6 @@ export default function SearchPage() {
       paddingVertical: 2,
     },
     clearButton: {
-      padding: 8,
       marginLeft: 4,
     },
     resultsCount: {
@@ -752,9 +751,9 @@ export default function SearchPage() {
               </ScrollView>
             )}
           </View>
-                </View>
+        </View>
 
-        <BottomNav />
+                 <BottomNav />
       </AppContainer>
     </ProtectedRoute>
   );

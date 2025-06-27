@@ -256,7 +256,7 @@ export default function RegisterPage() {
 
             <View style={styles.divider} />
             <ThemedText style={styles.footerText}>
-              Already have an account? <Link href="/" style={styles.link}>Sign in</Link>
+              Already have an account? <Link href="/Login" style={styles.link}>Sign in</Link>
             </ThemedText>
           </ThemedView>
         </ThemedView>

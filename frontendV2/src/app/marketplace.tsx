@@ -1,45 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import AppContainer from '@/components/AppContainer';
-import BottomNav from '@/components/ui/BottomNav';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { View, Text, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AppContainer from '@/components/AppContainer';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function MarketplacePage() {
   const colorScheme = useColorScheme();
   const backgroundColor = useThemeColor({}, 'default_background_color');
   const textColor = useThemeColor({}, 'default_text_color');
-  const cardBackground = useThemeColor({}, 'default_card_background_color');
+  const brandColor = useThemeColor({}, 'default_brand_color');
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: backgroundColor,
-    },
-    header: {
-      backgroundColor: cardBackground,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingTop: 60,
-      borderBottomWidth: 1,
-      borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: textColor,
-      textAlign: 'center',
-    },
-    content: {
-      flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      padding: 20,
     },
-    icon: {
-      marginBottom: 20,
+    iconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: brandColor + '20',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 24,
     },
     title: {
       fontSize: 28,
@@ -49,10 +37,19 @@ export default function MarketplacePage() {
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
-      color: colorScheme === 'dark' ? '#9CA3AF' : '#6B7280',
+      fontSize: 18,
+      color: brandColor,
+      fontWeight: '600',
+      marginBottom: 16,
       textAlign: 'center',
+    },
+    description: {
+      fontSize: 16,
+      color: textColor,
+      textAlign: 'center',
+      opacity: 0.7,
       lineHeight: 24,
+      maxWidth: 300,
     },
   });
 
@@ -60,28 +57,16 @@ export default function MarketplacePage() {
     <ProtectedRoute>
       <AppContainer>
         <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Marketplace</Text>
+          <View style={styles.iconContainer}>
+            <Ionicons name="storefront" size={40} color={brandColor} />
           </View>
-
-          {/* Content */}
-          <View style={styles.content}>
-            <Ionicons 
-              name="storefront" 
-              size={80} 
-              color="#57EC6B" 
-              style={styles.icon}
-            />
-            <Text style={styles.title}>Marketplace</Text>
-            <Text style={styles.subtitle}>
-              Buy and sell items with your university community.{'\n'}
-              Coming soon!
-            </Text>
-          </View>
-                </View>
-
-        <BottomNav />
+          <Text style={styles.title}>Marketplace</Text>
+          <Text style={styles.subtitle}>Coming Soon!</Text>
+          <Text style={styles.description}>
+            Buy and sell items with your university community. 
+            Find textbooks, electronics, furniture, and more from fellow students.
+          </Text>
+        </View>
       </AppContainer>
     </ProtectedRoute>
   );

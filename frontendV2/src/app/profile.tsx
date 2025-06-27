@@ -162,8 +162,8 @@ export default function ProfilePage() {
         text1: 'Logged out successfully',
       });
       
-      // Redirect to login page
-      router.replace('/Login' as any);
+      // Navigate to login page
+      router.replace('/Login');
     } catch (error) {
       console.error('Error during logout:', error);
       Toast.show({
@@ -275,13 +275,14 @@ export default function ProfilePage() {
       fontWeight: '600',
       color: textColor,
     },
-    logoutButton: {
-      padding: 8,
-      borderRadius: 20,
-    },
     settingsButton: {
       padding: 8,
       borderRadius: 20,
+    },
+    logoutButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: colorScheme === 'dark' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
     },
     content: {
       flex: 1,
@@ -476,7 +477,10 @@ export default function ProfilePage() {
             {/* Header with Settings */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>My Profile</Text>
-              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+              >
                 <Ionicons name="log-out-outline" size={24} color="#EF4444" />
               </TouchableOpacity>
             </View>
@@ -577,8 +581,6 @@ export default function ProfilePage() {
             </View>
           </ScrollView>
         </AppContainer>
-
-        <BottomNav />
         
         <ChangePasswordModal
           visible={showChangePasswordModal}
