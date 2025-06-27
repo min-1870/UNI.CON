@@ -665,20 +665,20 @@ export default function Home() {
               }
               renderItem={({ item }: any) => (
                 <PostCard
-                  post={{
-                    id: String((item as Article).id),
-                    user: (item as Article).user_temp_name || 'Unknown',
-                    timestamp: (item as Article).created_at,
+                  article={{
+                    id: (item as Article).id,
                     title: (item as Article).title,
-                    content: (item as Article).body,
-                    tags: (item as Article).course_code ? 
-                      (item as Article).course_code.split(',').map((tag: string) => tag.trim()).filter(Boolean) : 
-                      ['school', 'study'], // Fallback tags for testing
-                    likes: (item as Article).likes_count,
-                    comments: (item as Article).comments_count,
-                    bookmarks: (item as Article).save_status ? 1 : 0,
-                    image: (item as Article).image,
+                    body: (item as Article).body,
+                    user_temp_name: (item as Article).user_temp_name || 'Unknown',
+                    created_at: (item as Article).created_at,
+                    likes_count: (item as Article).likes_count,
+                    comments_count: (item as Article).comments_count,
+                    views_count: 0,
                     like_status: (item as Article).like_status || false,
+                    save_status: (item as Article).save_status || false,
+                    course_code: (item as Article).course_code || '',
+                    user_school: '',
+                    image: (item as Article).image,
                   }}
                   onPress={() => {
                     // Debug: Log the item data to see what tags are available

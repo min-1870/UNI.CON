@@ -792,8 +792,8 @@ export default function ArticleDetailPage() {
                                   />
                                   <Text style={styles.commentActionText}>{item.likes_count}</Text>
                                   <Ionicons
-                                    name="chatbubble-outline"
-                                    size={18}
+                                    name="arrow-redo-outline"
+                                    size={20}
                                     color={iconColor}
                                     style={{ marginLeft: 12, marginRight: 2 }}
                                     onPress={() => {
