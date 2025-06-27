@@ -184,10 +184,11 @@ const BottomNav: React.FC<BottomNavProps> = () => {
         ? 'rgba(74, 222, 128, 0.2)' 
         : '#E7FEE7',
       transform: [{ scale: 1.1 }],
+
       shadowColor: brandColor,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
-      shadowRadius: 8,
+      shadowRadius: 12,
       elevation: 6,
     },
   });

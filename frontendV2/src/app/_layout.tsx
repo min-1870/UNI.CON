@@ -91,13 +91,16 @@ export default function RootLayout() {
                 duration = 350; // Smoother timing
               } else if (animDirection === 'bottom') {
                 animation = 'slide_from_bottom';
-                duration = 400; // Slightly longer for bottom slide
+                duration = 700; // Extra long for maximum spring fun! 🎯
               }
               
               // Debug logging
               if (animDirection) {
                 console.log(`🎭 Stack Animation: Route ${route.name} → ${animation} (${duration}ms) [${animDirection}]`);
               }
+              
+              // Special enhanced animation for post screen (bottom slide)
+              const isPostScreen = animDirection === 'bottom';
               
               return {
                 animation: animation as any,
@@ -106,11 +109,20 @@ export default function RootLayout() {
                 animationTypeForReplace: 'push',
                 // Enhanced animation options for smoother feel
                 gestureEnabled: true,
-                gestureDirection: 'horizontal',
+                gestureDirection: isPostScreen ? 'vertical' : 'horizontal',
                 transitionSpec: {
                   open: {
                     animation: 'spring',
-                    config: {
+                    config: isPostScreen ? {
+                      // SUPER bouncy spring animation for post screen! 🚀
+                      stiffness: 400,
+                      damping: 1,
+                      mass: 0.8,
+                      overshootClamping: false, // Allow maximum bounce!
+                      restDisplacementThreshold: 0.001,
+                      restSpeedThreshold: 0.001,
+                    } : {
+                      // Regular smooth animation for other screens
                       stiffness: 1000,
                       damping: 500,
                       mass: 3,
@@ -121,7 +133,16 @@ export default function RootLayout() {
                   },
                   close: {
                     animation: 'spring',
-                    config: {
+                                         config: isPostScreen ? {
+                       // Fun bouncy close animation for post screen! 🎪
+                       stiffness: 250,
+                       damping: 20,
+                       mass: 1,
+                       overshootClamping: false,
+                       restDisplacementThreshold: 0.001,
+                       restSpeedThreshold: 0.001,
+                     } : {
+                      // Regular smooth animation for other screens
                       stiffness: 1000,
                       damping: 500,
                       mass: 3,
@@ -131,6 +152,57 @@ export default function RootLayout() {
                     },
                   },
                 },
+                // Additional fancy effects for post screen
+                ...(isPostScreen && {
+                  cardStyle: {
+                    backgroundColor: 'transparent',
+                  },
+                                     cardStyleInterpolator: ({ current, next, layouts }: any) => {
+                    return {
+                      cardStyle: {
+                        transform: [
+                          {
+                            translateY: current.progress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [layouts.screen.height, 0],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                                                     {
+                             scale: current.progress.interpolate({
+                               inputRange: [0, 0.6, 0.8, 0.95, 1],
+                               outputRange: [0.7, 1.1, 0.95, 1.05, 1],
+                               extrapolate: 'clamp',
+                             }),
+                           },
+                           {
+                             rotate: current.progress.interpolate({
+                               inputRange: [0, 0.3, 0.6, 1],
+                               outputRange: ['-2deg', '1deg', '-0.5deg', '0deg'],
+                               extrapolate: 'clamp',
+                             }),
+                           },
+                        ],
+                                                 opacity: current.progress.interpolate({
+                           inputRange: [0, 0.2, 0.4, 0.7, 1],
+                           outputRange: [0, 0.3, 0.8, 0.95, 1],
+                           extrapolate: 'clamp',
+                         }),
+                      },
+                                             overlayStyle: {
+                         opacity: current.progress.interpolate({
+                           inputRange: [0, 0.5, 1],
+                           outputRange: [0, 0.2, 0.4],
+                           extrapolate: 'clamp',
+                         }),
+                         backgroundColor: current.progress.interpolate({
+                           inputRange: [0, 1],
+                           outputRange: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)'],
+                         }),
+                       },
+                    };
+                  },
+                }),
               };
             }}
           >

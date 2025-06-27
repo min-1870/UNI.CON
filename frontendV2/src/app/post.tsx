@@ -22,8 +22,6 @@ import { fetchAPI } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import Toast from 'react-native-toast-message';
 import AppContainer from '@/components/AppContainer';
-import BottomNav from '@/components/ui/BottomNav';
-import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function CreatePost() {
   const [title, setTitle] = useState('');
@@ -33,6 +31,11 @@ export default function CreatePost() {
   const [currentHashtag, setCurrentHashtag] = useState('');
   const [loading, setLoading] = useState(false);
   const [unicon, setUnicon] = useState(false);
+  
+  // Focus states for input borders
+  const [titleFocused, setTitleFocused] = useState(false);
+  const [contentFocused, setContentFocused] = useState(false);
+  const [hashtagFocused, setHashtagFocused] = useState(false);
   
   // Animation for loading spinner
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -208,7 +211,6 @@ export default function CreatePost() {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderBottomWidth: 1,
       borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
     },
     backButton: {
@@ -235,7 +237,6 @@ export default function CreatePost() {
     postButtonText: {
       color: '#FFFFFF',
       fontWeight: '600',
-      marginLeft: 4,
     },
     content: {
       flex: 1,
@@ -251,11 +252,21 @@ export default function CreatePost() {
       fontSize: 18,
       fontWeight: '600',
       color: textColor,
+      borderWidth: 2,
+      borderColor: 'transparent',
       shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.1)',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
       shadowRadius: 8,
       elevation: 3,
+    },
+    titleInputFocused: {
+      borderColor: brandColor,
+      shadowColor: brandColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
     },
     titleCharCount: {
       fontSize: 12,
@@ -275,11 +286,21 @@ export default function CreatePost() {
       color: textColor,
       minHeight: 200,
       textAlignVertical: 'top',
+      borderWidth: 2,
+      borderColor: 'transparent',
       shadowColor: colorScheme === 'dark' ? '#000' : 'rgba(0, 0, 0, 0.1)',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.1,
       shadowRadius: 8,
       elevation: 3,
+    },
+    textAreaFocused: {
+      borderColor: brandColor,
+      shadowColor: brandColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
     },
     textInfo: {
       flexDirection: 'row',
@@ -366,8 +387,16 @@ export default function CreatePost() {
       paddingHorizontal: 16,
       paddingVertical: 12,
       marginRight: 8,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+    },
+    hashtagInputFieldFocused: {
+      borderColor: brandColor,
+      shadowColor: brandColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
     hashtagTextInput: {
       flex: 1,
@@ -477,20 +506,31 @@ export default function CreatePost() {
       shadowRadius: 20,
       elevation: 10,
     },
-    loadingSpinner: {
+    loadingSpinnerContainer: {
+      width: 60,
+      height: 60,
+      marginBottom: 20,
+      position: 'relative',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingSpinnerBackground: {
+      position: 'absolute',
       width: 60,
       height: 60,
       borderRadius: 30,
       borderWidth: 4,
-      borderColor: 'rgba(16, 185, 129, 0.3)',
-      borderTopColor: '#10B981',
-      marginBottom: 20,
+      borderColor: 'rgba(16, 185, 129, 0.2)',
     },
-    loadingSpinnerInner: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: 'transparent',
+    loadingSpinnerProgress: {
+      position: 'absolute',
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      borderWidth: 4,
+      borderColor: 'transparent',
+      borderTopColor: '#10B981',
+      borderRightColor: '#10B981',
     },
     loadingText: {
       fontSize: 16,
@@ -501,9 +541,8 @@ export default function CreatePost() {
   });
 
   return (
-    <ProtectedRoute>
-      <AppContainer>
-        <View style={styles.container}>
+    <AppContainer>
+      <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -513,7 +552,6 @@ export default function CreatePost() {
               <Ionicons name="arrow-back" size={24} color={textColor} />
             </TouchableOpacity>
             
-            <Text style={styles.title}>Create Post</Text>
             
             <TouchableOpacity
               style={[
@@ -534,12 +572,17 @@ export default function CreatePost() {
             {/* Title Section */}
             <View style={styles.titleSection}>
               <TextInput
-                style={styles.titleInput}
+                style={[
+                  styles.titleInput,
+                  titleFocused && styles.titleInputFocused
+                ]}
                 placeholder="Title"
                 placeholderTextColor={placeholderColor}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
+                onFocus={() => setTitleFocused(true)}
+                onBlur={() => setTitleFocused(false)}
               />
               <Text style={styles.titleCharCount}>{title.length}/100</Text>
             </View>
@@ -547,13 +590,18 @@ export default function CreatePost() {
             {/* Text Area */}
             <View style={styles.textSection}>
               <TextInput
-                style={styles.textArea}
+                style={[
+                  styles.textArea,
+                  contentFocused && styles.textAreaFocused
+                ]}
                 placeholder="Content"
                 placeholderTextColor={placeholderColor}
                 value={content}
                 onChangeText={handleContentChange}
                 multiline
                 textAlignVertical="top"
+                onFocus={() => setContentFocused(true)}
+                onBlur={() => setContentFocused(false)}
               />
               
               <View style={styles.textInfo}>
@@ -605,7 +653,10 @@ export default function CreatePost() {
               
               {/* Hashtag Input */}
               <View style={styles.hashtagInput}>
-                <View style={styles.hashtagInputField}>
+                <View style={[
+                  styles.hashtagInputField,
+                  hashtagFocused && styles.hashtagInputFieldFocused
+                ]}>
                   <Ionicons name="pricetag-outline" size={16} color={placeholderColor} />
                   <TextInput
                     style={styles.hashtagTextInput}
@@ -615,6 +666,8 @@ export default function CreatePost() {
                     onChangeText={setCurrentHashtag}
                     onSubmitEditing={addHashtag}
                     returnKeyType="done"
+                    onFocus={() => setHashtagFocused(true)}
+                    onBlur={() => setHashtagFocused(false)}
                   />
                 </View>
                 <TouchableOpacity
@@ -658,8 +711,7 @@ export default function CreatePost() {
                 </TouchableOpacity>
               </View>
               <Text style={styles.uniconDescription}>
-                Toggle this to share your post with other university students across UNI.CON network. <br/>
-                Still, your university community members will be able to see your post.
+                Toggle this to share your post with other university students across UNI.CON network. {'\n'}Still, your university community members will be able to see your post.
               </Text>
             </View>
 
@@ -674,16 +726,16 @@ export default function CreatePost() {
         >
           <View style={styles.loadingOverlay}>
             <View style={styles.loadingContainer}>
-              <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                <View style={styles.loadingSpinner}>
-                  <View style={styles.loadingSpinnerInner} />
-                </View>
-              </Animated.View>
+              <View style={styles.loadingSpinnerContainer}>
+                {/* Static background circle */}
+                <View style={styles.loadingSpinnerBackground} />
+                {/* Animated progress indicator */}
+                <Animated.View style={[styles.loadingSpinnerProgress, { transform: [{ rotate: spin }] }]} />
+              </View>
               <Text style={styles.loadingText}>Creating your post...</Text>
             </View>
           </View>
         </Modal>
       </AppContainer>
-    </ProtectedRoute>
   );
 } 

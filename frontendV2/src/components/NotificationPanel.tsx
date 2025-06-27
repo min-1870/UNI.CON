@@ -1,8 +1,10 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, ScrollView, Platform } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/contexts/ThemeContext';
+import { fetchAPI } from '@/components/Utils';
+import URLs from '@/constants/Urls';
 
 interface Notification {
   id: string;
@@ -22,6 +24,8 @@ interface NotificationPanelProps {
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose }) => {
   const slideAnim = useRef(new Animated.Value(300)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
   
   // Theme
   const { theme, isDark } = useTheme();
@@ -55,7 +59,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
     blurContainer: {
       flex: 1,
       backgroundColor: Platform.OS === 'ios' 
-        ? (isDark ? 'rgba(25, 25, 25, 0.1)' : 'rgba(255, 255, 255, 0.1)')
+        ? (isDark ? 'rgba(25, 25, 25, 0.1)' : 'rgba(255, 255, 255, 0.7)')
         : (isDark ? theme.colors.surface : 'rgba(255, 255, 255, 0.95)'),
     },
     header: {
@@ -195,13 +199,18 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
     },
   });
 
+  // Enhanced animation with bounce effect
   useEffect(() => {
     if (visible) {
+      // Fetch notifications when panel opens
+      fetchNotifications();
+      
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
-          duration: 300,
           useNativeDriver: true,
+          speed: 14,
+          bounciness: 8,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
@@ -210,20 +219,61 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
         }),
       ]).start();
     } else {
+      // Enhanced closing animation with spring
       Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 300,
-          duration: 250,
+        Animated.spring(slideAnim, {
+          toValue: 350,
           useNativeDriver: true,
+          speed: 16,
+          bounciness: 4,
         }),
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 250,
+          duration: 200,
           useNativeDriver: true,
         }),
       ]).start();
     }
   }, [visible]);
+
+  // Fetch notifications from API
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const [newNotificationsRes, oldNotificationsRes] = await Promise.all([
+        fetchAPI(URLs.NEW_NOTIFICATIONS, {
+          method: 'GET',
+          token: true,
+        }),
+        fetchAPI(URLs.OLD_NOTIFICATIONS, {
+          method: 'GET',
+          token: true,
+        })
+      ]);
+
+      const newNotifications = newNotificationsRes.data?.results?.notifications || [];
+      const oldNotifications = oldNotificationsRes.data?.results?.notifications || [];
+      
+      // Combine and format notifications
+      const allNotifications = [...newNotifications, ...oldNotifications].map((notif: any) => ({
+        id: notif.id || Math.random().toString(),
+        type: notif.type || 'like',
+        user: notif.user?.name || 'Unknown User',
+        username: notif.user?.username || '@unknown',
+        message: notif.message || 'New notification',
+        timestamp: notif.created_at || new Date().toISOString(),
+        isRead: notif.is_read || false,
+      }));
+
+      setNotifications(allNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // Fallback to mock data on error
+      setNotifications(mockNotifications);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // API needed - Replace with actual notification data
   const mockNotifications: Notification[] = [
@@ -352,7 +402,18 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
             style={styles.notificationsList}
             showsVerticalScrollIndicator={false}
           >
-            {mockNotifications.map((notification) => (
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Loading notifications...</Text>
+              </View>
+            ) : notifications.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="notifications-off" size={48} color={theme.colors.textMuted} />
+                <Text style={styles.emptyText}>No notifications yet</Text>
+              </View>
+            ) : (
+              notifications.map((notification) => (
               <TouchableOpacity 
                 key={notification.id}
                 style={[
@@ -385,7 +446,8 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ visible, onClose 
                   <Text style={styles.timestamp}>{notification.timestamp}</Text>
                 </View>
               </TouchableOpacity>
-            ))}
+                ))
+              )}
           </ScrollView>
 
           {/* API Needed Comment */}

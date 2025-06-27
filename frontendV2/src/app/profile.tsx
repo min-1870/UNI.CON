@@ -28,8 +28,8 @@ import moment from 'moment';
 // TODO -- Mock user data - replace with real API call
 const userData = {
   id: 1,
-  name: 'Michael Chen',
-  username: 'michelc',
+  name: 'Leo Lim',
+  username: 'leoooolim',
   email: 'root@unsw.edu.au',
   university: 'UNSW Sydney',
   verified: true,
@@ -359,11 +359,16 @@ export default function ProfilePage() {
     },
     credibilitySection: {
       marginBottom: 20,
+      height: 70,
+
     },
     credibilityGradient: {
       borderRadius: 20,
-      padding: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
       alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-around',
       shadowColor: '#10B981',
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.3,
@@ -371,10 +376,9 @@ export default function ProfilePage() {
       elevation: 8,
     },
     credibilityLabel: {
-      fontSize: 14,
+      fontSize: 17,
       fontWeight: '600',
       color: '#fff',
-      marginBottom: 4,
       opacity: 0.9,
     },
     credibilityValue: {
@@ -387,28 +391,22 @@ export default function ProfilePage() {
       color: '#fff',
       opacity: 0.8,
     },
-    statsTabsContainer: {
-      marginTop: 16,
-    },
-    tabIndicatorContainer: {
-      position: 'relative',
-      height: 3,
-      marginBottom: 10,
-    },
+
     tabIndicator: {
       position: 'absolute',
-      top: 0,
+      bottom: 0,
       width: '25%',
       height: 3,
       backgroundColor: brandColor,
-      borderRadius: 2,
-      marginLeft: '-12.5%',
+      borderRadius: 1.5,
     },
     statsGrid: {
+      position: 'relative',
       flexDirection: 'row',
       backgroundColor: colorScheme === 'dark' ? 'rgba(16, 18, 20, 0.6)' : '#F9FAFB',
       borderRadius: 16,
       padding: 20,
+      paddingBottom: 15,
     },
     statItem: {
       flex: 1,
@@ -473,7 +471,13 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <View style={styles.container}>
         <AppContainer>
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
+            alwaysBounceVertical={false}
+          >
             {/* Header with Settings */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>My Profile</Text>
@@ -519,28 +523,13 @@ export default function ProfilePage() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.credibilityLabel}>Karma Points</Text>
                   <Text style={styles.credibilityValue}>{userData.credibilityScore}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 4 }} />
-                  </View>
+                  <Text style={styles.credibilityLabel}>Credit Points 👏 </Text>
                 </LinearGradient>
               </View>
 
               {/* Stats as Tabs */}
               <View style={styles.statsTabsContainer}>
-                {/* Tab Indicator */}
-                <View style={styles.tabIndicatorContainer}>
-                  <View style={[
-                    styles.tabIndicator,
-                    { 
-                      left: activeTab === 'posted' ? '12.5%' : 
-                            activeTab === 'commented' ? '37.5%' : 
-                            activeTab === 'liked' ? '62.5%' : '87.5%',
-                    }
-                  ]} />
-                </View>
-                
                 {/* Stats Grid as Tabs */}
                 <View style={styles.statsGrid}>
                   {[
@@ -571,6 +560,16 @@ export default function ProfilePage() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                  
+                  {/* Tab Indicator positioned directly on stats */}
+                  <View style={[
+                    styles.tabIndicator,
+                    { 
+                      left: activeTab === 'posted' ? '4.5%' : 
+                            activeTab === 'commented' ? '30.5%' : 
+                            activeTab === 'liked' ? '57.5%' : '81.5%',
+                    }
+                  ]} />
                 </View>
               </View>
             </View>
