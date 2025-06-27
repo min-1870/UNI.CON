@@ -461,7 +461,6 @@ export default function CreatePost() {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 8,
     },
     uniconToggle: {
       width: 50,
@@ -485,7 +484,7 @@ export default function CreatePost() {
       alignSelf: 'flex-end',
     },
     uniconDescription: {
-      fontSize: 14,
+      fontSize: 13,
       color: placeholderColor,
       lineHeight: 20,
     },
@@ -649,7 +648,7 @@ export default function CreatePost() {
 
             {/* Hashtags Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Hashtags</Text>
+              <Text style={styles.sectionTitle}>Tags</Text>
               
               {/* Hashtag Input */}
               <View style={styles.hashtagInput}>

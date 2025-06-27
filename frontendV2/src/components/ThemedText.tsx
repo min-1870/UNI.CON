@@ -18,7 +18,7 @@ export default function ThemedText({
   const errorColor = useThemeColor({}, 'default_error_color');
   const defaultColor = useThemeColor({}, 'default_text_color');
   const feed_unchecked_color = useThemeColor({}, 'default_placeholder_color');
-  
+  const defaultTitleColor = useThemeColor({}, 'default_text_color');
   const styles = useMemo(() => StyleSheet.create({
     default: {
       fontSize: 16,
@@ -33,11 +33,16 @@ export default function ThemedText({
       lineHeight: 24,
       fontWeight: '600',
     },
+
     title: {
-      fontSize: 40,
+      marginTop: 10,
+      fontSize: 25,
       fontWeight: 'bold',
-      lineHeight: 32,
+      lineHeight: 30,
+      fontWeight: 'bold',
+      color: defaultTitleColor,
     },
+
     subtitle: {
       fontSize: 30,
       fontWeight: '600',

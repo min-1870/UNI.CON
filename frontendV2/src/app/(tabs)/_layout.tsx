@@ -1,7 +1,7 @@
 import React from 'react';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import HomePage from './index';
-import SearchPage from './search';
+import SearchPage from './search (deprecated)';
 import ProfilePage from './profile (deprecated)';
 import BottomNav from '@/components/ui/BottomNav';
 

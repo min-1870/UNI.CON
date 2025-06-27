@@ -21,7 +21,7 @@ function getRelativeTime(dateString: string) {
 
 function getTagColor(tag: string, isDark: boolean): { backgroundColor: string; color: string } {
   const tagLower = tag.toLowerCase();
-  
+  th
   if (tagLower.includes('school') || tagLower.includes('university')) {
     return { 
       backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2', 

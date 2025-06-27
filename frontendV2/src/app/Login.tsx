@@ -192,8 +192,8 @@ export default function LoginPage() {
     googleButton: {
       borderWidth: 1,
       borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : '#d1d5db',
-      backgroundColor: cardBackground,
-      borderRadius: 20,
+      backgroundColor: brandColor,
+      borderRadius: 30,
       marginTop: 10,
       paddingVertical: 10,
       paddingHorizontal: 12,
@@ -234,6 +234,7 @@ export default function LoginPage() {
             <ThemedText>University Email</ThemedText>
             <View style={styles.emailRow}>
               <ThemedInput
+                autoCapitalize='none'
                 onChangeText={setEmail}
                 value={email}
                 keyboardType='email-address'
@@ -276,7 +277,7 @@ export default function LoginPage() {
                   <View style={styles.googleIconWrapper}>
                     <Text style={styles.googleIcon}>G</Text>
                   </View>
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
                 </View>
               </ThemedButton>
             </View>

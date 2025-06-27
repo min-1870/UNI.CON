@@ -16,6 +16,7 @@ import AppContainer from '@/components/AppContainer';
 import PostCard from '@/components/PostCard';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import ThemedText from '@/components/ThemedText';
 
 import { fetchAPI, getData, setData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
@@ -381,7 +382,7 @@ export default function SearchPage() {
       paddingHorizontal: 20,
       paddingVertical: 10,
       backgroundColor: brandColor,
-      borderRadius: 8,
+      borderRadius: 30,
     },
     retryButtonText: {
       color: 'white',

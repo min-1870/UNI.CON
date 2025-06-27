@@ -174,7 +174,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     navItem: {
       alignItems: 'center',
       justifyContent: 'center',
-      width: 40,
+      width: 35,
       height: 50,
       borderRadius: 25,
       backgroundColor: 'transparent',

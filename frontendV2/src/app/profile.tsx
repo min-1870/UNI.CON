@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import BottomNav from '@/components/ui/BottomNav';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
-
+import ThemedText from '@/components/ThemedText';
 import URLs from "@/constants/Urls";
 import { LinearGradient } from 'expo-linear-gradient';
 import PostCard from '@/components/PostCard';
@@ -263,7 +263,7 @@ export default function ProfilePage() {
       backgroundColor: headerBackground,
       paddingHorizontal: 16,
       paddingVertical: 12,
-      paddingTop: 50,
+      paddingTop: 60,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -480,7 +480,7 @@ export default function ProfilePage() {
           >
             {/* Header with Settings */}
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>My Profile</Text>
+            <ThemedText type="title"> My Profile</ThemedText>
               <TouchableOpacity
                 style={styles.logoutButton}
                 onPress={handleLogout}

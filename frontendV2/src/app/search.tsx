@@ -22,6 +22,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { fetchAPI, getData, setData } from '@/components/Utils';
 import URLs from '@/constants/Urls';
 import { router } from 'expo-router';
+import ThemedText from '@/components/ThemedText';
 
 export default function SearchPage() {
   const [searchText, setSearchText] = useState('');
@@ -295,11 +296,8 @@ export default function SearchPage() {
       justifyContent: 'space-between',
       marginBottom: 16,
     },
-    title: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: textColor,
-    },
+
+
     searchContainer: {
       marginBottom: 12,
     },
@@ -431,7 +429,7 @@ export default function SearchPage() {
       paddingHorizontal: 20,
       paddingVertical: 10,
       backgroundColor: brandColor,
-      borderRadius: 8,
+      borderRadius: 15,
     },
     retryButtonText: {
       color: 'white',
@@ -694,10 +692,9 @@ export default function SearchPage() {
           {/* Fixed Search Header */}
           <View style={styles.searchHeader}>
             <View style={styles.headerRow}>
-              <Text style={styles.title}>Search</Text>
+            <ThemedText type="title">Search</ThemedText>
               {showResults && (
                 <TouchableOpacity onPress={clearSearch}>
-                  <Text style={{ color: brandColor, fontWeight: '600' }}>Clear</Text>
                 </TouchableOpacity>
               )}
             </View>
