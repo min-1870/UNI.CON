@@ -182,7 +182,7 @@ export default function ThemedText({
   : type === 'summaryPoints' ?
     StyleSheet.create({
       text: {
-        fontSize: 24,
+        fontSize: 30,
         color: DEFAULT_UNICON_COLOR,
         fontFamily: 'displayBold',
       }

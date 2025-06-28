@@ -5,9 +5,10 @@ import ThemedArticle from '@/components/ThemedArticle';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
-import { StyleSheet, FlatList, View } from 'react-native';
+import { StyleSheet, FlatList, View, Pressable } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
+import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import * as AuthSession from 'expo-auth-session';
 import { ImageBackground } from "react-native";
@@ -15,11 +16,172 @@ import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
+import { Feather, Ionicons } from '@expo/vector-icons';
+import OverflowMenu from '@/components/ThemedOverflowMenu';
 
+
+const Header = React.memo(function Header({
+  initialData,
+  tags,
+  DEFAULT_CARD_BACKGROUND,
+  DEFAULT_TEXT,
+  sortOption,
+  setSortOption,
+  setMenuVisible,
+  setUniOnly,
+}: {
+  initialData: InitialDataType | null;
+  tags: string[];
+  DEFAULT_CARD_BACKGROUND: string;
+  DEFAULT_TEXT: string;
+  uniOnly?: boolean;
+  sortOption: keyof typeof apiEndpoints;
+  setSortOption: (o: keyof typeof apiEndpoints) => void;
+  setMenuVisible: (v: boolean) => void;
+  setUniOnly?: (u: boolean) => void;
+}) {
+return (
+    <>
+      <ImageBackground
+        source={require("../../assets/images/indexBg.png")}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      >
+      </ImageBackground>
+      <View style={styles.nheaderContainer}>
+        <View style={styles.nheaderHeaderContainer}>
+          <ThemedText type='contentTitle'>UNI.CON</ThemedText>
+          <Pressable onPress={() => router.push('/notification')}>
+            <Feather
+              name="more-vertical"
+              size={24}
+              color={DEFAULT_TEXT}
+              onPress={() => setMenuVisible(true)}
+            />
+          </Pressable>
+        </View>
+        <View style={styles.nheaderContentContainer}>
+          
+          <View style={styles.nheaderScoreContainer}>
+            <ThemedText type={'university'}>Credibility Score</ThemedText>
+            <View style={styles.nheaderScoreScoreContainer}>
+              <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
+              <ThemedText type={'default'}>Points</ThemedText>
+            </View>
+          </View>
+          <View style={styles.nheaderAccountContainer}>
+            <ThemedText type={'contentSubTitle'}>Account Summary</ThemedText>
+            <View style={styles.nheaderAccountTagsContainer}>
+              {tags.map((tag, i) => (
+                <ThemedTag key={i} unClickable={true} text={tag} type='bigRanked' />
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+      <View style={[styles.buttonContainer, { backgroundColor: DEFAULT_CARD_BACKGROUND }]}>
+        <ThemedButton
+          type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('posted')}
+        >
+          <ThemedText type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'} >Posted</ThemedText>
+        </ThemedButton>
+        <ThemedButton
+          type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('saved')}
+        >
+          <ThemedText type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'} >Saved</ThemedText>
+        </ThemedButton>
+        <ThemedButton
+          type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('commented')}
+        >
+          <ThemedText type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'} >Commented</ThemedText>
+        </ThemedButton>
+        <ThemedButton
+          type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'}
+          onPress={() => setSortOption('liked')}
+        >
+          <ThemedText type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'} >Liked</ThemedText>
+        </ThemedButton>
+      </View>
+    </>
+  );
+}, (prev, next) => {
+  return (
+    prev.initialData === next.initialData &&
+    prev.tags === next.tags &&
+    prev.uniOnly === next.uniOnly &&
+    prev.sortOption === next.sortOption
+  );
+});
+
+  const apiEndpoints = {
+    posted: URLs.POSTED_ARTICLES,
+    saved: URLs.SAVED_ARTICLES,
+    commented: URLs.COMMENTED_ARTICLES,
+    liked: URLs.LIKED_ARTICLES,
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    nheaderContainer:{
+      margin: 15,
+    },
+    nheaderHeaderContainer:{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: "transparent",
+    },
+    nheaderContentContainer:{
+      padding: 20,
+      gap: 30,
+    },
+    nheaderScoreContainer: {
+      gap: 10,
+    },
+    nheaderScoreScoreContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 10,
+      alignItems: 'flex-end',
+    },
+    nheaderAccountContainer: {
+      gap: 10,
+    },
+    nheaderAccountTagsContainer: {
+      flexDirection: 'row',
+      alignSelf: 'flex-start',
+      flexWrap: 'wrap',
+      gap: 10,
+      backgroundColor: "transparent",
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      alignSelf: 'flex-start',
+      // justifyContent: 'space-between',
+      padding: 3,
+      borderRadius: 50,
+      // backgroundColor: DEFAULT_CARD_BACKGROUND,
+      marginHorizontal: 15,
+      
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
+    },
+    feedContainer: {
+      alignItems: 'stretch',
+      gap: 20,
+    },
+  });
 export default function ProfilePage() {
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const isFetchingMore = useRef(false);
   const route = useRoute();
@@ -38,12 +200,6 @@ export default function ProfilePage() {
     tokenEndpoint: URLs.tokenEndpoint,
   };
 
-  const apiEndpoints = {
-    posted: URLs.POSTED_ARTICLES,
-    saved: URLs.SAVED_ARTICLES,
-    commented: URLs.COMMENTED_ARTICLES,
-    liked: URLs.LIKED_ARTICLES,
-  };
 
   // Fetch again when the page is reset
   useEffect(() => {
@@ -161,132 +317,6 @@ export default function ProfilePage() {
     }
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    titleContainer: {
-      gap: 20,
-      margin: 15,
-      backgroundColor: "transparent",
-    },
-    credibilityScoreContainer: {
-      gap: 10,
-      backgroundColor: "transparent",
-    },
-    csRowContainer: {
-      display: 'flex',
-      flexDirection: 'row',
-      gap: 10,
-      alignItems: 'flex-end',
-      margin: 15,
-      backgroundColor: "transparent",
-    },
-    summaryContainer: {
-      gap: 10,
-      backgroundColor: "transparent",
-    },
-    rowsContainer: {
-      gap: 10,
-      margin: 15,
-      backgroundColor: "transparent",
-    },
-    rowContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: "transparent",
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      alignSelf: 'flex-start',
-      // justifyContent: 'space-between',
-      padding: 3,
-      borderRadius: 50,
-      backgroundColor: DEFAULT_CARD_BACKGROUND,
-      marginHorizontal: 15,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-    },
-    feedContainer: {
-      alignItems: 'stretch',
-      gap: 20,
-    },
-  });
-
-  const renderHeader = () => (
-    <>
-          <ImageBackground
-            source={require("../../assets/images/indexBg.png")}
-            style={StyleSheet.absoluteFillObject}
-            resizeMode="cover"
-          >
-          </ImageBackground>
-      <View style={styles.titleContainer}>
-        <View style={styles.credibilityScoreContainer}>
-          <ThemedText type={'contentTitle'}>Credibility Score</ThemedText>
-          <View style={styles.csRowContainer}>
-            <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
-            <ThemedText type={'contentSubTitle'}>Points</ThemedText>
-          </View>
-        </View>
-        <View style={styles.summaryContainer}>
-          <ThemedText type={'contentTitle'}>Account Summary</ThemedText>
-          <View style={styles.rowsContainer}>
-            <View style={styles.rowContainer}>
-              <ThemedText type={'contentSubTitle'}>University</ThemedText>
-              <ThemedText type={'articleBody'}>{initialData?.university}</ThemedText>
-            </View>
-            <View style={styles.rowContainer}>
-              <ThemedText type={'contentSubTitle'}>Student Email</ThemedText>
-              <ThemedText type={'articleBody'}>{initialData?.email}</ThemedText>
-            </View>
-            <View style={styles.rowContainer}>
-              <ThemedText type={'contentSubTitle'}>Google Account</ThemedText>
-              <ThemedText type={'articleBody'} onPress={connectGoogle} >(PLACE HOLDER)</ThemedText>
-            </View>
-            <View style={styles.rowContainer}>
-              <ThemedText type={'contentSubTitle'}>Update Password</ThemedText>
-              <ThemedText onPress={() => router.push(`/newPassword`)} type={'articleBody'}>(Click for Update)</ThemedText>
-            </View>
-            <View style={styles.rowContainer}>
-              <ThemedText type={'contentSubTitle'}>Logout</ThemedText>
-              <ThemedText onPress={() => router.push(`/`)} type={'articleBody'}>(Click for Update)</ThemedText>
-              
-            </View>
-          </View>
-        </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <ThemedButton
-          type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('posted')}
-        >
-          <ThemedText type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'} >Posted</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('saved')}
-        >
-          <ThemedText type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'} >Saved</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('commented')}
-        >
-          <ThemedText type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'} >Commented</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('liked')}
-        >
-          <ThemedText type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'} >Liked</ThemedText>
-        </ThemedButton>
-      </View>
-    </>
-  );
   return (
     <ThemedView style={styles.container}>        
       <FlatList
@@ -306,11 +336,39 @@ export default function ProfilePage() {
             <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
           </View>
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={<Header
+          initialData={initialData}
+          tags={[initialData?.university, initialData?.email].filter((tag): tag is string => typeof tag === 'string')}
+          DEFAULT_CARD_BACKGROUND={DEFAULT_CARD_BACKGROUND}
+          DEFAULT_TEXT={useThemeColor({}, 'DEFAULT_TEXT')}
+          uniOnly={false}
+          sortOption={sortOption}
+          setSortOption={setSortOption}
+          setUniOnly={() => {}}
+          setMenuVisible={setMenuVisible}
+        />}
         onEndReachedThreshold={0.5}
         onEndReached={() => {
           fetchMoreArticles();
         }}
+      />
+      <OverflowMenu
+        visible={menuVisible}
+        onDismiss={() => setMenuVisible(false)}
+        options={[
+          {
+            label: 'Connect Google Account',
+            onPress: () => {connectGoogle()},
+          },
+          {
+            label: 'Update Password',
+            onPress: () => {router.push('/newPassword')},
+          },
+          {
+            label: 'Logout',
+            onPress: () => {router.push('/')},
+          },
+        ]}
       />
     </ThemedView>
   );

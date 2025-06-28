@@ -45,13 +45,13 @@ const Header = React.memo(function Header({
 return (
   <>
     <ImageBackground
-      // source={require("../../assets/images/indexBg.png")}
-      source={
-        // Use different images based on theme
-        (require('react-native').useColorScheme?.() ?? 'light') === 'dark'
-          ? require("../../assets/images/indexBgDark.png")
-          : require("../../assets/images/indexBg.png")
-      }
+      source={require("../../assets/images/indexBg.png")}
+      // source={
+      //   // Use different images based on theme
+      //   (require('react-native').useColorScheme?.() ?? 'light') === 'dark'
+      //     ? require("../../assets/images/indexBgDark.png")
+      //     : require("../../assets/images/indexBg.png")
+      // }
       style={StyleSheet.absoluteFillObject}
       resizeMode="cover"
     />      

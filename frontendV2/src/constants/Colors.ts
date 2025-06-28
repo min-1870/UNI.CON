@@ -51,5 +51,5 @@ const DARK_MODE = {
   
 export const Colors = {
   light: LIGHT_MODE,
-  dark: DARK_MODE
+  dark: LIGHT_MODE
 };
