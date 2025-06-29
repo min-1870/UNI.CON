@@ -1,12 +1,17 @@
-import { StyleSheet } from 'react-native';
-import { Link, router } from 'expo-router';
+
+import { StyleSheet, FlatList, View, Pressable } from 'react-native';
+import { Link, router} from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
 import {fetchAPI, setData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
-import React, { useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
+import { useThemeColor } from '@/hooks/useThemeColor';
+
+import Toast from 'react-native-toast-message';
 
 
 
@@ -15,13 +20,31 @@ export default function NewPasswordPage() {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newConfirmPassword, setNewConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+    navigation.setOptions({
+      headerStyle: {
+        backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
+        // shadowColor: 'transparent', // remove iOS bottom border
+        elevation: 0, // remove Android shadow
+        borderWidth: 0, 
+      },
+      headerTintColor: DEFAULT_TEXT,
+      headerTitleAlign: 'center',
+      headerTitle: 'Update Password',
+    });
+  }, [navigation]);
   const handleUpdatePassword = async () => {
     if (newPassword !== newConfirmPassword) {
-      setError("Passwords do not match");
+      Toast.show({
+        type: 'error',
+        text1: `Passwords do not match..`,
+      });
       return;
     }
     setLoading(true);
@@ -34,61 +57,69 @@ export default function NewPasswordPage() {
       },
     });
     if (!response.error) {
-      setSuccess(true);
+      Toast.show({
+        type: 'success',
+        text1: `Password Updated Successfully !!`,
+      });
+       setPassword("");
+       setNewPassword("");
+       setNewConfirmPassword("");
+      router.push(`/profile`);
     }else{
-      setError(response?.data?.detail || "An error occurred");
+      Toast.show({
+        type: 'error',
+        text1: `Hi, ${response.data.detail}!`,
+      });
     }
     setLoading(false);
   }
   
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.textInputContainer}>
-        <ThemedText type="defaultSemiBold">Initial Password</ThemedText>
-        <ThemedInput
-          onChangeText={setPassword}
-          value={password}
-          editable={!success}
-          placeholder="Password"
-          keyboardType='default'
-          secureTextEntry={true}
-        />
-        <ThemedText type="defaultSemiBold">New Password</ThemedText>
-        <ThemedInput
-          onChangeText={setNewPassword}
-          value={newPassword}
-          editable={!success}
-          placeholder="Password"
-          keyboardType='default'
-          secureTextEntry={true}
-        />
-        <ThemedText type="defaultSemiBold">Confirm Password</ThemedText>
-        <ThemedInput
-          onChangeText={setNewConfirmPassword}
-          value={newConfirmPassword}
-          editable={!success}
-          placeholder="Password"
-          keyboardType='default'
-          secureTextEntry={true}
-        />
-      </ThemedView>
+      <View style={styles.textInputContainer}>
+        <View style={styles.currentPwWrapper}>
+          <ThemedText type="default">Current Password</ThemedText>
+          <ThemedInput
+            onChangeText={setPassword}
+            value={password}
+            placeholder="Password"
+            keyboardType='default'
+            secureTextEntry={true}
+          />
+        </View>
+        <View style={styles.newPwWrapper}>
+          <ThemedText type="default">New Password</ThemedText>
+          <ThemedInput
+            onChangeText={setNewPassword}
+            value={newPassword}
+            placeholder="Password"
+            keyboardType='default'
+            secureTextEntry={true}
+          />
+        </View>
+        <View style={styles.newPwWrapper}>
+          <ThemedText type="default">Confirm Password</ThemedText>
+          <ThemedInput
+            onChangeText={setNewConfirmPassword}
+            value={newConfirmPassword}
+            placeholder="Password"
+            keyboardType='default'
+            secureTextEntry={true}
+          />
+        </View>
+      </View>
       
       <ThemedView style={styles.buttonContainer}>
-        {error || <ThemedText type="error">{error}</ThemedText>}
+        {/* {error || <ThemedText type="error">{error}</ThemedText>}
         {success && (
-          <ThemedText type="defaultSemiBold">Password Updated Successfully</ThemedText>
-        )}
+          <ThemedText type="default">Password Updated Successfully</ThemedText>
+        )} */}
         <ThemedButton 
-          onPress={success ? ()=>{
-            setPassword("");
-            setNewPassword("");
-            setNewConfirmPassword("");
-            router.push(`/profile`);
-          } : handleUpdatePassword} 
+          onPress={handleUpdatePassword} 
           disabled={loading}
           type={'auth'}
         >
-          {success ? 'Back to Profile' : loading ? 'Updating Password..' : 'Update Password'}
+          <ThemedText type="default">{loading ? 'Updating Password..' : 'Update Password'}</ThemedText>
         </ThemedButton>
       </ThemedView>
 
@@ -105,6 +136,15 @@ const styles = StyleSheet.create({
   },
   textInputContainer: {
     alignItems: 'flex-start',
+    gap: 20,
+    width: '100%',
+  },
+  currentPwWrapper: {
+    gap: 10,
+    marginBottom: 30,
+    width: '100%',
+  },
+  newPwWrapper: {
     gap: 10,
     width: '100%',
   },

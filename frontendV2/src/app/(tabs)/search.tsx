@@ -18,10 +18,6 @@ import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { router } from "expo-router";
-import { createShimmerPlaceholder } from 'react-native-shimmer-placeholder';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const ShimmerPlaceHolder = createShimmerPlaceholder(LinearGradient);
 
 const TagHeader = memo<{
   tags: string[];
@@ -252,6 +248,7 @@ const styles = StyleSheet.create({
   headerContainer: { 
     marginHorizontal: 15,
     gap: 10,
+    marginBottom: 10,
   },
   searchContainers:{
     gap: 10,
@@ -265,7 +262,6 @@ const styles = StyleSheet.create({
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   feedContainer: {
     alignItems: 'stretch',
-    gap: 20,
     paddingVertical: 15,
   },
 });

@@ -125,6 +125,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginHorizontal: 15,
     backgroundColor: "transparent",
+    marginBottom: 10,
   },
   titleHeaderContainer: {
     flexDirection: 'row',
@@ -158,7 +159,6 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     alignItems: 'stretch',
-    gap: 20,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

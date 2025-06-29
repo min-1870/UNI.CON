@@ -20,6 +20,7 @@ import moment from 'moment';
       borderRadius: 20,
       marginHorizontal: 15,
       padding: 16, 
+      marginBottom: 20,
     },
     infoContainer: {
       flexDirection: 'row',
@@ -89,6 +90,7 @@ type ThemedArticleProps = {
 function ThemedArticle({ articleData, initialData, trendingTags, type='default',  }: ThemedArticleProps) {
 
   const button_color = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const active_button_color = useThemeColor({}, 'UNICON_BACKGROUND');
   const [fetchedTrendingTags, setFetchedTrendingTags] = useState<string[]>(trendingTags ?? []);
   
   const { bodies, imgUris } = useMemo(
@@ -261,7 +263,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
           <AntDesign
             name={articleData.like_status ? 'heart' : 'hearto'}
             size={15}
-            color={button_color}
+            color={articleData.like_status ? active_button_color: button_color}
           />
           <ThemedText type='articleButton'>
             {articleData.likes_count}

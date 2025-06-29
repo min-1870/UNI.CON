@@ -162,10 +162,9 @@ return (
     buttonContainer: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
-      // justifyContent: 'space-between',
+      marginBottom: 10,
       padding: 3,
       borderRadius: 50,
-      // backgroundColor: DEFAULT_CARD_BACKGROUND,
       marginHorizontal: 15,
       
       boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
@@ -174,7 +173,6 @@ return (
     },
     feedContainer: {
       alignItems: 'stretch',
-      gap: 20,
     },
   });
 export default function ProfilePage() {

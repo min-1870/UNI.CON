@@ -1,4 +1,4 @@
-import {View, NativeSyntheticEvent, TextInputKeyPressEventData, Platform, TextStyle} from 'react-native';
+import {View, Platform, TextStyle} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
