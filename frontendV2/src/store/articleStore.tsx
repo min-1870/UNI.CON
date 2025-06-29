@@ -15,6 +15,7 @@ type ArticlesStore = {
   setNextArticlePage: (page: string, feed: string, nextPage: string | null) => void;
   updateArticle: (id: number, update: Partial<ArticleType>) => void;
   reset: (page: string) => void;
+  clear: () => void;
 };
 
 export const useArticlesStore = create<ArticlesStore>((set, get) => ({
@@ -24,6 +25,14 @@ export const useArticlesStore = create<ArticlesStore>((set, get) => ({
     currentArticlePage: {},
     lastResetPage: null,
 
+    clear: () =>
+        set({
+            articlesById: {},
+            feeds: {},
+            nextArticlePage: {},
+            currentArticlePage: {},
+            lastResetPage: null,
+        }),
 
     reset: (page) => {
         if (page === get().lastResetPage) {

@@ -3,62 +3,84 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useArticlesStore } from '@/store/articleStore';
 import ThemedArticle from '@/components/ThemedArticle';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import {fetchAPI, getData} from "@/components/Utils";
+import {fetchAPI, getData, removeData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
-import { StyleSheet, FlatList, View, Pressable } from 'react-native';
+import { Animated, StyleSheet, FlatList, View, Pressable } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import * as AuthSession from 'expo-auth-session';
-import { ImageBackground } from "react-native";
 import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'
+
 import OverflowMenu from '@/components/ThemedOverflowMenu';
 
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ArticleType>);
 
 const Header = React.memo(function Header({
   initialData,
   tags,
   DEFAULT_CARD_BACKGROUND,
+  BACKGROUND_GRADIENT_START,
   DEFAULT_TEXT,
   sortOption,
   setSortOption,
-  setMenuVisible,
+  connectGoogle,
+  logout,
   setUniOnly,
+  scrollY,
 }: {
   initialData: InitialDataType | null;
   tags: string[];
   DEFAULT_CARD_BACKGROUND: string;
+  BACKGROUND_GRADIENT_START: string;
   DEFAULT_TEXT: string;
   uniOnly?: boolean;
   sortOption: keyof typeof apiEndpoints;
   setSortOption: (o: keyof typeof apiEndpoints) => void;
-  setMenuVisible: (v: boolean) => void;
+  connectGoogle: () => Promise<void>;
+  logout: () => void;
   setUniOnly?: (u: boolean) => void;
+  scrollY: Animated.Value;
 }) {
+    
+  // parallax the gradient up by 50% of scroll:
+  const translateY = scrollY.interpolate({
+    inputRange: [0, 200],
+    outputRange: [0, -100],
+    extrapolate: 'clamp',
+  });
 return (
     <>
-      <ImageBackground
-        source={require("../../assets/images/indexBg.png")}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
+      <Animated.View
+        style={[
+          styles.gradient,
+          { transform: [{ translateY }] }
+        ]}
       >
-      </ImageBackground>
+        <LinearGradient
+          colors={[BACKGROUND_GRADIENT_START,  'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </Animated.View>    
       <View style={styles.nheaderContainer}>
         <View style={styles.nheaderHeaderContainer}>
           <ThemedText type='contentTitle'>UNI.CON</ThemedText>
-          <Pressable onPress={() => router.push('/notification')}>
-            <Feather
-              name="more-vertical"
-              size={24}
+            <Pressable onPress={logout}>
+              <Feather
+              name="log-out"
+              size={20}
               color={DEFAULT_TEXT}
-              onPress={() => setMenuVisible(true)}
-            />
-          </Pressable>
+              />
+            </Pressable>
         </View>
         <View style={styles.nheaderContentContainer}>
           
@@ -76,6 +98,16 @@ return (
                 <ThemedTag key={i} unClickable={true} text={tag} type='bigRanked' />
               ))}
             </View>
+          </View>
+          <View style={styles.nheaderAccountContainer}>
+            <Pressable onPress={connectGoogle} style={styles.settingButton}>
+              <ThemedText type={'default'}>Connect Google</ThemedText>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color="#000" />
+            </Pressable>
+            <Pressable onPress={()=>router.navigate('/newPassword')} style={styles.settingButton}>
+              <ThemedText type={'default'}>Update Password</ThemedText>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color="#000" />
+            </Pressable>            
           </View>
         </View>
       </View>
@@ -127,6 +159,13 @@ return (
     container: {
       flex: 1,
     },
+    gradient: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 500,
+    },
     nheaderContainer:{
       margin: 15,
     },
@@ -159,6 +198,12 @@ return (
       gap: 10,
       backgroundColor: "transparent",
     },
+    settingButton:{
+      display:'flex',
+      flexDirection:'row',
+      gap:5,
+      alignItems:'center'
+    },
     buttonContainer: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
@@ -179,10 +224,11 @@ export default function ProfilePage() {
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
-
+  
+  const scrollY = useRef(new Animated.Value(0)).current;
   const isFetchingMore = useRef(false);
   const route = useRoute();
+  const router = useRouter()
   
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
@@ -192,7 +238,8 @@ export default function ProfilePage() {
   const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
-  
+  const BACKGROUND_GRADIENT_START = useThemeColor({}, 'BACKGROUND_GRADIENT_START');
+
   const discovery = {
     authorizationEndpoint: URLs.authorizationEndpoint,
     tokenEndpoint: URLs.tokenEndpoint,
@@ -219,7 +266,6 @@ export default function ProfilePage() {
       fetchArticles();
     }
   }, [sortOption]);
-
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -252,6 +298,17 @@ export default function ProfilePage() {
     }
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);
+
+
+  const handleLogout = () => {
+    removeData();
+    useArticlesStore.getState().clear();
+    Toast.show({
+      type: 'success',
+      text1: 'Logged out successfully',
+    });
+    router.replace('/login');
+  }
 
   const connectGoogle = async () => {
     const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -317,7 +374,7 @@ export default function ProfilePage() {
 
   return (
     <ThemedView style={styles.container}>        
-      <FlatList
+      <AnimatedFlatList
         data={feedArticles}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
@@ -343,30 +400,15 @@ export default function ProfilePage() {
           sortOption={sortOption}
           setSortOption={setSortOption}
           setUniOnly={() => {}}
-          setMenuVisible={setMenuVisible}
+          logout={handleLogout}
+          scrollY={scrollY}
+          BACKGROUND_GRADIENT_START={BACKGROUND_GRADIENT_START}
+          connectGoogle={connectGoogle}
         />}
         onEndReachedThreshold={0.5}
         onEndReached={() => {
           fetchMoreArticles();
         }}
-      />
-      <OverflowMenu
-        visible={menuVisible}
-        onDismiss={() => setMenuVisible(false)}
-        options={[
-          {
-            label: 'Connect Google Account',
-            onPress: () => {connectGoogle()},
-          },
-          {
-            label: 'Update Password',
-            onPress: () => {router.push('/newPassword')},
-          },
-          {
-            label: 'Logout',
-            onPress: () => {router.push('/')},
-          },
-        ]}
       />
     </ThemedView>
   );

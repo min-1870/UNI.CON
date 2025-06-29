@@ -9,6 +9,9 @@ import { useArticlesStore } from '@/store/articleStore';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRef } from 'react';
+import ThemedBNavBar from '@/components/ThemedBNavBar';
+
+const Tabs = createBottomTabNavigator<TabParamList>();
 
 export type TabParamList = {
   home: undefined;
@@ -17,7 +20,6 @@ export type TabParamList = {
   profile: undefined;
 };
 
-const Tabs = createBottomTabNavigator<TabParamList>();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -47,13 +49,16 @@ export default function TabLayout() {
   return (
     <Tabs.Navigator 
     
-      screenOptions={screenOptions}
+      // screenOptions={screenOptions}
+      
+      tabBar={props => <ThemedBNavBar {...props} />}
       screenListeners={({ navigation, route }) => ({
       tabPress: (e) => {
         if (route.name === routeName.current) {
           useArticlesStore.getState().reset(route.name);
         }
         routeName.current = route.name; 
+        console.log(`Tab pressed: ${route.name}`);
       },
       })}
     >

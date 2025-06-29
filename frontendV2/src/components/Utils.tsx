@@ -24,11 +24,11 @@ const getData = async (key:string) => {
 };
 
 // Function to remove data
-const removeData = async (key:string) => {
+const removeData = async () => {
   try {
-    await AsyncStorage.removeItem(key);
+    await AsyncStorage.clear();
   } catch (e) {
-    console.error('Error removing data', e);
+    console.error('Error removing all data', e);
   }
 };
 

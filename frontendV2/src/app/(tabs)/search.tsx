@@ -210,7 +210,6 @@ export default function SearchPage() {
           <>
             <View style={styles.headerContainer}>
               <View style={styles.searchContainers}>
-                <ThemedText type="contentTitle">Search</ThemedText>
                 <SearchHeader
                   value={searchContent}
                   onChange={setSearchContent}

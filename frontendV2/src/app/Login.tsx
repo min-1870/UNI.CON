@@ -1,15 +1,16 @@
-import { StyleSheet, View } from 'react-native';
-import { Link, router } from 'expo-router';
-import ThemedText from '@/components/ThemedText';
-import ThemedView from '@/components/ThemedView';
-import URLs from "@/constants/Urls";
+import { Pressable, StyleSheet, View } from 'react-native';
 import { fetchAPI, setData } from "@/components/Utils";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
-import React, { useState, useEffect } from "react";
-import Toast from 'react-native-toast-message';
-import * as Google from 'expo-auth-session/providers/google';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import Toast from 'react-native-toast-message';
+import { Link, router } from 'expo-router';
+import React, { useState } from "react";
+import URLs from "@/constants/Urls";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,105 +19,239 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const backgroundColor = useThemeColor({}, 'DEFAULT_BACKGROUND');
+  const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
+  
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-    expoClientId: '654153127818-9aao6il7d5vv3ivdb27nlsa58s7i6knl.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-
-      Toast.show({
-        type: 'success',
-        text1: 'Signed in with Google!',
-      });
-
-      // Send token to backend or process login here if needed
-      router.push("/index");
-    }
-  }, [response]);
+  const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
+  const discovery = {
+    authorizationEndpoint: URLs.authorizationEndpoint,
+    tokenEndpoint:         URLs.tokenEndpoint,
+  };
 
   const handleSubmit = async () => {
-    const url = URLs.LOGIN;
     setLoading(true);
 
-    const response = await fetchAPI(url, {
+    const response = await fetchAPI(URLs.LOGIN, {
       method: 'POST',
       token: false,
       body: { email, password },
     });
 
     if (!response.error) {
-      setData('id', response.data.id);
+      setData('initialData', JSON.stringify(response.data))
       setData('access', response.data.access);
-      setData('email', response.data.email);
-      setData('points', response.data.points);
-      setData('university_colors', response.data.university_colors);
-      setData('university', response.data.university);
       setData('refresh', response.data.refresh);
-      setData('color', response.data.color);
-      setData('initial', response.data.initial);
-      setData('is_validated', response.data.is_validated);
 
       Toast.show({
         type: 'success',
-        text1: `Hi, ${response.data.id}!`,
+        text1: `Hi, Welcome Back!!`,
       });
-
       router.push("/(tabs)");
     } else {
-      setError(response?.data?.detail || "An error occurred");
-      Toast.show({
-        type: 'error',
-        text1: "We couldn't log you in.",
-        text2: "Try again.",
-      });
+      if (response?.status === 403) {
+        setData('initialData', JSON.stringify(response.data))
+        setData('access', response.data.access);
+        setData('refresh', response.data.refresh);
+        Toast.show({
+          type: 'success',
+          text1: `Hi, Please validate your account!!`,
+        });
+        router.push("/validation");
+      } else {
+        setError(response?.data?.detail || "An error occurred");
+        Toast.show({
+          type: 'error',
+          text1: "We couldn't log you in.",
+          text2: "Try again.",
+        });
+      }
     }
 
     setLoading(false);
   };
 
+  const googleLogin = async () => {
+    setLoading(true);
+    try {
+      // Generate a code verifier and challenge for PKCE
+      const request = new AuthSession.AuthRequest({
+        clientId: URLs.GOOGLE_CLIENT_ID,
+        scopes: ['openid', 'profile', 'email'], 
+        redirectUri: GOOGLE_LOGIN_CALLBACK_URL,
+        responseType: 'code',
+        extraParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      });
+
+      // Send to Oauth
+      await request.makeAuthUrlAsync(discovery);
+      const oauth_response = await request.promptAsync(discovery);
+
+      if (oauth_response.type === 'success') {
+        const { code } = oauth_response.params;
+        
+        // Send back the response to API server
+        const login_response = await fetchAPI(
+          URLs.GOOGLE_LOGIN, {
+          method: 'POST',
+          token: false,
+          body: { code, code_verifier: request.codeVerifier }
+        });
+
+        if (!login_response.error) {
+          router.push("/(tabs)");
+        } else {
+          console.log(login_response)
+          setError(login_response?.data?.detail || "Google account is not registered");
+          return;
+        }
+
+      } else {
+        setError("Failed to login with Google");
+      }
+    } catch (err) {
+      setError(`Unexpected error: ${err}`);
+    }
+    
+    setLoading(false);
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 30,
+      backgroundColor: backgroundColor,
+    },
+    card: {
+      width: '100%',
+      padding: 24,
+      borderRadius: 20,
+      backgroundColor: DEFAULT_CARD_BACKGROUND,
+      
+      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
+      backdropFilter: 'blur(10px)', // For web platforms
+      elevation: 10, // For Android shadow
+    },
+    header:{
+      gap: 40,
+    },
+    badge: {
+      alignSelf: 'center',
+      backgroundColor: '#d1fae5',
+      color: '#059669',
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    row: {
+      gap: 5,
+    },
+    passwordForgot: {
+      color: uniconContent,
+      fontWeight: '600',
+      textAlign: 'right',
+      textDecorationLine: 'underline',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: '#e5e7eb',
+      alignSelf: 'stretch',
+      marginVertical: 16,
+    },
+    footerText: {
+      textAlign: 'center',
+      color: '#6b7280',
+      marginBottom: 30,
+    },
+    link: {
+      color: uniconContent,
+      fontWeight: '600',
+    },
+    socialButtonContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
+      width: '100%',
+    },
+    googleButton: {
+      borderWidth: 1,
+      borderColor: '#d1d5db',
+      borderRadius: 20,
+      marginTop: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '70%',
+    },
+    googleButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    googleIconWrapper: {
+      backgroundColor: 'transparent',
+      width: 20,
+      height: 20,
+    },
+    googleButtonText: {
+      color: '#000',
+      fontWeight: '500',
+      fontSize: 14,
+    },
+  });
+
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.card}>
-        <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-        <ThemedText type="Wording">Welcome Back</ThemedText>
-        <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
+        <ThemedView style={styles.header}>
+          
+          <ThemedView>
+            <ThemedText style={styles.badge}>UNI.CON</ThemedText>
+            <ThemedText type="university" >Welcome Back</ThemedText>
+            <ThemedText type='contentSubTitle'>Sign in to continue</ThemedText>
+          </ThemedView>
 
-        <ThemedText>University Email</ThemedText>
-        <View style={styles.emailRow}>
-        <ThemedInput
-          onChangeText={setEmail}
-          value={email}
-          keyboardType='email-address'
-        />
-        </View>
+          <ThemedView >
+            <View style={styles.row}>
+              <ThemedText>University Email</ThemedText>
+              <ThemedInput
+                onChangeText={setEmail}
+                value={email}
+                type="auth"
+                keyboardType='email-address'
+              />
+            </View>
+            <View style={styles.row}>
+              <ThemedText>Password</ThemedText>
+              <ThemedInput
+                onChangeText={setPassword}
+                value={password}
+                secureTextEntry={true}
+              />
+              <ThemedText
+                type="link"
+                // onPress={() => router.push("/forgot-password")}
+                style={styles.passwordForgot}
+              >
+                Forgot Password?
+              </ThemedText>
+            </View>
+          </ThemedView>
 
-        <ThemedText>Password</ThemedText>
-        <View style={styles.passwordRow}>
-          <ThemedInput
-            onChangeText={setPassword}
-            value={password}
-            secureTextEntry={true}
-          />
-        </View>
+          <ThemedButton onPress={handleSubmit} disabled={loading} type='auth'>
+            <ThemedText>{loading ? 'Logging in...' : 'Login'}</ThemedText>
+          </ThemedButton>
 
-        {error ? <ThemedText type="error">{error}</ThemedText> : null}
-
-        <ThemedText
-  type="link"
-  onPress={() => router.push("/forgot-password")}
-  style={styles.passwordForgot}
->
-  Forgot Password?
-</ThemedText>
-
-        <ThemedButton onPress={handleSubmit} disabled={loading} style={styles.loginButton}>
-          {loading ? 'Logging in...' : 'Login'}
-        </ThemedButton>
-
+        </ThemedView>
         <View style={styles.divider} />
 
         <ThemedText style={styles.footerText}>
@@ -124,7 +259,7 @@ export default function LoginPage() {
         </ThemedText>
 
         <View style={styles.socialButtonContainer}>
-          <ThemedButton onPress={() => promptAsync()} disabled={!request} style={styles.googleButton}>
+          <Pressable onPress={() => googleLogin()} disabled={loading} style={styles.googleButton}>
             <View style={styles.googleButtonContent}>
               <View style={styles.googleIconWrapper}>
                 {/* @ts-ignore */}
@@ -138,130 +273,9 @@ export default function LoginPage() {
               </View>
               <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
             </View>
-          </ThemedButton>
+          </Pressable>
         </View>
       </ThemedView>
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 30,
-    backgroundColor: '#f9fafb',
-  },
-  card: {
-    width: '100%',
-    padding: 24,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  badge: {
-    alignSelf: 'center',
-    backgroundColor: '#d1fae5',
-    color: '#059669',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  title: {
-    alignSelf: 'center',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    alignSelf: 'center',
-    color: '#6b7280',
-    marginBottom: 20,
-  },
-  emailRow: {
-    backgroundColor:'f3f4f6',
-    height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 6,
-    marginBottom: 0,
-  },
-
-  passwordRow: {
-    height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 6,
-    marginBottom: 0,
-  },
-  passwordForgot: {
-    color: '#059669',
-    fontWeight: '600',
-    textAlign: 'right',
-    marginBottom: 40,
-    textDecorationLine: 'underline',
-  },
-  loginButton: {
-    backgroundColor: '#4ade80',
-    borderRadius: 30,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    alignSelf: 'stretch',
-    marginVertical: 16,
-  },
-  footerText: {
-    textAlign: 'center',
-    color: '#6b7280',
-    marginBottom: 30,
-  },
-  link: {
-    color: '#059669',
-    fontWeight: '600',
-  },
-  socialButtonContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-    width: '100%',
-  },
-  googleButton: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginTop: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '70%',
-  },
-  googleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  googleIconWrapper: {
-    backgroundColor: 'transparent',
-    width: 20,
-    height: 20,
-  },
-  googleButtonText: {
-    color: '#000',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-});

@@ -15,7 +15,7 @@ export default function ThemedCard({
   const DEFAULT_VIEWED_CARD_BG = useThemeColor({}, 'DEFAULT_VIEWED_CARD_BACKGROUND');
 
   return <View style={[{ 
-      backgroundColor: viewed ? DEFAULT_VIEWED_CARD_BG : DEFAULT_CARD_BG,
+      backgroundColor: viewed ? DEFAULT_CARD_BG : DEFAULT_CARD_BG,
       boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
       backdropFilter: 'blur(10px)', // For web platforms
       elevation: 10,

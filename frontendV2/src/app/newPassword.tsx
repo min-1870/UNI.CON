@@ -24,9 +24,10 @@ export default function NewPasswordPage() {
 
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const navigation = useNavigation();
 
-    useLayoutEffect(() => {
+  useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
         backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
@@ -38,7 +39,7 @@ export default function NewPasswordPage() {
       headerTitleAlign: 'center',
       headerTitle: 'Update Password',
     });
-  }, [navigation]);
+  }, [navigation, loading]);
   const handleUpdatePassword = async () => {
     if (newPassword !== newConfirmPassword) {
       Toast.show({
@@ -110,16 +111,12 @@ export default function NewPasswordPage() {
       </View>
       
       <ThemedView style={styles.buttonContainer}>
-        {/* {error || <ThemedText type="error">{error}</ThemedText>}
-        {success && (
-          <ThemedText type="default">Password Updated Successfully</ThemedText>
-        )} */}
         <ThemedButton 
           onPress={handleUpdatePassword} 
           disabled={loading}
           type={'auth'}
         >
-          <ThemedText type="default">{loading ? 'Updating Password..' : 'Update Password'}</ThemedText>
+          <ThemedText style={{color:ALWAYS_BLACK}} type="default">{loading ? 'Updating Password..' : 'Update Password'}</ThemedText>
         </ThemedButton>
       </ThemedView>
 

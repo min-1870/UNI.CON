@@ -4,7 +4,7 @@ import ThemedNotification from '@/components/ThemedNotification';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import type { TabParamList } from './(tabs)/_layout';
-import { StyleSheet, FlatList, Pressable } from 'react-native';
+import { StyleSheet, FlatList, Pressable, View } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
@@ -141,35 +141,41 @@ export default function NotificationPage() {
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           <ThemedText type="contentTitle">Recent</ThemedText>
-          <FlatList
-            data={newNotifications}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-            contentContainerStyle={styles.feedContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
-            }
-            onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              fetchMoreNotification(true);
-            }}
-          />
+            <View style={styles.feedWrapper}>
+              <FlatList
+                data={newNotifications}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
+                contentContainerStyle={styles.feedContainer}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  
+                    <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+                  
+                }
+                onEndReachedThreshold={0.5}
+                onEndReached={() => {
+                  fetchMoreNotification(true);
+                }}
+              />
+            </View>
           <ThemedText type="contentTitle">Older</ThemedText>
-          <FlatList
-            data={oldNotifications}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-            contentContainerStyle={styles.feedContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
-            }
-            onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              fetchMoreNotification(false);
-            }}
-          />
+          <View style={styles.feedWrapper}>
+            <FlatList
+              data={oldNotifications}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
+              contentContainerStyle={styles.feedContainer}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+              }
+              onEndReachedThreshold={0.5}
+              onEndReached={() => {
+                fetchMoreNotification(false);
+              }}
+            />
+          </View>
         </Animated.View>
       )}
     </ThemedView>
@@ -189,4 +195,9 @@ const styles = StyleSheet.create({
     gap: 20,
     alignSelf: 'center',
   },
+  feedWrapper:{ 
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 100
+  }
 });

@@ -83,7 +83,7 @@ export default function ArticlePage() {
   const [menuVisible, setMenuVisible] = useState(false);
 
 
-    useLayoutEffect(() => {
+  useLayoutEffect(() => {
     navigation.setOptions({
       headerStyle: {
         backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
