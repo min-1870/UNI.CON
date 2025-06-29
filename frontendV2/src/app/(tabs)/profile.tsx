@@ -102,11 +102,11 @@ return (
           <View style={styles.nheaderAccountContainer}>
             <Pressable onPress={connectGoogle} style={styles.settingButton}>
               <ThemedText type={'default'}>Connect Google</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color="#000" />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
             </Pressable>
             <Pressable onPress={()=>router.navigate('/newPassword')} style={styles.settingButton}>
               <ThemedText type={'default'}>Update Password</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color="#000" />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
             </Pressable>            
           </View>
         </View>
