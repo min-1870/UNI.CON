@@ -7,7 +7,7 @@ import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { fetchAPI, setData } from "@/components/Utils";
 import URLs from "@/constants/Urls";
 export default function EmailVerificationPage() {
@@ -19,6 +19,7 @@ export default function EmailVerificationPage() {
   const [resendCount, setResendCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [validated, setValidated] = useState(false);
+  const { forgotPassword = false } = useLocalSearchParams<{ forgotPassword?: string }>();
 
   const handleInitialSend = () => {
     console.log(`Sending verification code to: ${email}`);
@@ -58,25 +59,38 @@ export default function EmailVerificationPage() {
   const handleVerify = async (entered?: string) => {
     const finalCode = entered || code.join('');
     setLoading(true);
-    const response = await fetchAPI(URLs.VALIDATE, {
+    const response = await fetchAPI(forgotPassword == '1' ? URLs.VALIDATE_FORGOT_PASSWORD : URLs.VALIDATE, {
       method: 'POST',
-      token: true,
-      body: { validation_code: finalCode },
+      token: forgotPassword ? false : true,
+      body: { validation_code: finalCode, email: email },
     });
     
     setTimeout(() => {
       if (!response.error) {
-        Toast.show({
-          type: 'success',
-          text1: 'Code verified! 🎉',
-          text2: 'Redirecting you to the last step.',
-        });
-        setValidated(true);
-        setLoading(true);
-        setTimeout(() => {
-          setLoading(false);
+        if (forgotPassword == '1'){
+          Toast.show({
+            type: 'success',
+            text1: 'Code verified! 🎉',
+          });
+          setValidated(true);
+          setLoading(true);
+          setData('initialData', JSON.stringify(response.data))
+          setData('access', response.data.access);
+          setData('refresh', response.data.refresh);
+          router.push({
+            pathname: '/resetPassword',
+            params: { email: email }, 
+          });
+        } else {
+          Toast.show({
+            type: 'success',
+            text1: 'Code verified! 🎉',
+            text2: 'Redirecting you to the last step.',
+          });
+          setValidated(true);
+          setLoading(true);
           router.push('/(tabs)');
-        }, 1500);
+        }
       } else {
         setLoading(false);
         Toast.show({
@@ -88,6 +102,7 @@ export default function EmailVerificationPage() {
         inputs.current[0]?.focus();
       }
     }, 1000);
+    setLoading(false);
   };
 
   const handleResend = () => {

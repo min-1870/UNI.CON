@@ -1,4 +1,10 @@
-from .utils import send_email, annotate_user, exchange_google_code_for_data
+from .utils import (
+    send_email,
+    annotate_user,
+    exchange_google_code_for_data,
+    get_validation_code,
+    match_validation_code,
+)
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.hashers import make_password
 from .permissions import User_IsAuthenticated
@@ -66,15 +72,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check for the empty property
-        validation_code = request.data.get("validation_code", "").strip()
-        if len(validation_code) == 0:
-            return Response(
-                {"detail": "The property is empty."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         # Validate the code in the DB
-        if validation_code != user_instance.validation_code:
+        if match_validation_code(user_instance, request.data["validation_code"]) is False:
             return Response(
                 {"detail": "The validation code is incorrect."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -118,10 +117,16 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"detail":"The password has been updated."}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["post"])
-    def forgotpassword(self, request):
+    def forgot_password(self, request):
         user_instance = request.user
         
         email = request.data["email"]
+        if not email:
+            return Response(
+            {"detail": "The email is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         user_instance = User.objects.filter(email=email).first()
 
         # Validate the email
@@ -131,13 +136,79 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        temporary_password = get_name()
-        send_email(FORGOT_PASSWORD_EMAIL_SUBJECT, FORGOT_PASSWORD_EMAIL_BODY+temporary_password, request.data["email"])
+        # recreate the validation code
+        validation_code = get_validation_code(user_instance)
+        
+        # send the validation code to the email
+        send_email(
+            OTP_EMAIL_SUBJECT, 
+            OTP_EMAIL_BODY + validation_code, 
+            user_instance.email
+        )
 
-        with transaction.atomic():
-            user_instance.update(password=make_password(temporary_password))
+        return Response({"detail":"Sent Validation Code."}, status=status.HTTP_200_OK)
 
-        return Response({"detail":"The temporary password has been sent."}, status=status.HTTP_200_OK)
+    @action(detail=False, methods=["post"])
+    def validate_forgot_password(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response(
+            {"detail": "The email is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        user_instance = User.objects.filter(email=email).first()
+        if user_instance is None:
+            return Response(
+            {"detail": "The email is not registered."},
+            status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check the missing property
+        if "validation_code" not in request.data.keys():
+            return Response(
+                {"detail": "The property is missing."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check for the empty property
+        validation_code = request.data.get("validation_code", "").strip()
+        if len(validation_code) == 0:
+            return Response(
+                {"detail": "The property is empty."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate the code in the DB
+        if match_validation_code(user_instance, validation_code) is False:
+            return Response(
+                {"detail": "The validation code is incorrect."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+        user_instance = annotate_user(user_instance)
+        serializer = self.get_serializer(user_instance)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"])
+    def reset_forgot_password(self, request):
+        user_instance = request.user
+        
+        # Check the missing property
+        if "password" not in request.data.keys():
+            return Response(
+                {"detail": "The property is missing."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        password = request.data["password"]
+        password = make_password(password)
+        user_instance.password = password
+        user_instance.save()
+
+        return Response({"detail":"The password has been updated."}, status=status.HTTP_200_OK)
+    
     
     @action(detail=False, methods=["get"])
     def google_auth_session(self, request):

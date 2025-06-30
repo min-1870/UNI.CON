@@ -17,6 +17,9 @@ OTP_EMAIL_BODY = "This is your OTP for UNI.CON: "
 FORGOT_PASSWORD_EMAIL_SUBJECT = "Your new password for UNI.CON is here!"
 FORGOT_PASSWORD_EMAIL_BODY = "We have provided a temporary password for you. Please change it after login: "
 
+TEMPORARY_CODE_LIFETIME = 60 * 5  # 5 minutes
+VALIDATION_CODE_LENGTH = 6
+VALIDATION_CODE_CACHE_KEY = (lambda uid: f"USER_{uid}_VALIDATION_CODE")
 SSO_SESSION_CACHE_KEY = (
     lambda session_id: f"SSO_SESSION_{session_id}_CACHE_KEY"
 )

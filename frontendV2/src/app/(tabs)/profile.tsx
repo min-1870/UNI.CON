@@ -11,15 +11,12 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
-import * as AuthSession from 'expo-auth-session';
 import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'
-
-import OverflowMenu from '@/components/ThemedOverflowMenu';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ArticleType>);
 
@@ -31,7 +28,6 @@ const Header = React.memo(function Header({
   DEFAULT_TEXT,
   sortOption,
   setSortOption,
-  connectGoogle,
   logout,
   setUniOnly,
   scrollY,
@@ -44,7 +40,6 @@ const Header = React.memo(function Header({
   uniOnly?: boolean;
   sortOption: keyof typeof apiEndpoints;
   setSortOption: (o: keyof typeof apiEndpoints) => void;
-  connectGoogle: () => Promise<void>;
   logout: () => void;
   setUniOnly?: (u: boolean) => void;
   scrollY: Animated.Value;
@@ -236,10 +231,6 @@ export default function ProfilePage() {
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const BACKGROUND_GRADIENT_START = useThemeColor({}, 'BACKGROUND_GRADIENT_START');
 
-  const discovery = {
-    authorizationEndpoint: URLs.authorizationEndpoint,
-    tokenEndpoint: URLs.tokenEndpoint,
-  };
 
 
   // Fetch again when the page is reset
@@ -306,67 +297,6 @@ export default function ProfilePage() {
     router.replace('/login');
   }
 
-  const connectGoogle = async () => {
-    const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
-    try {
-
-      // Get temp session ID from the API server
-      const response = await fetchAPI(URLs.TEMP_STATE, {
-        method: 'GET',
-        token: true,
-      });
-
-      if (response.error) {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-      });
-        return;
-      }
-
-      // Generate a code verifier and challenge for PKCE
-      const request = new AuthSession.AuthRequest({
-        clientId: URLs.GOOGLE_CLIENT_ID,
-        scopes: ['openid', 'profile', 'email'], 
-        redirectUri: GOOGLE_LINK_CALLBACK_URL,
-        responseType: 'code',
-        extraParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-          state: response.data.state,
-        },
-      });
-
-      // Send to Oauth
-      await request.makeAuthUrlAsync(discovery);
-      const result = await request.promptAsync(discovery);
-
-      if (result.type === 'success') {
-        const { code, state } = result.params;
-
-        // Send back the response to API server
-        const response = await fetchAPI(
-          URLs.GOOGLE_LINK_URL, {
-          method: 'POST',
-          token: true,
-          body: { code, state, code_verifier: request.codeVerifier }
-        });
-
-        if (response.error) {
-          Toast.show({
-            type: 'success',
-            text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
-          });
-          return;
-        }
-
-      } else {
-        console.log("Google sign-in cancelled or failed:", result);
-      }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-    }
-  };
 
   return (
     <ThemedView style={styles.container}>        
@@ -399,7 +329,6 @@ export default function ProfilePage() {
           logout={handleLogout}
           scrollY={scrollY}
           BACKGROUND_GRADIENT_START={BACKGROUND_GRADIENT_START}
-          connectGoogle={connectGoogle}
         />}
         onEndReachedThreshold={0.5}
         onEndReached={() => {

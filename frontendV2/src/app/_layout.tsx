@@ -68,6 +68,8 @@ export default function RootLayout() {
             {/* <Stack.Screen name="index" /> */}
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
+            <Stack.Screen name="forgotPassword" />
+            <Stack.Screen name="resetPassword" />
             <Stack.Screen name="validation" />
             <Stack.Screen name="tnc" />
             <Stack.Screen name="(tabs)" />

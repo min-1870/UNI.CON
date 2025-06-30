@@ -3,6 +3,7 @@ import { fetchAPI, setData } from "@/components/Utils";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
+import ThemedCard from '@/components/ThemedCard';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
@@ -11,6 +12,8 @@ import Toast from 'react-native-toast-message';
 import { Link, router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
+
+
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,6 +26,8 @@ export default function LoginPage() {
   const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
   
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
+  const ALWAYS_WHITE = useThemeColor({}, 'ALWAYS_WHITE');
   
 
   const GOOGLE_LOGIN_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -124,57 +129,9 @@ export default function LoginPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 30,
-      backgroundColor: backgroundColor,
-    },
-    card: {
-      width: '100%',
-      padding: 24,
-      borderRadius: 20,
-      backgroundColor: DEFAULT_CARD_BACKGROUND,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-    },
-    header:{
-      gap: 40,
-    },
-    badge: {
-      alignSelf: 'center',
-      backgroundColor: '#d1fae5',
-      color: '#059669',
-      paddingVertical: 4,
-      paddingHorizontal: 10,
-      borderRadius: 12,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
-    row: {
-      gap: 5,
-    },
-    passwordForgot: {
-      color: uniconContent,
-      fontWeight: '600',
-      textAlign: 'right',
-      textDecorationLine: 'underline',
-    },
-    divider: {
-      height: 1,
-      backgroundColor: '#e5e7eb',
-      alignSelf: 'stretch',
-      marginVertical: 16,
-    },
-    footerText: {
-      textAlign: 'center',
-      color: '#6b7280',
-      marginBottom: 30,
-    },
-    link: {
-      color: uniconContent,
-      fontWeight: '600',
     },
     socialButtonContainer: {
       alignItems: 'center',
@@ -190,6 +147,7 @@ export default function LoginPage() {
       paddingHorizontal: 12,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: ALWAYS_WHITE,
       width: '70%',
     },
     googleButtonContent: {
@@ -203,34 +161,64 @@ export default function LoginPage() {
       height: 20,
     },
     googleButtonText: {
-      color: '#000',
-      fontWeight: '500',
-      fontSize: 14,
+      color: ALWAYS_BLACK,
     },
+    header: {
+      marginTop: 30,
+    },
+    card:{
+      width:'90%',
+      maxWidth:500,
+      gap:50,
+    },
+    row:{
+      gap:20,
+    },
+    inputWrapper:{
+      gap:10,
+    },
+    forgotPasswordText: {
+      textAlign: 'right',
+      color: uniconContent,
+      fontSize: 14,
+      fontWeight: '500',
+      textDecorationLine: 'underline',
+    },
+    submitButtonWrapper: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    submitButtonText: {
+      color: ALWAYS_BLACK
+    }
   });
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
-        <ThemedView style={styles.header}>
-          
-          <ThemedView>
-            <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-            <ThemedText type="university" >Welcome Back</ThemedText>
-            <ThemedText type='contentSubTitle'>Sign in to continue</ThemedText>
-          </ThemedView>
+      <ThemedCard style={styles.card}>
 
-          <ThemedView >
-            <View style={styles.row}>
-              <ThemedText>University Email</ThemedText>
-              <ThemedInput
-                onChangeText={setEmail}
-                value={email}
-                type="auth"
-                keyboardType='email-address'
-              />
-            </View>
-            <View style={styles.row}>
+        <View style={styles.header}>
+          <ThemedText type="university" >Welcome Back</ThemedText>
+          <ThemedText type='contentSubTitle'>Sign in to continue</ThemedText>
+        </View>
+
+        
+        <View style={styles.row}>
+          <View style={styles.inputWrapper}>
+            <ThemedText>University Email</ThemedText>
+            <ThemedInput
+              onChangeText={setEmail}
+              value={email}
+              type="auth"
+              keyboardType='email-address'
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.inputWrapper}>
               <ThemedText>Password</ThemedText>
               <ThemedInput
                 onChangeText={setPassword}
@@ -239,24 +227,25 @@ export default function LoginPage() {
               />
               <ThemedText
                 type="link"
-                // onPress={() => router.push("/forgot-password")}
-                style={styles.passwordForgot}
+                style={styles.forgotPasswordText}
+                onPress={() => router.push("/forgotPassword")}
               >
                 Forgot Password?
               </ThemedText>
             </View>
-          </ThemedView>
+          </View>
+        </View>
 
-          <ThemedButton onPress={handleSubmit} disabled={loading} type='auth'>
-            <ThemedText>{loading ? 'Logging in...' : 'Login'}</ThemedText>
+
+        <View style={styles.submitButtonWrapper}>
+          <ThemedButton  onPress={handleSubmit} disabled={loading} type='auth'>
+            <ThemedText style={styles.submitButtonText}>{loading ? 'Logging in...' : 'Login'}</ThemedText>
           </ThemedButton>
-
-        </ThemedView>
-        <View style={styles.divider} />
-
-        <ThemedText style={styles.footerText}>
-          Don't have an account yet? <Link href="/register" style={styles.link}>Sign Up</Link>
-        </ThemedText>
+          <ThemedText >
+            Don't have an account yet? <Link href="/register" >Sign Up</Link>
+          </ThemedText>
+        </View>
+        
 
         <View style={styles.socialButtonContainer}>
           <Pressable onPress={() => googleLogin()} disabled={loading} style={styles.googleButton}>
@@ -275,7 +264,7 @@ export default function LoginPage() {
             </View>
           </Pressable>
         </View>
-      </ThemedView>
+      </ThemedCard>
     </ThemedView>
   );
 }

@@ -6,8 +6,31 @@ from .models import School
 import requests
 import smtplib
 import jwt
+from django.core.cache import cache
+from .constants import VALIDATION_CODE_LENGTH, VALIDATION_CODE_CACHE_KEY, TEMPORARY_CODE_LIFETIME
+import random
+
+
+def get_validation_code(user_instance):
+    """
+    Store the validation code in the cache for 10 minutes.
+    """
+    validation_code = "".join(str(random.randint(0, 9)) for _ in range(VALIDATION_CODE_LENGTH))
+    cache.set(VALIDATION_CODE_CACHE_KEY(user_instance.id), validation_code, timeout=TEMPORARY_CODE_LIFETIME)
+    return validation_code
+
+def match_validation_code(user_instance, code):
+    cached_code = cache.get(VALIDATION_CODE_CACHE_KEY(user_instance.id))
+    print("Cached Code:", cached_code)
+    print("Provided Code:", code, VALIDATION_CODE_CACHE_KEY(user_instance.id))
+    if cached_code == code:
+        # If the code matches, delete it from the cache
+        cache.delete(VALIDATION_CODE_CACHE_KEY(user_instance.id))
+        return True
+    return False
 
 def send_email(subject, body, email):
+    email = '200134kms@gmail.com' # For testing purposes, replace with the actual email address
 
     unicon_email = config("UNICON_EMAIL")
     unicon_password = config("UNICON_EMAIL_PASSWORD")

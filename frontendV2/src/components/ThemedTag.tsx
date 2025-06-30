@@ -28,12 +28,6 @@ export default function ThemedTag({
   const RANKED_TAG_TEXT = useThemeColor({}, 'RANKED_TAG_TEXT');
   const ALWAYS_WHILE = useThemeColor({}, 'ALWAYS_WHITE');
 
-  // const background_color = useThemeColor({}, 'default_tag_background_color');
-  // const textColor = useThemeColor({}, 'default_text_color');
-  // const rankedBackgroundColor = useThemeColor({}, 'rankedTagBackgroundColor');
-  // const rankedTextColor = useThemeColor({}, 'rankedTagTextColor');
-  // const uniTextColor = useThemeColor({}, 'uniTagTextColor');
-
   const styles = type === 'bigRanked' ?
     StyleSheet.create({
         tag: {
