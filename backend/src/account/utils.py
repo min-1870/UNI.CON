@@ -70,6 +70,7 @@ def annotate_user(user_instance, params=None):
     color = user_instance.school.color
     refresh = RefreshToken.for_user(user_instance)
     access = RefreshToken.for_user(user_instance).access_token
+    points = user_instance.points
     if params:
         return f"?user={user_instance.id}&initial={initial}&color={color}&points={points}&refresh={refresh}&access={access}"
     else:

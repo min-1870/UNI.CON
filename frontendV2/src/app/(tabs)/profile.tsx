@@ -100,12 +100,8 @@ return (
             </View>
           </View>
           <View style={styles.nheaderAccountContainer}>
-            <Pressable onPress={connectGoogle} style={styles.settingButton}>
-              <ThemedText type={'default'}>Connect Google</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
-            </Pressable>
-            <Pressable onPress={()=>router.navigate('/newPassword')} style={styles.settingButton}>
-              <ThemedText type={'default'}>Update Password</ThemedText>
+            <Pressable onPress={()=>router.navigate('/setting')} style={styles.settingButton}>
+              <ThemedText type={'default'}>Setting</ThemedText>
               <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
             </Pressable>            
           </View>
@@ -393,7 +389,7 @@ export default function ProfilePage() {
         )}
         ListHeaderComponent={<Header
           initialData={initialData}
-          tags={[initialData?.university, initialData?.email].filter((tag): tag is string => typeof tag === 'string')}
+          tags={[initialData?.university, initialData?.email, initialData?.gmail ? initialData?.gmail : 'No Google Account'].filter((tag): tag is string => typeof tag === 'string')}
           DEFAULT_CARD_BACKGROUND={DEFAULT_CARD_BACKGROUND}
           DEFAULT_TEXT={useThemeColor({}, 'DEFAULT_TEXT')}
           uniOnly={false}

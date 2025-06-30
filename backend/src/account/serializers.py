@@ -28,6 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
             "points",
             "refresh",
             "access",
+            "gmail",
             "is_validated",
         ]
         extra_kwargs = {

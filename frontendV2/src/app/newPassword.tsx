@@ -39,7 +39,8 @@ export default function NewPasswordPage() {
       headerTitleAlign: 'center',
       headerTitle: 'Update Password',
     });
-  }, [navigation, loading]);
+  }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
+
   const handleUpdatePassword = async () => {
     if (newPassword !== newConfirmPassword) {
       Toast.show({

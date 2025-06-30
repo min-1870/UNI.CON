@@ -15,13 +15,6 @@ import URLs from "@/constants/Urls";
 import moment from 'moment';
   
   const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      borderRadius: 20,
-      marginHorizontal: 15,
-      padding: 16, 
-      marginBottom: 20,
-    },
     infoContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -168,10 +161,9 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
   }, [articleData.id]);
   
   return (
-    <ThemedCard viewed={articleData.view_status && type === 'default'} style={[
-      styles.container,
-      type === 'detail' && { borderTopRightRadius: 0, borderTopLeftRadius: 0, marginHorizontal: 0, marginBottom: 20 },
-    ]}>
+    <ThemedCard type={
+        type === 'default' ? (articleData.view_status ? 'defaultViewed' : 'default') : 'detail'
+      }>
       <Pressable onPress={() => (type === 'default' && handleArticleDetail())}>
         <View style={[styles.infoContainer]}>
             {articleData.unicon && (

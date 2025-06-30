@@ -293,10 +293,6 @@ export default function NewArticlePage() {
     cardContainer: {
       minHeight: 700,
       display: 'flex',
-      borderBottomLeftRadius: 30,
-      borderBottomRightRadius: 30,
-      padding: 20, 
-      marginBottom: 20,
     },
     textAreasContainer:{
       display: 'flex',
@@ -368,7 +364,7 @@ export default function NewArticlePage() {
         showsHorizontalScrollIndicator={false}
     >
     <ThemedView style={styles.container}>
-      <ThemedCard style={styles.cardContainer}>
+      <ThemedCard type='detail' style={styles.cardContainer}>
         <View style={styles.textAreasContainer}>
           <TextInput
             style={[removeOutline, styles.titleTextArea]}

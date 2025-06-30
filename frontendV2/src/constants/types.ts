@@ -30,6 +30,7 @@ export interface InitialDataType {
     color: string;
     initial: string;
     is_validated: boolean;
+    gmail: string;
 }
 export interface CommentType {
   id: number;
