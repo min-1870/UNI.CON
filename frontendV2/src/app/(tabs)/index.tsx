@@ -15,7 +15,7 @@ import URLs from "@/constants/Urls";
 import { fetchAPI, getData, setData } from "@/components/Utils";
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedButton from '@/components/ThemedButton';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
@@ -73,16 +73,16 @@ return (
     </Animated.View>    
     <View style={styles.titleContainer}>
       <View style={styles.titleHeaderContainer}>
-        <ThemedText type='contentTitle'>UNI.CON</ThemedText>
+        <ThemedText size='h3' font='displayBold'>UNI.CON</ThemedText>
         <Pressable onPress={() => router.push('/notification')}>
           <Ionicons name='notifications-outline' size={25} color={DEFAULT_TEXT}/>
         </Pressable>
       </View>
       <View style={styles.titleContentContainer}>
-        <ThemedText type='university' style={{ marginBottom: 15 }}>
+        <ThemedText size='h1' font='displayBold' style={{ marginBottom: 15 }}>
           {initialData?.university}
         </ThemedText>
-        <ThemedText type='contentSubTitle' style={{ marginBottom: 5 }}>
+        <ThemedText size='bigger' font='textMedium' style={{ marginBottom: 5 }}>
           Currently, they are chatting about..
         </ThemedText>
         <View style={styles.trendingTagsContainers}>
@@ -101,7 +101,7 @@ return (
               type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
               onPress={() => setSortOption(opt)}
             >
-              <ThemedText type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}>
+              <ThemedText size='smaller' color={sortOption === opt ? 'black' : 'gray'} font='textMedium'>
                 {opt.charAt(0).toUpperCase() + opt.slice(1)}
               </ThemedText>
             </ThemedButton>
@@ -111,7 +111,7 @@ return (
           type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
           onPress={() => setUniOnly(!uniOnly)}
         >
-          <ThemedText type={uniOnly ? 'feedChecked' : 'feedUnchecked'}>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
+          <ThemedText size='smaller' color={uniOnly ? 'black' : 'gray' } font='textMedium'>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
         </ThemedButton>
       </View>
     </View>
@@ -330,7 +330,7 @@ export default function HomePage() {
           </>
         ) : (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
-            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+            <ThemedText size='h3' font='textMedium' color="gray">No articles found.</ThemedText>
           </View>
         )}
         contentContainerStyle={styles.feedContainer}

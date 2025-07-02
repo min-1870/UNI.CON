@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useRef  } from "react";
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import ThemedNotification from '@/components/ThemedNotification';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import type { TabParamList } from './(tabs)/_layout';
-import { StyleSheet, FlatList, Pressable, View } from 'react-native';
-import ThemedText from '@/components/ThemedText';
+import { StyleSheet, FlatList, View } from 'react-native';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
 import {fetchAPI} from "@/components/Utils";
@@ -19,12 +17,13 @@ export default function NotificationPage() {
   const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const default_card_background_color = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
-  const default_text_color = useThemeColor({}, 'DEFAULT_TEXT');
+  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
+  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const fetchedNewNotificationPage = useRef(null);
   const fetchedOldNotificationPage = useRef(null);
+  const navigation = useNavigation();
   
   useEffect(() => {
     if (loading) {
@@ -38,31 +37,19 @@ export default function NotificationPage() {
     }
   }, [loading]);
 
-  const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
-    useLayoutEffect(() => {
-      navigation.setOptions({
-        headerStyle: {
-          backgroundColor: default_card_background_color, 
-          // Android
-          elevation: 0,
-          // iOS
-          shadowColor: 'transparent',
-          shadowOpacity: 0,
-          // web
-          borderBottomWidth: 0,
-          borderBottomColor: 'transparent',
-          boxShadow: 'none',
-        },
-        headerTitle: 'Notification',
-        headerTintColor: default_text_color,
-        headerTitleAlign: 'center',
-      });
-    }, []);
-
-  useEffect(() => {
-    fetchNotification(true);
-    fetchNotification(false);
-  }, []);
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerStyle: {
+        backgroundColor: DEFAULT_CARD_BACKGROUND, // navbar background
+        // shadowColor: 'transparent', // remove iOS bottom border
+        elevation: 0, // remove Android shadow
+        borderWidth: 0, 
+      },
+      headerTintColor: DEFAULT_TEXT,
+      headerTitleAlign: 'center',
+      headerTitle: 'Update Password',
+    });
+  }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
 
   const fetchNotification = async (isNew = true) => {
     setLoading(true);
@@ -140,7 +127,7 @@ export default function NotificationPage() {
     <ThemedView style={styles.container}>
       {loading ? null : (
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          <ThemedText type="contentTitle">Recent</ThemedText>
+          <ThemedText size='h3' font='displayBold'>Recent</ThemedText>
             <View style={styles.feedWrapper}>
               <FlatList
                 data={newNotifications}
@@ -150,7 +137,7 @@ export default function NotificationPage() {
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                   
-                    <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+                    <ThemedText size='h3' font='textMedium' color="gray" >No Notification found.</ThemedText>
                   
                 }
                 onEndReachedThreshold={0.5}
@@ -159,7 +146,7 @@ export default function NotificationPage() {
                 }}
               />
             </View>
-          <ThemedText type="contentTitle">Older</ThemedText>
+          <ThemedText size='h3' font='displayBold'>Older</ThemedText>
           <View style={styles.feedWrapper}>
             <FlatList
               data={oldNotifications}
@@ -168,7 +155,7 @@ export default function NotificationPage() {
               contentContainerStyle={styles.feedContainer}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
-                <ThemedText type='contentPlaceholder'>No Notification found.</ThemedText>
+                <ThemedText size='h3' font='textMedium' color="gray" >No Notification found.</ThemedText>
               }
               onEndReachedThreshold={0.5}
               onEndReached={() => {

@@ -6,7 +6,7 @@ import { useArticlesStore } from '@/store/articleStore';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import Markdown from 'react-native-markdown-display'
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
 import { Image } from 'react-native';
@@ -169,33 +169,33 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             {articleData.unicon && (
               <ThemedTag initialData={initialData} type='uni' unClickable={true} text={articleData.user_school.toUpperCase()}/>
             )}
-          <ThemedText type='articleAuthor'>
-            {articleData.user_temp_name}
-          </ThemedText>
-          <ThemedText type='articlePoints'>
-            {articleData.user_static_points}
-          </ThemedText>
-          <ThemedText type='articleDate'>
+          {articleData.user_static_points > 0 && (
+            <ThemedText color="brand">
+              {articleData.user_static_points}p
+            </ThemedText>
+          )}
+          <ThemedText color="gray" size='smaller'>
             {moment(articleData.created_at).fromNow()}
           </ThemedText>
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
-           <ThemedText type='articleDate' >
+           <ThemedText color="gray" size='smaller' >
              {articleData.deleted? 'deleted' : articleData.edited ? 'edited' : null}
            </ThemedText>
           </View>
         </View>
         <View style={styles.content}>
-          <ThemedText type='articleTitle'>{articleData.title}</ThemedText>
+          <ThemedText size='h3' font='textBold'>{articleData.title}</ThemedText>
             {type === 'default' ? (
               <React.Fragment>
-                <ThemedText type="articleBody">
+                <ThemedText justify={true}>
                   <Markdown>
-                    {bodies[0].length > 200 
-                      ? bodies[0].slice(0, 200).trimEnd() + ' ... read more'
-                      : bodies.length > 1 
-                      ? bodies[0].trimEnd() + ' ... read more'
-                      : bodies[0]
-                    }
+                    {(() => {
+                      const snippet = bodies[0].slice(0,200).trimEnd();
+                      const needsMore = bodies[0].length > 200 || bodies.length > 1;
+                      return needsMore
+                        ? `${snippet}... **read more**`
+                        : snippet;
+                    })()}
                   </Markdown>
                 </ThemedText>
                 {imgUris[0] && (
@@ -219,7 +219,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             ) : (
               bodies.map((bodyText, idx) => (
                 <React.Fragment key={idx}>
-                  <ThemedText type="articleBody">
+                  <ThemedText justify={true}>
                     <Markdown>
                       {bodyText}
                     </Markdown>
@@ -257,7 +257,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             size={15}
             color={articleData.like_status ? active_button_color: button_color}
           />
-          <ThemedText type='articleButton'>
+          <ThemedText size='smaller' color="gray" font='textMedium'>
             {articleData.likes_count}
           </ThemedText>
         </Pressable>
@@ -267,7 +267,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             size={15}
             color={button_color}
           />
-          <ThemedText type='articleButton'>
+          <ThemedText size='smaller' color="gray" font='textMedium'>
             {articleData.comments_count}
           </ThemedText>
         </View>
@@ -277,7 +277,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             size={15}
             color={button_color}
           />
-          <ThemedText type='articleButton'>
+          <ThemedText size='smaller' color="gray" font='textMedium'>
             {articleData.views_count}
           </ThemedText>
         </View>

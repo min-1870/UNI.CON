@@ -12,7 +12,7 @@ import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import Toast from 'react-native-toast-message';
 import type { TabParamList } from './_layout';
 import ThemedTag from '@/components/ThemedTag';
@@ -187,7 +187,8 @@ export default function NewArticlePage() {
 
       headerRight: () => (
         <ThemedText
-          type={'default'} 
+          size='smaller'
+          font='textMedium'
           onPress={handlePost} 
           disabled={loading}
           style={{ marginRight: 30 }}
@@ -435,13 +436,13 @@ export default function NewArticlePage() {
               type={unicon ? 'toggled' : 'unToggled'}
               onPress={() => {setUnicon(!unicon);}}
             >
-              <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
+              <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
             </ThemedButton>
           </View>
       </ThemedCard>
       <View style={styles.tagAreaContainer} >
         <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >
-        <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
+        <ThemedText size='h3' font='displayBold'>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
             <Pressable onPress={() => removeTag(i)}>

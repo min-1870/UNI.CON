@@ -25,7 +25,7 @@ export type ThemedTextProps = TextProps & {
     | 'summaryPoints'
     | 'feedChecked'
     | 'feedUnchecked'
-    | 'Wording';
+    | 'Wording'
 };
 
 export default function ThemedText({
@@ -48,6 +48,36 @@ export default function ThemedText({
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
+
+  const FONTS = {
+    textRegular: 'textRegular',
+    textMedium: 'textMedium',
+    textSemibold: 'textSemibold',
+    textBold: 'textBold',
+    displayBold: 'displayBold',
+  };
+
+  const FONT_SIZES = {
+    smaller: 12,
+    default: 14,
+    bigger: 16,
+    h1: 32,
+    h2: 24,
+  };
+
+  const COLORS = {
+    default: useThemeColor({}, 'DEFAULT_TEXT'),
+    brand: useThemeColor({}, 'UNICON_CONTENT'),
+    gray: useThemeColor({}, 'DEFAULT_GRAY_TEXT'),
+    black: useThemeColor({}, 'ALWAYS_BLACK'),
+    white: useThemeColor({}, 'ALWAYS_WHITE'), 
+  };
+
+  const DEFAULT_TEXT_STYLE = {
+    fontSize: FONT_SIZES.default,
+    color: COLORS.default,
+    fontFamily: fontsLoaded ? FONTS.textRegular : 'textRegular',
+  };
   
   const styles = type === 'university' ?
     StyleSheet.create({
@@ -142,7 +172,7 @@ export default function ThemedText({
   : type === 'articleButton' ?
     StyleSheet.create({
       text: {
-        fontSize: 12,
+         ...DEFAULT_TEXT_STYLE,
         color: DEFAULT_GRAY_TEXT,
         fontFamily: 'textMedium',
       }
@@ -204,11 +234,7 @@ export default function ThemedText({
         }
       })
   : StyleSheet.create({
-      text: {
-        fontSize: 12,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textRegular',
-      }
+      text: DEFAULT_TEXT_STYLE
   });
 
 

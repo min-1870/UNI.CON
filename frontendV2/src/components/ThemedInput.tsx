@@ -2,18 +2,20 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { Platform, TextStyle, TextInput, StyleSheet, type TextInputProps } from 'react-native';
 
 type ThemedInputProps = TextInputProps & {
-  type?: 'auth' | 'comment' | 'search' ;
+  type?: 'auth' | 'comment' | 'search' | 'validation';
+  inputRef?: React.Ref<TextInput>;
 };
 
 export default function ThemedInput({
   type='auth',
+  inputRef,
   ...rest
 }: ThemedInputProps) {
     const DEFAULT_GRAY_BACKGROUND = useThemeColor({}, 'DEFAULT_GRAY_BACKGROUND');
     const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
     const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
     const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
-
+    
     const default_style = {
       ...(Platform.OS === 'web'
         ? ({ outlineStyle: 'none' } as TextStyle)
@@ -30,6 +32,18 @@ export default function ThemedInput({
             justifyContent: 'center',
             color: DEFAULT_TEXT, 
             width: '100%',
+          },
+        })
+      : type === 'validation'
+      ? StyleSheet.create({
+          style: {
+            borderRadius: 10,
+            height: 48,
+            width: 48,
+            fontSize: 24,
+            backgroundColor: DEFAULT_GRAY_BACKGROUND,
+            textAlign: 'center',
+            color: DEFAULT_TEXT, 
           },
         })
       : type === 'comment'
@@ -73,6 +87,7 @@ export default function ThemedInput({
       style={[default_style, styles.style, rest.style]}
       {...rest}
       placeholderTextColor={DEFAULT_GRAY_TEXT}
+      ref={inputRef} 
     />
   );
 }

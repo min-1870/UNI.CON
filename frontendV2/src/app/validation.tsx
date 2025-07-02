@@ -1,13 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, TextInput, View, Pressable } from 'react-native';
 import ThemedView from '@/components/ThemedView';
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/ThemedText';
-import ThemedButton from '@/components/ThemedButton';
+import ThemedText from '@/components/nThemedText';
+import ThemedCard from '@/components/ThemedCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { fetchAPI, setData } from "@/components/Utils";
 import URLs from "@/constants/Urls";
 export default function EmailVerificationPage() {
@@ -16,18 +14,9 @@ export default function EmailVerificationPage() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputs = useRef<Array<TextInput | null>>([]);
 
-  const [resendCount, setResendCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [validated, setValidated] = useState(false);
   const { forgotPassword = false } = useLocalSearchParams<{ forgotPassword?: string }>();
 
-  const handleInitialSend = () => {
-    console.log(`Sending verification code to: ${email}`);
-  };
-
-  useEffect(() => {
-    handleInitialSend();
-  }, []);
 
   const handleChange = (text: string, index: number) => {
     if (/^\d$/.test(text) || text === '') {
@@ -35,13 +24,10 @@ export default function EmailVerificationPage() {
       newCode[index] = text;
       setCode(newCode);
 
-      if (text !== '' && index < 5) {
-        setTimeout(() => {
-          inputs.current[index + 1]?.focus();
-        }, 100); // slight delay for better user experience
+      if (text && index < inputs.current.length - 1) {
+        inputs.current[index + 1]?.focus();
       }
 
-      // Auto-submit if all digits are entered
       if (newCode.every(char => char !== '')) {
         handleVerify(newCode.join(''));
       }
@@ -50,9 +36,12 @@ export default function EmailVerificationPage() {
 
   const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === 'Backspace' && code[index] === '' && index > 0) {
-      setTimeout(() => {
-        inputs.current[index - 1]?.focus();
-      }, 100);
+      setCode(prev => {
+        const newCode = [...prev];
+        newCode[index - 1] = '';
+        return newCode;
+      });
+      inputs.current[index - 1]?.focus();
     }
   };
 
@@ -65,95 +54,86 @@ export default function EmailVerificationPage() {
       body: { validation_code: finalCode, email: email },
     });
     
-    setTimeout(() => {
-      if (!response.error) {
-        if (forgotPassword == '1'){
-          Toast.show({
-            type: 'success',
-            text1: 'Code verified! 🎉',
-          });
-          setValidated(true);
-          setLoading(true);
-          setData('initialData', JSON.stringify(response.data))
-          setData('access', response.data.access);
-          setData('refresh', response.data.refresh);
-          router.push({
-            pathname: '/resetPassword',
-            params: { email: email }, 
-          });
-        } else {
-          Toast.show({
-            type: 'success',
-            text1: 'Code verified! 🎉',
-            text2: 'Redirecting you to the last step.',
-          });
-          setValidated(true);
-          setLoading(true);
-          router.push('/(tabs)');
-        }
-      } else {
-        setLoading(false);
+    if (!response.error) {
+      if (forgotPassword == '1'){
         Toast.show({
-          type: 'error',
-          text1: response?.data?.detail || 'Verification failed',
-          text2: 'Please try again.',
+          type: 'success',
+          text1: 'Code verified!',
         });
-        setCode(['', '', '', '', '', '']);
-        inputs.current[0]?.focus();
+        setLoading(true);
+        setData('initialData', JSON.stringify(response.data))
+        setData('access', response.data.access);
+        setData('refresh', response.data.refresh);
+        router.push({
+          pathname: '/resetPassword',
+          params: { email: email }, 
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: 'Code verified!',
+          text2: 'Redirecting you to the last step.',
+        });
+        setLoading(true);
+        router.push({
+          pathname: '/(tabs)',
+        });
       }
-    }, 1000);
+    } else {
+      setLoading(false);
+      Toast.show({
+        type: 'error',
+        text1: response?.data?.detail || 'Verification failed',
+        text2: 'Please try again.',
+      });
+    }
+    
+    setCode(['', '', '', '', '', '']);
+    inputs.current[0]?.focus();
     setLoading(false);
   };
 
   const handleResend = () => {
-    if (resendCount >= 3) {
-      alert('You have reached the maximum resend attempts for today.');
-      return;
-    }
-    setResendCount(resendCount + 1);
-    handleInitialSend();
+    // implement resend logic here
   };
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="mail" size={24} color="white" />
+      <ThemedCard style={styles.card}>
+        <View style={styles.header}>
+          <ThemedText size='h1' font='displayBold' >Email Verification</ThemedText>
+          <ThemedText size='default' font='textMedium'>Please enter the code that we sent to {'200134kms@gmail.com'} </ThemedText>
         </View>
-        <ThemedText type="university" >Email Verification</ThemedText>
-        <ThemedText style={styles.subtitle}>We have sent you an email to {email} </ThemedText>
-        <ThemedText style={styles.subtitle}>It will include 6-digits verification code. <br></br>
-        This code will be valid for 7 minutes.</ThemedText>
         <View style={styles.codeInputRow}>
-          {[...Array(6)].map((_, i) => (
+          {[...Array(6)].map((digit, i) => (
             <ThemedInput
               key={i}
-              style={styles.codeBox}
+              type="validation"
               maxLength={1}
               keyboardType="number-pad"
-              value={code[i]}
-              onChangeText={(text) => handleChange(text, i)}
-              onKeyPress={(e) => handleKeyPress(e, i)}
-              autoFocus={i === 0}
-              textAlign="center"
-              editable={!validated}
+              returnKeyType="next"
+              value={digit}
+              onKeyPress={e => handleKeyPress(e, i)}
+              onChangeText={text => handleChange(text, i)}
+              onSubmitEditing={() => inputs.current[i + 1]?.focus()}
+              inputRef={(el: TextInput | null) => (inputs.current[i] = el)}    // ← capture ref
+              editable={!loading}
             />
           ))}
         </View>
-        
-        {/* <ThemedButton onPress={handleVerify} style={styles.verifyButton} disabled={loading || validated}>
-          {loading ? 'Verifying...' : validated ? 'Verified' : 'Verify'}
-        </ThemedButton> */}
-        {validated && loading && (
-          <ActivityIndicator size="large" color="#4ade80" style={{ marginTop: 16 }} />
-        )}
-        <View style={styles.divider} />
-        <TouchableOpacity onPress={handleResend} activeOpacity={0.7} disabled={loading || validated}>
-          <ThemedText style={styles.resendText}>
-          I didn’t receive an email  <Text style={{ color: '#3B82F6' }}>Resend</Text>
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.footer}>
+          <Pressable onPress={() => router.push('/register')} disabled={loading} >
+            <ThemedText color='gray'>
+              Wrong email? <ThemedText color='brand'>Fix</ThemedText>
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={handleResend} disabled={loading} >
+            <ThemedText color='gray'>
+              Didn't receive email? <ThemedText color='brand'>Resend</ThemedText>
+            </ThemedText>
+          </Pressable>
+        </View>
+      </ThemedCard>
     </ThemedView>
   );
 }
@@ -161,75 +141,22 @@ export default function EmailVerificationPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'stretch',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    padding: 20,
   },
   card: {
-    width: '100%',
-    padding: 24,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    alignItems: 'center',
-      
-    boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-    backdropFilter: 'blur(10px)', // For web platforms
-    elevation: 10, // For Android shadow
+    gap: 40,
   },
-  iconCircle: {
-    backgroundColor: '#dc2626', // red-600
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#6b7280',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
+    header:{
+      marginTop: 30,
+    },
+    footer:{
+      marginBottom: 30,
+      alignItems: 'center',
+      gap: 10,
+    },
   codeInputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-    width: '100%',
-  },
-  codeBox: {
-    backgroundColor: '#f3f4f6', // Tailwind gray-100
-    borderRadius: 10,
-    height: 48,
-    width: 48,
-    fontSize: 24,
-    color: '#111827', // Tailwind gray-900
-    textAlign: 'center',
-    textAlignVertical: 'center',
-  },
-  resendText: {
-    color: '#6b7280',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    alignSelf: 'stretch',
-    marginVertical: 16,
-  },
-  verifyButton: {
-    backgroundColor: '#4ade80', // Tailwind green-400
-    borderRadius: 10,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

@@ -1,11 +1,12 @@
 
-import { StyleSheet, FlatList, View, Pressable } from 'react-native';
-import { Link, router} from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { router} from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
+import ThemedCard from '@/components/ThemedCard';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI, setData} from "@/components/Utils";
+import {fetchAPI} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import React, { useLayoutEffect, useState } from "react";
@@ -24,7 +25,6 @@ export default function NewPasswordPage() {
 
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
-  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
@@ -78,38 +78,40 @@ export default function NewPasswordPage() {
   
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.textInputContainer}>
-        <View style={styles.currentPwWrapper}>
-          <ThemedText type="default">Current Password</ThemedText>
-          <ThemedInput
-            onChangeText={setPassword}
-            value={password}
-            placeholder="Password"
-            keyboardType='default'
-            secureTextEntry={true}
-          />
+      <ThemedCard>
+        <View style={styles.textInputContainer}>
+          <View style={styles.currentPwWrapper}>
+            <ThemedText>Current Password</ThemedText>
+            <ThemedInput
+              onChangeText={setPassword}
+              value={password}
+              placeholder="Password"
+              keyboardType='default'
+              secureTextEntry={true}
+            />
+          </View>
+          <View style={styles.newPwWrapper}>
+            <ThemedText>New Password</ThemedText>
+            <ThemedInput
+              onChangeText={setNewPassword}
+              value={newPassword}
+              placeholder="Password"
+              keyboardType='default'
+              secureTextEntry={true}
+            />
+          </View>
+          <View style={styles.newPwWrapper}>
+            <ThemedText>Confirm Password</ThemedText>
+            <ThemedInput
+              onChangeText={setNewConfirmPassword}
+              value={newConfirmPassword}
+              placeholder="Password"
+              keyboardType='default'
+              secureTextEntry={true}
+            />
+          </View>
         </View>
-        <View style={styles.newPwWrapper}>
-          <ThemedText type="default">New Password</ThemedText>
-          <ThemedInput
-            onChangeText={setNewPassword}
-            value={newPassword}
-            placeholder="Password"
-            keyboardType='default'
-            secureTextEntry={true}
-          />
-        </View>
-        <View style={styles.newPwWrapper}>
-          <ThemedText type="default">Confirm Password</ThemedText>
-          <ThemedInput
-            onChangeText={setNewConfirmPassword}
-            value={newConfirmPassword}
-            placeholder="Password"
-            keyboardType='default'
-            secureTextEntry={true}
-          />
-        </View>
-      </View>
+      </ThemedCard>
       
       <ThemedView style={styles.buttonContainer}>
         <ThemedButton 
@@ -117,7 +119,7 @@ export default function NewPasswordPage() {
           disabled={loading}
           type={'auth'}
         >
-          <ThemedText style={{color:ALWAYS_BLACK}} type="default">{loading ? 'Updating Password..' : 'Update Password'}</ThemedText>
+          <ThemedText size='default' color='black' font='textMedium'>{loading ? 'Updating Password..' : 'Update'}</ThemedText>
         </ThemedButton>
       </ThemedView>
 
@@ -128,9 +130,10 @@ export default function NewPasswordPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
+    width: '100%',
     justifyContent: 'space-between',
-    padding: 30,
+    alignItems: 'stretch',
+    paddingVertical: 20,
   },
   textInputContainer: {
     alignItems: 'flex-start',
@@ -149,6 +152,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     alignItems: 'center',
     width: '100%',
-    gap: 10,
+    paddingHorizontal: 20,
   },
 });

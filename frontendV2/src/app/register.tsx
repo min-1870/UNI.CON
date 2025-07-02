@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { router, Link } from 'expo-router';
+import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
 import ThemedView from '@/components/ThemedView';
+import ThemedCard from '@/components/ThemedCard';
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedButton from '@/components/ThemedButton';
-import { Ionicons } from '@expo/vector-icons';
+import { Octicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchAPI, setData } from "@/components/Utils";
 import URLs from "@/constants/Urls";
 function getPasswordStrength(password: string): {
@@ -29,13 +29,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ length: false, upper: false, lower: false });
 
-  
-  const backgroundColor = useThemeColor({}, 'default_background_color');
-  const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
-  const cardBackgroundColor = useThemeColor({}, 'default_card_background_color');
 
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(password));
@@ -44,35 +39,13 @@ export default function RegisterPage() {
   const handleRegister = async () => {
 
     if (!email || !password || !confirmPassword) {
-
       Toast.show({
         type: 'error',
-        text1: 'Oops ! Please fill all entries. 🙁',
+        text1: 'Oops ! Please fill all entries.',
         text2: 'All fields are required.',
       });
       return;
     }
-
-    if (!/\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Email. 🙁',
-        text2: 'Please use a valid university email.',
-      });
-      return;
-    } else if ( /\S+@+(unsw.edu.au)$/.test(email)) {
-      var university = 'unsw' ;
-    }
-    else  if (/\S+@+(sydney.edu.au)$/.test(email)) {
-      var university = 'sydney' ;
-    }
-    else  if (/\S+@+(uts.edu.au)$/.test(email)) {
-      var university = 'uts' ;
-    }
-    else  if (/\S+@+(unsw.edu.au)$/.test(email)) {
-      var university = 'unsw' ;
-    }
-   
     if (password !== confirmPassword) {
       Toast.show({
         type: 'error',
@@ -108,7 +81,6 @@ export default function RegisterPage() {
       setData('refresh', response.data.refresh);
       router.push("/validation");
     } else {
-      setError(response?.data?.detail || "An error occurred");
       Toast.show({
         type: 'error',
         text1: `Sorry, ${response?.data?.detail}`,
@@ -124,31 +96,20 @@ export default function RegisterPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      alignItems: 'stretch',
       justifyContent: 'center',
+    },    
+    card:{
+      gap:20,
+    },
+    header: {
+      marginTop: 20,
+    },
+    footer:{
+      marginTop: 30,
       alignItems: 'center',
-      backgroundColor: backgroundColor,
-      padding: 20,
-    },
-    card: {
-      width: '100%',
-      padding: 24,
-      backgroundColor: cardBackgroundColor,
-      borderRadius: 20,
-      gap: 30,
-      
-      boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
-      backdropFilter: 'blur(10px)', // For web platforms
-      elevation: 10, // For Android shadow
-    },
-    badge: {
-      alignSelf: 'center',
-      backgroundColor: '#d1fae5',
-      color: '#059669',
-      paddingVertical: 4,
-      paddingHorizontal: 10,
-      borderRadius: 12,
-      fontWeight: 'bold',
-      marginBottom: 10,
+      gap: 15,
+      marginBottom: 20,
     },
     inputRows: {
       gap: 20,
@@ -156,56 +117,31 @@ export default function RegisterPage() {
     inputRow: {
       gap: 5,
     },
-    footers:{
-      marginTop: 20,
-    },
-    footerText: {
-      textAlign: 'center',
-      color: '#6b7280',
-    },
-    link: {
-      color: '#059669',
-      fontWeight: '600',
-    },
-    divider: {
-      borderBottomColor: '#e5e7eb', // Tailwind gray-200
-      borderBottomWidth: 1,
-      marginVertical: 16,
-    },
     inputWrapper: {
       position: 'relative',
     },
     eyeIcon: {
       position: 'absolute',
       right: 12,
-      top: '30%',
+      top: '37%',
       transform: [{ translateY: -10 }],
       padding: 4,
     },
-    nicknameRow: {
+    iconWrapper: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 12,
-    },
-    atSymbol: {
-      fontSize: 16,
-      marginRight: 4,
-      color: '#6b7280',
-    },
-    nicknameInput: {
-      flex: 1,
+      gap: 10,
     },
   });
   
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.card}>
+      <ThemedCard style={styles.card}>
 
 
-        <View>
-          <ThemedText style={styles.badge}>UNI.CON</ThemedText>
-          <ThemedText type="university" >Create Account</ThemedText>
-          <ThemedText type="contentSubTitle">Join our university community</ThemedText>
+        <View style={styles.header}>
+          <ThemedText size='h1' font='displayBold' >Create Account</ThemedText>
+          <ThemedText size='bigger' font='textMedium' >Join our university community</ThemedText>
         </View>
 
         <View style={styles.inputRows}>
@@ -217,11 +153,6 @@ export default function RegisterPage() {
             keyboardType="email-address"
             type="auth"
           />
-          <ThemedText style={{ fontSize: 12, color: /\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email) ? '#10b981' : '#ef4444', marginLeft: 5, marginRight: 5 }}>
-            {/\S+@+(unsw.edu.au|sydney.edu.au|uts.edu.au)$/.test(email)
-              ? '✔️ You can create an account.'
-              : '𝗫 Currently 🥲 - only UNSW , University of Sydney , UTS emails are accepted.'}
-          </ThemedText>
         </View>
 
 
@@ -238,28 +169,42 @@ export default function RegisterPage() {
               onPress={() => setShowPassword(!showPassword)}
               style={styles.eyeIcon}
             >
-              <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
+              <Octicons name={showPassword ? 'eye-closed' : 'eye'} size={20} color="#888" />
             </TouchableOpacity>
           </View>
-          <View style={{ marginTop:6, height: 6, borderRadius: 3, backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
-            <View style={{
-              width: `${(Object.values(passwordStrength).filter(Boolean).length / 3) * 100}%`,
-              height: '100%',
-              backgroundColor: Object.values(passwordStrength).filter(Boolean).length === 3 ? '#10b981' : '#f59e0b',
-            }} />
+            <View >
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrength.length ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrength.length ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrength.length ? 'brand' : 'gray'} size='smaller'>
+                  More than 8 characters required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrength.upper ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrength.upper ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrength.upper ? 'brand' : 'gray'} size='smaller'>
+                  At least one uppercase alphabet required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrength.lower ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrength.lower ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrength.lower ? 'brand' : 'gray'} size='smaller'>
+                  At least one lowercase alphabet required.
+                </ThemedText>
+              </View>
+            </View>
           </View>
-          <View style={{ marginTop: 4, marginLeft: 5, marginRight: 5 }}>
-            <ThemedText style={{ fontSize: 12, color: passwordStrength.length ? '#10b981' : '#6b7280' }}>
-              {passwordStrength.length ? '✔️' : '𝗫'} More than 8 characters required.
-            </ThemedText>
-            <ThemedText style={{ fontSize: 12, color: passwordStrength.upper ? '#10b981' : '#6b7280' }}>
-              {passwordStrength.upper ? '✔️' : '𝗫'} At least one uppercase alphabet required.
-            </ThemedText>
-            <ThemedText style={{ fontSize: 12, color: passwordStrength.lower ? '#10b981' : '#6b7280' }}>
-              {passwordStrength.lower ? '✔️' : '𝗫'} At least one lowercase alphabet required.
-            </ThemedText>
-          </View>
-        </View>
 
 
         <View style={styles.inputRow}>
@@ -275,28 +220,25 @@ export default function RegisterPage() {
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               style={styles.eyeIcon}
             >
-              <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
+              <Octicons name={showConfirmPassword ? 'eye-closed' : 'eye'} size={20} color="#888" />
             </TouchableOpacity>
           </View>
         </View>
         </View>
 
-
-
-        <View style={styles.footers}>
+        <View style={styles.footer}>
           <ThemedButton type='auth' onPress={handleRegister} disabled={loading}>
-            <ThemedText>{loading ? 'Creating Account...' : 'Next'}</ThemedText>
+            <ThemedText size='default' color='black' font='textMedium' >{loading ? 'Sending Code...' : 'Next'}</ThemedText>
           </ThemedButton>
-
-          <View style={styles.divider} />
-          <ThemedText style={styles.footerText}>
-            Already have an account? <Link href="/" style={styles.link}>Sign in</Link>
-          </ThemedText>
+          <Pressable onPress={() => router.push("/login")} disabled={loading}>
+            <ThemedText color='gray'>
+              Have an account? <ThemedText color='brand'>Sign In</ThemedText>
+            </ThemedText>
+          </Pressable>
         </View>
 
 
-
-      </ThemedView>
+      </ThemedCard>
     </ThemedView>
   );
 }

@@ -1,13 +1,13 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { fetchAPI, setData } from "@/components/Utils";
+import { fetchAPI } from "@/components/Utils";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
 
@@ -64,9 +64,20 @@ export default function LoginPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      width: '100%',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
+    },
+    card:{
+      gap:20,
+    },
+    header: {
+      marginTop: 20,
+    },
+    footer:{
+      marginTop: 30,
+      alignItems: 'center',
+      gap: 15,
+      marginBottom: 20,
     },
     socialButtonContainer: {
       alignItems: 'center',
@@ -98,14 +109,6 @@ export default function LoginPage() {
     googleButtonText: {
       color: ALWAYS_BLACK,
     },
-    header: {
-      marginTop: 30,
-    },
-    card:{
-      width:'90%',
-      maxWidth:500,
-      gap:50,
-    },
     row:{
       gap:20,
     },
@@ -119,16 +122,6 @@ export default function LoginPage() {
       fontWeight: '500',
       textDecorationLine: 'underline',
     },
-    submitButtonWrapper: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    submitButtonText: {
-      color: ALWAYS_BLACK
-    }
   });
 
   return (
@@ -136,8 +129,8 @@ export default function LoginPage() {
       <ThemedCard style={styles.card}>
 
         <View style={styles.header}>
-            <ThemedText type="university">Reset Your Password</ThemedText>
-            <ThemedText type='contentSubTitle'>Enter your new password below</ThemedText>
+            <ThemedText size='h1' font='displayBold'>Reset Password</ThemedText>
+            <ThemedText size='default' font='textMedium'>Enter your new password below</ThemedText>
         </View>
 
         
@@ -167,13 +160,15 @@ export default function LoginPage() {
         </View>
 
 
-        <View style={styles.submitButtonWrapper}>
+        <View style={styles.footer}>
           <ThemedButton  onPress={handleSubmit} disabled={loading} type='auth'>
-            <ThemedText style={styles.submitButtonText}>{loading ? 'Resetting password in...' : 'Reset password'}</ThemedText>
+            <ThemedText size='default' color='black' font='textMedium'>{loading ? 'Resetting password in...' : 'Reset password'}</ThemedText>
           </ThemedButton>
-          <ThemedText >
-            Remember your password? <Link href="/register" >Sign Up</Link>
-          </ThemedText>
+          <Pressable onPress={() => router.push('/login')} disabled={loading} >
+            <ThemedText color='gray'>
+              Remember password? <ThemedText color='brand'>Sign In</ThemedText>
+            </ThemedText>
+          </Pressable>
         </View>
       </ThemedCard>
     </ThemedView>

@@ -14,7 +14,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
 import { useLayoutEffect } from 'react';
@@ -558,7 +558,7 @@ export default function ArticlePage() {
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <ThemedView style={styles.NCF}>
-                  <ThemedText type="contentPlaceholder">No comments found.</ThemedText>
+                  <ThemedText size='h3' font='textMedium' color="gray" >No comments found.</ThemedText>
                 </ThemedView>
               }
               ListHeaderComponent={

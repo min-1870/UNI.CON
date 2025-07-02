@@ -1,9 +1,9 @@
+import { StyleSheet, View, Pressable } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { InitialDataType } from '@/constants/types';
-import { useFonts } from 'expo-font';
-import React from "react";
+import ThemedText from '@/components/nThemedText';
 import { router } from 'expo-router';
+import React from "react";
 type TagProps = {
     text: string;
     type: 'default'| 'selectedDefault'|'ranked'|'selectedRanked'|'bigRanked'|'uni';
@@ -16,97 +16,48 @@ export default function ThemedTag({
   unClickable = false,
   initialData,
 }: TagProps) {
-  
-  const [fontsLoaded] = useFonts({
-    textRegular: require('../assets/fonts/SF-Pro-Text-Regular.otf'),
-    textBold: require('../assets/fonts/SF-Pro-Text-Bold.otf'),
-  });
 
   const DEFAULT_TAG_BG = useThemeColor({}, 'DEFAULT_TAG_BACKGROUND');
   const DEFAULT_TEXT_COLOR = useThemeColor({}, 'DEFAULT_TEXT');
   const RANKED_TAG_BG = useThemeColor({}, 'RANKED_TAG_BACKGROUND');
   const RANKED_TAG_TEXT = useThemeColor({}, 'RANKED_TAG_TEXT');
-  const ALWAYS_WHILE = useThemeColor({}, 'ALWAYS_WHITE');
 
-  const styles = type === 'bigRanked' ?
-    StyleSheet.create({
-        tag: {
-        backgroundColor: RANKED_TAG_BG,
-        borderRadius: 16,
-        paddingHorizontal: 13,
-        paddingVertical: 4,
-        marginRight: 8,
-        },
-        Text: {
-        fontSize: 14,
-        color: RANKED_TAG_TEXT,
-        fontFamily: 'textRegular',
-        },
-    })
-    : type === 'selectedRanked' ?
-    StyleSheet.create({
-        tag: {
-        backgroundColor: RANKED_TAG_BG,
-        borderRadius: 16,
-        paddingHorizontal: 9,
-        paddingVertical: 4,
-        marginRight: 8,
-        borderWidth: 1.5,
-        borderColor: RANKED_TAG_TEXT,
-        },
-        Text: {
-        fontSize: 12,
-        color: RANKED_TAG_TEXT,
-        fontFamily: 'textRegular',
-        },
-    })    
-    : type === 'ranked' ?
-    StyleSheet.create({
-        tag: {
-        backgroundColor: RANKED_TAG_BG,
-        borderRadius: 16,
-        paddingHorizontal: 9,
-        paddingVertical: 4,
-        marginRight: 8,
-        },
-        Text: {
-        fontSize: 12,
-        color: RANKED_TAG_TEXT,
-        fontFamily: 'textRegular',
-        },
-    })
-    : type === 'uni' ?
-    StyleSheet.create({
-        tag: {
-        backgroundColor: initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : DEFAULT_TAG_BG,
-        borderRadius: 16,
-        paddingHorizontal: 5,
-        paddingVertical: 3,
+  const styles = StyleSheet.create({
+    tag: {
+    backgroundColor: type === 'ranked' || type === 'bigRanked' || type === 'selectedRanked'
+      ? RANKED_TAG_BG 
+      : type === 'uni'
+      ? initialData?.university_colors[text.toLowerCase()] || DEFAULT_TAG_BG
+      : DEFAULT_TAG_BG,
+    
+    boxShadow: type === 'uni' 
+      ? `0px 0px 9px ${initialData?.university_colors[text.toLowerCase()] || DEFAULT_TAG_BG}`
+      : 'none',
+    backdropFilter: type === 'uni' ? 'blur(9px)' : 'none', // For web platforms
+    elevation: type === 'uni' ? 9 : 0, // For Android shadow
 
-        boxShadow: `0px 0px 13px ${initialData?.university_colors[text.toLowerCase()] ? initialData?.university_colors[text.toLowerCase()] : DEFAULT_TAG_BG}`,
-        backdropFilter: 'blur(10px)', // For web platforms
-        elevation: 10, // For Android shadow
-        },
-        Text: {
-        fontSize: 8,
-        color: ALWAYS_WHILE,
-        fontFamily: 'textBold',
-        },
-    })
-    : StyleSheet.create({ //default tag
-        tag: {
-        backgroundColor: DEFAULT_TAG_BG,
-        borderRadius: 16,
-        paddingHorizontal: 9,
-        paddingVertical: 4,
-        marginRight: 8,
-        },
-        Text: {
-        fontSize: 12,
-        color: DEFAULT_TEXT_COLOR,
-        fontFamily: 'textRegular',
-        },
-    });
+    borderWidth: type === 'selectedRanked' || type === 'selectedDefault' 
+      ? 1.5 : 0,
+
+    borderColor: type === 'selectedRanked' || type === 'selectedDefault'
+      ? RANKED_TAG_TEXT : DEFAULT_TEXT_COLOR,
+
+    borderRadius: type === 'bigRanked' ? 16 : 10,
+    paddingHorizontal: type === 'bigRanked' ? 13 : 9,
+    paddingVertical: type === 'bigRanked' ? 4 : 3,
+    marginRight: type === 'bigRanked' ? 8 : 4,
+    
+    }
+  });
+
+  const textSize = type === 'bigRanked' 
+      ? 'default' : 'smaller';
+
+  const textColor = type === 'uni' 
+      ? 'white' 
+      : type === 'ranked' || type === 'selectedRanked' || type === 'bigRanked'
+      ? 'brand'
+      : 'default';
 
   return (
     <>
@@ -118,12 +69,12 @@ export default function ThemedTag({
           });
         }}>
           <View style={styles.tag}>
-            <Text style={styles.Text}>{text}</Text>
+            <ThemedText size={textSize} color={textColor}>{text}</ThemedText>
           </View>
         </Pressable>
       ) : (
         <View style={styles.tag}>
-          <Text style={styles.Text}>{text}</Text>
+          <ThemedText size={textSize} color={textColor}>{text}</ThemedText>
         </View>
       )}
     </>

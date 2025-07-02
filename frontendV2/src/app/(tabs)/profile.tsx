@@ -7,7 +7,7 @@ import {fetchAPI, getData, removeData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import { Animated, StyleSheet, FlatList, View, Pressable } from 'react-native';
 import { LinearGradient } from "expo-linear-gradient";
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
@@ -15,7 +15,7 @@ import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
-import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ArticleType>);
@@ -28,7 +28,6 @@ const Header = React.memo(function Header({
   DEFAULT_TEXT,
   sortOption,
   setSortOption,
-  logout,
   setUniOnly,
   scrollY,
 }: {
@@ -40,7 +39,6 @@ const Header = React.memo(function Header({
   uniOnly?: boolean;
   sortOption: keyof typeof apiEndpoints;
   setSortOption: (o: keyof typeof apiEndpoints) => void;
-  logout: () => void;
   setUniOnly?: (u: boolean) => void;
   scrollY: Animated.Value;
 }) {
@@ -68,10 +66,10 @@ return (
       </Animated.View>    
       <View style={styles.nheaderContainer}>
         <View style={styles.nheaderHeaderContainer}>
-          <ThemedText type='contentTitle'>UNI.CON</ThemedText>
-            <Pressable onPress={logout}>
+          <ThemedText size='h3' font='displayBold' >UNI.CON</ThemedText>
+            <Pressable onPress={() => router.navigate('/setting')}>
               <Feather
-              name="log-out"
+              name="settings"
               size={20}
               color={DEFAULT_TEXT}
               />
@@ -80,53 +78,34 @@ return (
         <View style={styles.nheaderContentContainer}>
           
           <View style={styles.nheaderScoreContainer}>
-            <ThemedText type={'university'}>Credibility Score</ThemedText>
+            <ThemedText size='h1' font='displayBold' >Credibility Score</ThemedText>
             <View style={styles.nheaderScoreScoreContainer}>
-              <ThemedText type={'summaryPoints'}>{initialData?.points}</ThemedText>
-              <ThemedText type={'default'}>Points</ThemedText>
+              <ThemedText size='h1' font='displayBold' color='brand'>{initialData?.points}</ThemedText>
+              <ThemedText size='bigger' font='textMedium'>Points</ThemedText>
             </View>
           </View>
           <View style={styles.nheaderAccountContainer}>
-            <ThemedText type={'contentSubTitle'}>Account Summary</ThemedText>
+            <ThemedText size='bigger' font='textMedium'>Account Summary</ThemedText>
             <View style={styles.nheaderAccountTagsContainer}>
               {tags.map((tag, i) => (
                 <ThemedTag key={i} unClickable={true} text={tag} type='bigRanked' />
               ))}
             </View>
           </View>
-          <View style={styles.nheaderAccountContainer}>
-            <Pressable onPress={()=>router.navigate('/setting')} style={styles.settingButton}>
-              <ThemedText type={'default'}>Setting</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
-            </Pressable>            
-          </View>
         </View>
       </View>
       <View style={[styles.buttonContainer, { backgroundColor: DEFAULT_CARD_BACKGROUND }]}>
-        <ThemedButton
-          type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('posted')}
-        >
-          <ThemedText type={sortOption === 'posted' ? 'feedChecked' : 'feedUnchecked'} >Posted</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('saved')}
-        >
-          <ThemedText type={sortOption === 'saved' ? 'feedChecked' : 'feedUnchecked'} >Saved</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('commented')}
-        >
-          <ThemedText type={sortOption === 'commented' ? 'feedChecked' : 'feedUnchecked'} >Commented</ThemedText>
-        </ThemedButton>
-        <ThemedButton
-          type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'}
-          onPress={() => setSortOption('liked')}
-        >
-          <ThemedText type={sortOption === 'liked' ? 'feedChecked' : 'feedUnchecked'} >Liked</ThemedText>
-        </ThemedButton>
+        {(['posted', 'saved', 'commented', 'liked'] as (keyof typeof apiEndpoints)[]).map(option => (
+          <ThemedButton
+            key={option}
+            type={sortOption === option ? 'feedChecked' : 'feedUnchecked'}
+            onPress={() => setSortOption(option)}
+          >
+            <ThemedText size='smaller' color={sortOption === option ? 'black' : 'gray'} font='textMedium'>
+              {option.charAt(0).toUpperCase() + option.slice(1)}
+            </ThemedText>
+          </ThemedButton>
+        ))}
       </View>
     </>
   );
@@ -286,18 +265,6 @@ export default function ProfilePage() {
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);
 
-
-  const handleLogout = () => {
-    removeData();
-    useArticlesStore.getState().clear();
-    Toast.show({
-      type: 'success',
-      text1: 'Logged out successfully',
-    });
-    router.replace('/login');
-  }
-
-
   return (
     <ThemedView style={styles.container}>        
       <AnimatedFlatList
@@ -314,7 +281,7 @@ export default function ProfilePage() {
           </>
         ) : (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
-            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+            <ThemedText size='h3' font='textMedium' color="gray" >No articles found.</ThemedText>
           </View>
         )}
         ListHeaderComponent={<Header
@@ -326,7 +293,6 @@ export default function ProfilePage() {
           sortOption={sortOption}
           setSortOption={setSortOption}
           setUniOnly={() => {}}
-          logout={handleLogout}
           scrollY={scrollY}
           BACKGROUND_GRADIENT_START={BACKGROUND_GRADIENT_START}
         />}

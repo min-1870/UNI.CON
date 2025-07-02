@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import React,  { useState, useEffect, useCallback, useMemo  } from "react";
 import { CommentType, InitialDataType } from '@/constants/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import { AntDesign } from '@expo/vector-icons';
 import moment from 'moment';
@@ -22,9 +22,7 @@ type CommentProps = {
 
 function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
 
-  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
-  const DEFAULT_UNICON = useThemeColor({}, 'UNICON_BACKGROUND');
 
   const styles = StyleSheet.create({
     container: {
@@ -52,31 +50,6 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       alignItems: 'center',
       gap: 5,
     },
-    uni: {
-      color: DEFAULT_TEXT,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    name: {
-      color: DEFAULT_TEXT,
-      fontWeight: '600',
-      fontSize: 18,
-    },
-    points: {
-      color: DEFAULT_UNICON,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    time: {
-      color: DEFAULT_GRAY_TEXT,
-      fontWeight: '400',
-      fontSize: 15,
-    },
-    body: {
-      color: DEFAULT_TEXT,
-      fontWeight: '400',
-      fontSize: 17,
-    },
     button_container: {
       display: 'flex',
       flexDirection: 'row',
@@ -88,7 +61,6 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       flexDirection: 'row',
       justifyContent: 'center',
     },
-
     button: {
       display: 'flex',
       gap: 7,
@@ -103,22 +75,24 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
           {isUnicon && (
             <ThemedTag unClickable={true} initialData={initialData} type='uni' text={commentData.user_school.toUpperCase()}/>
           )}
-        <ThemedText type='articleAuthor' style={{fontSize:12}}>
+        <ThemedText size='smaller' >
           {commentData.user_temp_name}
         </ThemedText>
-        <ThemedText type='articlePoints' style={{fontSize:9}}>
-          {commentData.user_static_points}
-        </ThemedText>
-        <ThemedText type='articleDate' style={{fontSize:9}}>
+        {commentData.user_static_points > 0 && (
+          <ThemedText color="brand">
+            {commentData.user_static_points}p
+          </ThemedText>
+        )}
+        <ThemedText color="gray" size='smaller'>
           {moment(commentData.created_at).fromNow()}
         </ThemedText>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
-          <ThemedText type='articleDate' style={{fontSize:9}}>
+          <ThemedText color="gray" size='smaller'>
             {commentData.deleted ? 'deleted' : commentData.edited ? 'edited' : null}
           </ThemedText>
         </View>
       </View>
-      <ThemedText type='articleBody'> {commentData.body} </ThemedText>
+      <ThemedText> {commentData.body} </ThemedText>
       <View style={styles.button_container}>
         {initialData && (
             
@@ -137,7 +111,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
                       isReplying(true);
                     }
                   }}>
-                    <ThemedText type='articleButton' >
+                    <ThemedText color="gray" size='smaller' font='textMedium' justify={true}>
                       Reply
                     </ThemedText>
                   </Pressable>
@@ -157,7 +131,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
                       isReplying(false);
                     }
                   }}>
-                    <ThemedText type='articleButton' >
+                    <ThemedText color="gray" size='smaller' font='textMedium'>
                       Edit
                     </ThemedText>
                   </Pressable>
@@ -170,7 +144,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
                       deleteComment(commentData.id, commentData.parent_comment);
                     }
                   }}>
-                    <ThemedText type='articleButton' >
+                    <ThemedText color="gray" size='smaller' font='textMedium'>
                       Delete
                     </ThemedText>
                   </Pressable>
@@ -187,7 +161,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
               size={15}
               color={DEFAULT_GRAY_TEXT} 
             />
-            <ThemedText type='articleButton'>
+            <ThemedText color="gray" size='smaller' font='textMedium'>
               {commentData.likes_count}
             </ThemedText>
           </Pressable> 
@@ -201,7 +175,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
             <>
               {commentData.comments_count == 0 ? null : (
                 <Pressable onPress={() => fetchNestedComments(commentData.id)} > 
-                  <ThemedText type='articleButton'>
+                  <ThemedText color="gray" size='smaller' font='textMedium'>
                     {commentData.showReplies ? 'Hide Replies..' : `Show ${commentData.comments_count} Replies`}
                     
                   </ThemedText>
@@ -218,7 +192,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
     <View >
       {commentData.showReplies && commentData.next &&
       <Pressable style={styles.load_more} onPress={() => fetchMoreNestedComment(commentData.id)} > 
-        <ThemedText type='articleButton' >Load More</ThemedText>
+        <ThemedText color="gray" size='smaller' font='textMedium' >Load More</ThemedText>
       </Pressable>}
     </View>
   );

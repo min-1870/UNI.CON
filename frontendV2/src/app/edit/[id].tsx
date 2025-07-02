@@ -12,7 +12,7 @@ import ThemedButton from '@/components/ThemedButton';
 import { useRoute } from '@react-navigation/native';
 import ThemedView from '@/components/ThemedView';
 import * as ImagePicker from 'expo-image-picker'; 
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import Toast from 'react-native-toast-message';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
@@ -273,7 +273,6 @@ export default function EditArticlePage() {
       ),
       headerRight: () => (
         <ThemedText
-          type={'default'} 
           onPress={handleUpdate} 
           disabled={loading}
           style={{ marginRight: 30 }}
@@ -509,12 +508,12 @@ export default function EditArticlePage() {
               type={unicon ? 'toggled' : 'unToggled'}
               onPress={() => {setUnicon(!unicon);}}
             >
-              <ThemedText type='contentSubTitle'>UNI.CON</ThemedText>
+              <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
             </ThemedButton>
         </ThemedView>
       </ThemedCard>
       <ThemedView style={styles.tagAreaContainer}>
-        <ThemedText type={'contentSubTitle'}>Add Tags</ThemedText>
+        <ThemedText size='h3' font='displayBold'>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
             <Pressable onPress={() => removeTag(i)}>

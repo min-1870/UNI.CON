@@ -2,10 +2,10 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { StyleSheet, FlatList, View, Pressable } from 'react-native';
 import { Link, router} from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI, setData} from "@/components/Utils";
+import {fetchAPI, removeData, setData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
@@ -13,7 +13,8 @@ import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
 import * as AuthSession from 'expo-auth-session';
 import Toast from 'react-native-toast-message';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Feather } from '@expo/vector-icons';
+import { useArticlesStore } from '@/store/articleStore';
 
 
 
@@ -112,37 +113,57 @@ export default function SettingPage() {
     }
   };
   
+      
+  const handleLogout = async () => {
+    removeData();
+    useArticlesStore.getState().clear();
+    Toast.show({
+      type: 'success',
+      text1: 'Logged out successfully',
+    });
+    router.replace('/login');
+  }
+  
   return (
     <ThemedView style={styles.container}>
       <View>
         <ThemedCard style={styles.card}>
-          <ThemedText type='contentTitle' style={styles.title}>Account</ThemedText>
+          <ThemedText size='h3' font='textBold' style={styles.title}>Account</ThemedText>
           <View >
             <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
               <View style={styles.buttonText}>
-                <Octicons name="key" size={10} color={DEFAULT_TEXT} />
-                <ThemedText type='default'>Update Password</ThemedText>
+                <Octicons name="key" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Update Password</ThemedText>
               </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
               
             </Pressable>
           </View>
           <View >
             <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
               <View style={styles.buttonText}>
-                <Octicons style={{marginTop:2}} name="lock" size={10} color={DEFAULT_TEXT} />
-                <ThemedText type='default'>Forgot Password</ThemedText>
+                <Octicons style={{marginTop:2}} name="lock" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Forgot Password</ThemedText>
               </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>
           </View>
           <View >
             <Pressable style={styles.button} onPress={connectGoogle}>
               <View style={styles.buttonText}>
-                <Octicons style={{marginTop:2}} name="link" size={10} color={DEFAULT_TEXT} />
-                <ThemedText type='default'>Connect Google Account</ThemedText>
+                <Octicons style={{marginTop:2}} name="link" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Connect Google Account</ThemedText>
               </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+            </Pressable>
+          </View>
+          <View >
+            <Pressable style={styles.button} onPress={handleLogout}>
+              <View style={styles.buttonText}>
+                <Feather style={{marginTop:2}} name="log-out" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Logout</ThemedText>
+              </View>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>
           </View>
         </ThemedCard>
@@ -150,11 +171,11 @@ export default function SettingPage() {
 
       <View>
         <ThemedCard style={styles.card}>
-          <ThemedText type='contentTitle' style={styles.title}>Appearance</ThemedText>
+          <ThemedText size='h3' font='textBold' style={styles.title}>Appearance</ThemedText>
           <View >
             <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
-              <ThemedText type='default'>Dark Mode</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
+              <ThemedText >Dark Mode</ThemedText>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>
           </View>
         </ThemedCard>
@@ -162,11 +183,11 @@ export default function SettingPage() {
 
       <View>
         <ThemedCard style={styles.card}>
-          <ThemedText type='contentTitle' style={styles.title}>Notification</ThemedText>
+          <ThemedText size='h3' font='textBold' style={styles.title}>Notification</ThemedText>
           <View >
             <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
-              <ThemedText type='default'>Turn off email notification</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={10} color={DEFAULT_TEXT} />
+              <ThemedText >Turn off email notification</ThemedText>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>
           </View>
         </ThemedCard>

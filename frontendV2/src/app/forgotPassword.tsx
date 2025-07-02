@@ -1,21 +1,15 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { fetchAPI, setData } from "@/components/Utils";
+import { fetchAPI } from "@/components/Utils";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedView from '@/components/ThemedView';
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
 import Toast from 'react-native-toast-message';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
-
-
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function forgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -64,47 +58,20 @@ export default function forgotPasswordPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      width: '100%',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
-    },
-    socialButtonContainer: {
-      alignItems: 'center',
-      marginBottom: 16,
-      width: '100%',
-    },
-    googleButton: {
-      borderWidth: 1,
-      borderColor: '#d1d5db',
-      borderRadius: 20,
-      marginTop: 10,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: ALWAYS_WHITE,
-      width: '70%',
-    },
-    googleButtonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    googleIconWrapper: {
-      backgroundColor: 'transparent',
-      width: 20,
-      height: 20,
-    },
-    googleButtonText: {
-      color: ALWAYS_BLACK,
+    },    
+    card:{
+      gap:20,
     },
     header: {
-      marginTop: 30,
+      marginTop: 20,
     },
-    card:{
-      width:'90%',
-      maxWidth:500,
-      gap:50,
+    footer:{
+      marginTop: 30,
+      alignItems: 'center',
+      gap: 15,
+      marginBottom: 20,
     },
     row:{
       gap:20,
@@ -119,16 +86,6 @@ export default function forgotPasswordPage() {
       fontWeight: '500',
       textDecorationLine: 'underline',
     },
-    submitButtonWrapper: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    submitButtonText: {
-      color: ALWAYS_BLACK
-    }
   });
 
   return (
@@ -136,8 +93,8 @@ export default function forgotPasswordPage() {
       <ThemedCard style={styles.card}>
 
         <View style={styles.header}>
-            <ThemedText type="university">Forgot Password</ThemedText>
-            <ThemedText type='contentSubTitle'>Enter your university email to receive a OTP</ThemedText>
+            <ThemedText size='h1' font='displayBold'>Forgot Password</ThemedText>
+            <ThemedText size='bigger' font='textMedium'>Enter your university email to receive a Code</ThemedText>
         </View>
 
         
@@ -150,17 +107,17 @@ export default function forgotPasswordPage() {
             keyboardType='email-address'
           />
         </View>
-
-
-        <View style={styles.submitButtonWrapper}>
-          <ThemedButton  onPress={handleSubmit} disabled={loading} type='auth'>
-            <ThemedText style={styles.submitButtonText}>{loading ? 'Sending OTP again...' : 'Send OTP'}</ThemedText>
-          </ThemedButton>
-            <ThemedText>
-            Remember your password? <Link href="/login">Sign In</Link>
-            </ThemedText>
-        </View>
         
+        <View style={styles.footer}>
+          <ThemedButton type='auth' onPress={handleSubmit} disabled={loading}>
+            <ThemedText size='default' color='black' font='textMedium' >{loading ? 'Sending OTP...' : 'Next'}</ThemedText>
+          </ThemedButton>
+          <Pressable onPress={() => router.push("/login")} disabled={loading}>
+            <ThemedText color='gray'>
+              Remember your password? <ThemedText color='brand'>Sign In</ThemedText>
+            </ThemedText>
+          </Pressable>
+        </View>
 
       </ThemedCard>
     </ThemedView>

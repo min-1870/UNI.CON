@@ -14,7 +14,7 @@ import { fetchAPI, getData } from '@/components/Utils';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedView from '@/components/ThemedView';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from '@/components/nThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { router } from "expo-router";
@@ -203,7 +203,7 @@ export default function SearchPage() {
           </>
         ) : (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 200 }}>
-            <ThemedText type="contentPlaceholder">No articles found.</ThemedText>
+            <ThemedText size='h3' font='textMedium' color="gray" >No articles found.</ThemedText>
           </View>
         )}
         ListHeaderComponent={
@@ -219,7 +219,7 @@ export default function SearchPage() {
                   }}
                 />
               </View>
-              <ThemedText type={'contentTitle'}>Tags</ThemedText>
+              <ThemedText size='h3' font='displayBold' >Tags</ThemedText>
               <View style={styles.trendingTagsContainers}>
                 <TagHeader
                   tags={tags}
