@@ -34,11 +34,11 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   commentBarContainer: {
-    height: 70,
+    height: 60,
     flexDirection: 'row',
-    paddingHorizontal: 30,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    gap: 20,
+    gap: 10,
   },
   focusedCommentContainer: {
     height: 40,
@@ -75,6 +75,7 @@ export default function ArticlePage() {
 
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const articleId = (route.params as { id: string }).id;
   const articlesById = useArticlesStore((s) => s.articlesById) || {};
   const article = articlesById[Number(articleId)] || null;
@@ -201,14 +202,25 @@ export default function ArticlePage() {
       setComments((prevComments) =>
         prevComments.map((comment) =>
           String(comment.id) === String(commentId)
-            ? { ...comment, showReplies: false, nested_comments: [] }
+            ? { ...comment, showReplies: false }
             : comment
         )
       );
       return;
     }else{
+      if (comment?.nested_comments){
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            String(comment.id) === String(commentId)
+              ? { ...comment, showReplies: true }
+              : comment
+          )
+        );
+        return;
+      }
       const response = await fetchAPI(URLs.COMMENT(commentId), { method: 'GET', token: true });
       if (!response.error) {
+        // await new Promise(resolve => setTimeout(resolve, 2000));
         setComments((prevComments) =>
           prevComments.map((comment) =>
             String(comment.id) === String(commentId)
@@ -246,6 +258,7 @@ export default function ArticlePage() {
        token: true,
      });
      if (!response.error) {
+      // await new Promise(resolve => setTimeout(resolve, 3000));
        setComments((prevComments) =>
          prevComments.map((comment) =>
            String(comment.id) === String(commentId)
@@ -587,8 +600,7 @@ export default function ArticlePage() {
           </ThemedButton>
         </ThemedView>
       )}
-      {/* Comment input bar: separated from FlatList data */}
-      <ThemedView style={styles.commentBarContainer}>
+      <ThemedView style={[styles.commentBarContainer, { backgroundColor: DEFAULT_CARD_BACKGROUND }]}>
         <ThemedInput
           type="comment"
           placeholder="Add Comments"
@@ -599,7 +611,7 @@ export default function ArticlePage() {
           type="feedChecked"
           onPress={focusedComment ? (isReply ? replyComment : editComment) : sendComment}
         >
-          <AntDesign name="arrowright" size={25} color="#000" />
+          <AntDesign name="arrowright" size={25} color={ALWAYS_BLACK} />
         </ThemedButton>
       </ThemedView>
       <OverflowMenu

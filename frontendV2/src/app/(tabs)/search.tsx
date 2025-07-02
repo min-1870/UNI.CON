@@ -198,7 +198,7 @@ export default function SearchPage() {
         ListEmptyComponent={loading ? (
           <>
             {[...Array(5)].map((_, idx) => (
-              <ThemedShimmer idx={idx} ></ThemedShimmer>
+              <ThemedShimmer key={idx} type="article"/> 
             ))}
           </>
         ) : (

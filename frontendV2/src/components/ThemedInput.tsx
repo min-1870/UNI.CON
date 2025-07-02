@@ -49,8 +49,8 @@ export default function ThemedInput({
       : type === 'comment'
       ? StyleSheet.create({
           style: {
-            padding: 12,
-            paddingHorizontal: 20,
+            padding: 3,
+            paddingHorizontal: 15,
             backgroundColor: DEFAULT_GRAY_BACKGROUND,
             borderRadius: 50,
             alignItems: 'center',

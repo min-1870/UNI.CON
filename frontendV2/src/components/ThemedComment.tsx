@@ -1,9 +1,10 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
-import React,  { useState, useEffect, useCallback, useMemo  } from "react";
+import React,  { useState, useEffect, useCallback, useMemo, useRef  } from "react";
 import { CommentType, InitialDataType } from '@/constants/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedText from '@/components/nThemedText';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedShimmer from '@/components/ThemedShimmer';
 import { AntDesign } from '@expo/vector-icons';
 import moment from 'moment';
 
@@ -23,27 +24,30 @@ type CommentProps = {
 function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
 
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const [loading, setLoading] = useState(false);
+  // const prevNestedCommentsCount = useRef(commentData.nested_comments?.length ?? 0);
+
+  useEffect(() => {
+    setLoading(false);
+  }, [commentData?.nested_comments?.length, commentData?.showReplies]);
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       gap: 10,
       paddingVertical: 10,
-      paddingHorizontal: 40,
+      paddingHorizontal: 16,
     },
     nested_container: {
       flex: 1,
       paddingVertical: 10,
-      paddingHorizontal: 40,
-      marginLeft: 40,
+      paddingLeft:80,
+      paddingRight:16,
       gap: 10,
     },
     load_more: {
-      flex: 1,
-      paddingVertical: 20,
-      paddingHorizontal: 40,
-      marginLeft: 40,
-      alignSelf: 'center'
+      paddingBottom: 10,
+      alignItems: 'center',
     },
     info_container: {
       flexDirection: 'row',
@@ -174,9 +178,13 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
         {commentData.parent_comment ? null : (
             <>
               {commentData.comments_count == 0 ? null : (
-                <Pressable onPress={() => fetchNestedComments(commentData.id)} > 
+                <Pressable onPress={() => {fetchNestedComments(commentData.id); !commentData.showReplies && setLoading(true);}} > 
                   <ThemedText color="gray" size='smaller' font='textMedium'>
-                    {commentData.showReplies ? 'Hide Replies..' : `Show ${commentData.comments_count} Replies`}
+                    {commentData.showReplies 
+                      ? 'Hide Replies' 
+                      : commentData.nested_comments?.length == 0 && loading
+                      ? 'Loading Replies..'
+                      : `Show ${commentData.comments_count} Replies`}
                     
                   </ThemedText>
                 </Pressable>
@@ -189,17 +197,41 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
   );
 
   const renderFooter = () => (
-    <View >
-      {commentData.showReplies && commentData.next &&
-      <Pressable style={styles.load_more} onPress={() => fetchMoreNestedComment(commentData.id)} > 
-        <ThemedText color="gray" size='smaller' font='textMedium' >Load More</ThemedText>
-      </Pressable>}
+    <View>
+      {loading ?
+        <View style={styles.nested_container} >
+          {Array.from({ length: Math.min(
+            commentData.comments_count - (
+              commentData.nested_comments 
+                ? commentData.nested_comments?.length 
+                : 0
+            ), 10) }).map((_, idx) => (
+            <ThemedShimmer key={idx} type="comment" />
+          ))}
+        </View>
+      :
+        <>
+          {commentData.showReplies && commentData.next && (
+            <Pressable
+              style={styles.load_more}
+              onPress={() => {
+                fetchMoreNestedComment(commentData.id);
+                setLoading(true);
+              }}
+            >
+              <ThemedText color="gray" size="smaller" font="textMedium">
+                  Load More
+                </ThemedText>
+            </Pressable>
+          )}
+        </>
+      }
     </View>
   );
 
   return (
     <FlatList
-      data={commentData.nested_comments ?? []}
+      data={commentData.showReplies ? commentData.nested_comments ?? [] : []}
       keyExtractor={(item) => item.id.toString()}
       renderItem={({ item }) => 
         <ThemedComment

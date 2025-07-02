@@ -325,7 +325,7 @@ export default function HomePage() {
         ListEmptyComponent={loading ? (
           <>
             {[...Array(5)].map((_, idx) => (
-              <ThemedShimmer idx={idx} ></ThemedShimmer>
+              <ThemedShimmer idx={idx} type='article'></ThemedShimmer>
             ))}
           </>
         ) : (

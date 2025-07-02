@@ -140,7 +140,7 @@ export default function SettingPage() {
             </Pressable>
           </View>
           <View >
-            <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
+            <Pressable style={styles.button} onPress={() => router.push('/forgotPassword')}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="lock" size={15} color={DEFAULT_TEXT} />
                 <ThemedText >Forgot Password</ThemedText>
