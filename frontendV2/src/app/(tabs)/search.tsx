@@ -14,7 +14,7 @@ import { fetchAPI, getData } from '@/components/Utils';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedView from '@/components/ThemedView';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { router } from "expo-router";

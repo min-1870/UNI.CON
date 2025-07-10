@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View, Pressable } from 'react-native';
 import ThemedView from '@/components/ThemedView';
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedCard from '@/components/ThemedCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';

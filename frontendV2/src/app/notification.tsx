@@ -3,7 +3,7 @@ import ThemedNotification from '@/components/ThemedNotification';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { StyleSheet, FlatList, View } from 'react-native';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
 import {fetchAPI} from "@/components/Utils";

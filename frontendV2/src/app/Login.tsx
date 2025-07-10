@@ -4,7 +4,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';

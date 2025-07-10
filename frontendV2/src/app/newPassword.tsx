@@ -2,7 +2,7 @@
 import { StyleSheet, View } from 'react-native';
 import { router} from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";

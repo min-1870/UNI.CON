@@ -7,7 +7,7 @@ import {fetchAPI, getData, removeData} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import { Animated, StyleSheet, FlatList, View, Pressable } from 'react-native';
 import { LinearGradient } from "expo-linear-gradient";
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
@@ -114,7 +114,8 @@ return (
     prev.initialData === next.initialData &&
     prev.tags === next.tags &&
     prev.uniOnly === next.uniOnly &&
-    prev.sortOption === next.sortOption
+    prev.sortOption === next.sortOption &&
+    prev.DEFAULT_CARD_BACKGROUND === next.DEFAULT_CARD_BACKGROUND
   );
 });
 
@@ -273,6 +274,7 @@ export default function ProfilePage() {
         renderItem={({ item }) => <ThemedArticle initialData={initialData} articleData={item} />}
         contentContainerStyle={styles.feedContainer}
         showsVerticalScrollIndicator={false}
+        extraData={[DEFAULT_CARD_BACKGROUND]}
         ListEmptyComponent={loading ? (
           <>
             {[...Array(5)].map((_, idx) => (

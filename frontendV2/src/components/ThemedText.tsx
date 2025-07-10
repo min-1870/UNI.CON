@@ -4,33 +4,37 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useFonts } from 'expo-font';
 
 export type ThemedTextProps = TextProps & {
-  type?:
+  font?:
+    | 'textRegular'
+    | 'textMedium'
+    | 'textSemibold'
+    | 'textBold'
+    | 'displayBold',
+  size?:
+    | 'tiny'
+    | 'smaller'
     | 'default'
-    | 'university'
-    | 'contentTitle'
-    | 'contentSubTitle'
-    | 'contentPlaceholder'
-    | 'articleTitle'
-    | 'articleBody'
-    | 'articleAuthor'
-    | 'articlePoints'
-    | 'articleDate'
-    | 'articleButton'
-    | 'notificationTitle'
-    | 'notificationTitleBold'
-    | 'notificationBody'
-    | 'notificationButton'
-    | 'link'
-    | 'error'
-    | 'summaryPoints'
-    | 'feedChecked'
-    | 'feedUnchecked'
-    | 'Wording'
+    | 'bigger'
+    | 'h2'
+    | 'h1'
+    | 'h3',
+  color?:
+    | 'default'
+    | 'brand'
+    | 'gray'
+    | 'black'
+    | 'white',
+  justify?: boolean,
+  underline?: boolean,
 };
 
 export default function ThemedText({
   style,
-  type = 'default',
+  size = 'default',
+  font = 'textRegular',
+  color = 'default',
+  justify = false,
+  underline = false,
   children,
   ...rest
 }: ThemedTextProps) {
@@ -44,11 +48,6 @@ export default function ThemedText({
     displayBold: require('../assets/fonts/SF-Pro-Display-Bold.otf'),
   });
 
-  const DEFAULT_UNICON_COLOR = useThemeColor({}, 'UNICON_BACKGROUND');
-  const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
-  const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
-  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
-
   const FONTS = {
     textRegular: 'textRegular',
     textMedium: 'textMedium',
@@ -57,12 +56,14 @@ export default function ThemedText({
     displayBold: 'displayBold',
   };
 
-  const FONT_SIZES = {
+  const SIZES = {
+    tiny: 10,
     smaller: 12,
     default: 14,
     bigger: 16,
     h1: 32,
     h2: 24,
+    h3: 20,
   };
 
   const COLORS = {
@@ -73,169 +74,17 @@ export default function ThemedText({
     white: useThemeColor({}, 'ALWAYS_WHITE'), 
   };
 
-  const DEFAULT_TEXT_STYLE = {
-    fontSize: FONT_SIZES.default,
-    color: COLORS.default,
-    fontFamily: fontsLoaded ? FONTS.textRegular : 'textRegular',
-  };
+  const styles = StyleSheet.create({
+    text: { 
+      fontSize: SIZES[size] || SIZES.default,
+      color: COLORS[color] || COLORS.default,
+      fontFamily: fontsLoaded ? FONTS[font] : 'textRegular',
+      textAlign: justify ? 'justify' : 'left',
+      textDecorationLine: underline ? 'underline' : 'none',
+      textDecorationColor: COLORS[color] || COLORS.default,
+    }
+  })  
   
-  const styles = type === 'university' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 32,
-        lineHeight: 32,
-        color: DEFAULT_TEXT,
-        fontFamily: 'displayBold',
-      }
-    }) 
-  : type === 'contentPlaceholder' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 20,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textSemibold',
-      }
-    }) 
-  : type === 'contentTitle' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 20,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textSemibold',
-      }
-    }) 
-  : type === 'contentSubTitle' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 16,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textMedium',
-      }
-    }) 
-  : type === 'feedChecked' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 14,
-        color: ALWAYS_BLACK,
-        fontFamily: 'textRegular',
-      }
-    })
-  : type === 'feedUnchecked' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 14,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textRegular',
-      }
-    })
-  : type === 'articleAuthor' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 14,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textSemibold',
-      }
-    }) 
-  : type === 'articleDate' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 10,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textRegular',
-      }
-    }) 
-  : type === 'articlePoints' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 10,
-        color: DEFAULT_UNICON_COLOR,
-        fontFamily: 'textRegular',
-      }
-    }) 
-  : type === 'articleTitle' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 18,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textMedium',
-      }
-    }) 
-  : type === 'articleBody' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 12,
-        color: DEFAULT_TEXT,
-        textAlign: 'justify',
-        fontFamily: 'textRegular',
-      }
-    }) 
-  : type === 'articleButton' ?
-    StyleSheet.create({
-      text: {
-         ...DEFAULT_TEXT_STYLE,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textMedium',
-      }
-    }) 
-  : type === 'notificationTitle' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 12,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textRegular',
-      }
-    }) 
-  : type === 'notificationTitleBold' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 12,
-        color: DEFAULT_TEXT,
-        fontFamily: 'textMedium',
-      }
-    }) 
-  : type === 'notificationBody' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 10,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textRegular',
-      }
-    }) 
-  : type === 'notificationButton' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 10,
-        color: DEFAULT_GRAY_TEXT,
-        fontFamily: 'textMedium',
-      }
-    }) 
-  : type === 'summaryPoints' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 30,
-        color: DEFAULT_UNICON_COLOR,
-        fontFamily: 'displayBold',
-      }
-    })
-  : type === 'link' ?
-    StyleSheet.create({
-      text: {
-        fontSize: 12,
-        color: '#0a7ea4',
-      }
-    })
-  : type === 'Wording' ?
-      StyleSheet.create({
-        text: {
-          fontSize: 50,
-          fontWeight: '500',
-          color: 'rgb(8, 8, 8)',
-          fontFamily: 'DMSerifDisplay-Regular'
-        }
-      })
-  : StyleSheet.create({
-      text: DEFAULT_TEXT_STYLE
-  });
 
 
   return (

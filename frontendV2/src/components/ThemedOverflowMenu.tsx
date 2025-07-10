@@ -2,13 +2,12 @@ import React from 'react';
 import {
   Modal,
   View,
-  Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   StyleSheet,
 } from 'react-native';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedText from '@/components/ThemedText';
+import ThemedText from './ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 type Option = {
   label: string;
@@ -35,9 +34,9 @@ const OverflowMenu: React.FC<OverflowMenuProps> = ({
         flex: 1,
         backgroundColor: 'transparent',
     },
-    menu: {
+    card: {
         position: 'absolute',
-        borderRadius: 20,
+        padding: 8,
     },
     item: {
         paddingHorizontal: 16,
@@ -57,7 +56,7 @@ const OverflowMenu: React.FC<OverflowMenuProps> = ({
             <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
-        <ThemedCard style={[styles.menu, { top: position.top, right: position.right }]}>
+        <ThemedCard style={[styles.card, { top: position.top, right: position.right }]}>
             {options.map((opt, i) => (
             <TouchableOpacity
                 key={i}

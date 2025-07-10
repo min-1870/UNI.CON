@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import React,  { useState, useEffect, useCallback, useMemo, useRef  } from "react";
 import { CommentType, InitialDataType } from '@/constants/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { AntDesign } from '@expo/vector-icons';

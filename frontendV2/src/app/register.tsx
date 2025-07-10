@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
 import { Octicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';

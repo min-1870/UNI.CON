@@ -2,12 +2,10 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { StyleSheet, FlatList, View, Pressable } from 'react-native';
 import { Link, router} from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI, removeData, setData} from "@/components/Utils";
-import ThemedButton from '@/components/ThemedButton';
-import ThemedInput from '@/components/ThemedInput';
+import {fetchAPI, removeData} from "@/components/Utils";
 import ThemedCard from '@/components/ThemedCard';
 import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -15,19 +13,21 @@ import * as AuthSession from 'expo-auth-session';
 import Toast from 'react-native-toast-message';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
+import { useTheme, ThemeMode } from '@/theme/ThemeContext';
 
 
+import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
+const themeOption: Option[] = [
+  { label: 'Auto', value: 'auto' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dark', value: 'dark' },
+];
 
 export default function SettingPage() {
-  
-  const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newConfirmPassword, setNewConfirmPassword] = useState("");
+  const { mode, setMode } = useTheme();
   const [loading, setLoading] = useState(false);
-
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
-  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const navigation = useNavigation();
 
   const discovery = {
@@ -48,7 +48,6 @@ export default function SettingPage() {
       headerTitle: 'Settings',
     });
   }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
-
 
 
   const connectGoogle = async () => {
@@ -125,7 +124,7 @@ export default function SettingPage() {
   }
   
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { overflow: 'visible' }]}>
       <View>
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Account</ThemedText>
@@ -169,14 +168,19 @@ export default function SettingPage() {
         </ThemedCard>
       </View>
 
-      <View>
+      <View style={{zIndex:1000}}>
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Appearance</ThemedText>
           <View >
-            <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
-              <ThemedText >Dark Mode</ThemedText>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
-            </Pressable>
+            <View style={styles.button}>
+              <ThemedText>Theme</ThemedText>
+              <ThemedDropdown
+                options={themeOption}
+                selectedValue={mode}
+                onValueChange={(v) => setMode(v as ThemeMode)}
+                style={{width:90}}
+              />
+            </View>
           </View>
         </ThemedCard>
       </View>

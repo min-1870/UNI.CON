@@ -6,7 +6,7 @@ import { useArticlesStore } from '@/store/articleStore';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import Markdown from 'react-native-markdown-display'
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
 import { Image } from 'react-native';

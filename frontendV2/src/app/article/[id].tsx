@@ -14,7 +14,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import {fetchAPI, getData} from "@/components/Utils";
 import ThemedInput from '@/components/ThemedInput';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import Toast from 'react-native-toast-message';
 import { useLayoutEffect } from 'react';

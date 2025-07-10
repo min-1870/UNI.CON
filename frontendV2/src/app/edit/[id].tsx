@@ -12,7 +12,7 @@ import ThemedButton from '@/components/ThemedButton';
 import { useRoute } from '@react-navigation/native';
 import ThemedView from '@/components/ThemedView';
 import * as ImagePicker from 'expo-image-picker'; 
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import Toast from 'react-native-toast-message';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';

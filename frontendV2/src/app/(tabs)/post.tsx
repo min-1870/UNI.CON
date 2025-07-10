@@ -12,7 +12,7 @@ import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import Toast from 'react-native-toast-message';
 import type { TabParamList } from './_layout';
 import ThemedTag from '@/components/ThemedTag';

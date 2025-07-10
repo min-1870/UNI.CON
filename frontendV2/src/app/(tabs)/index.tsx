@@ -15,7 +15,7 @@ import URLs from "@/constants/Urls";
 import { fetchAPI, getData, setData } from "@/components/Utils";
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedButton from '@/components/ThemedButton';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
@@ -122,7 +122,9 @@ return (
     prev.initialData === next.initialData &&
     prev.tags === next.tags &&
     prev.uniOnly === next.uniOnly &&
-    prev.sortOption === next.sortOption
+    prev.sortOption === next.sortOption &&
+    prev.DEFAULT_CARD_BACKGROUND === next.DEFAULT_CARD_BACKGROUND
+    
   );
 });
 
@@ -308,6 +310,7 @@ export default function HomePage() {
           { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
+        extraData={[DEFAULT_CARD_BACKGROUND]}
         ListHeaderComponent={
           <Header
             initialData={initialData}

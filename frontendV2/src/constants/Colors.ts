@@ -47,7 +47,7 @@ const DARK_MODE = {
   SKIMMER_PRIMARY:            '#1CE1B8',
   SKIMMER_SECONDARY:          '#0A2C25',
   BACKGROUND_GRADIENT_START:  '#0BB288',
-  TEXT_GRADIENT_START:        '#00E594', // '#00E594' for dark mode
+  TEXT_GRADIENT_START:        '#00E594',
 };
 
   

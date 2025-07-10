@@ -1,7 +1,7 @@
 import { StyleSheet, View, Pressable } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { InitialDataType } from '@/constants/types';
-import ThemedText from '@/components/nThemedText';
+import ThemedText from '@/components/ThemedText';
 import { router } from 'expo-router';
 import React from "react";
 type TagProps = {
@@ -51,7 +51,7 @@ export default function ThemedTag({
   });
 
   const textSize = type === 'bigRanked' 
-      ? 'default' : 'smaller';
+      ? 'default' : type === 'uni' ? 'tiny' : 'smaller';
 
   const textColor = type === 'uni' 
       ? 'white' 
