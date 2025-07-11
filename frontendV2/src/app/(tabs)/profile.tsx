@@ -11,12 +11,13 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
-import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'
+import { useToast } from '@/contexts/ToastContext';
+
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ArticleType>);
 
@@ -192,6 +193,7 @@ return (
     },
   });
 export default function ProfilePage() {
+  const { showToast } = useToast();
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("posted");
   const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
@@ -245,7 +247,7 @@ export default function ProfilePage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
   }, [sortOption, lastResetPage]);
@@ -261,7 +263,7 @@ export default function ProfilePage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);

@@ -8,16 +8,18 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import Toast from 'react-native-toast-message';
 import { router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginPage() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function LoginPage() {
       setData('access', response.data.access);
       setData('refresh', response.data.refresh);
 
-      Toast.show({
+      showToast({
         type: 'success',
         text1: `Hi, Welcome Back!!`,
       });
@@ -55,16 +57,15 @@ export default function LoginPage() {
         setData('initialData', JSON.stringify(response.data))
         setData('access', response.data.access);
         setData('refresh', response.data.refresh);
-        Toast.show({
+        showToast({
           type: 'success',
           text1: `Hi, Please validate your account!!`,
         });
         router.push("/validation");
       } else {
-        Toast.show({
+        showToast({
           type: 'error',
           text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
-          text2: "Try again.",
         });
       }
     }
@@ -105,7 +106,7 @@ export default function LoginPage() {
         if (!login_response.error) {
           router.push("/(tabs)");
         } else {
-          Toast.show({
+          showToast({
             type: 'error',
             text1: 'Sorry, Google account is not registered..',
           });
@@ -113,13 +114,13 @@ export default function LoginPage() {
         }
 
       } else {
-        Toast.show({
+        showToast({
           type: 'error',
           text1: 'Sorry, Failed to login with Google..',
         });
       }
     } catch (err) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Sorry, ${err || "An unexpected error occurred"}!`,
       });

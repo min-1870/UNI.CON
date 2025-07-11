@@ -7,9 +7,10 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
 import { Octicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
 import { fetchAPI, setData } from "@/components/Utils";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 function getPasswordStrength(password: string): {
   length: boolean;
   upper: boolean;
@@ -23,6 +24,7 @@ function getPasswordStrength(password: string): {
 }
 
 export default function RegisterPage() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,26 +41,23 @@ export default function RegisterPage() {
   const handleRegister = async () => {
 
     if (!email || !password || !confirmPassword) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: 'Oops ! Please fill all entries.',
-        text2: 'All fields are required.',
       });
       return;
     }
     if (password !== confirmPassword) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: 'Passwords do not match. 🙁',
-        text2: 'Try again.',
       });
       return;
     }
     if (!passwordStrength.length || !passwordStrength.upper || !passwordStrength.lower) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: 'Weak Password 🙁',
-        text2: 'Password must be 8+ chars, include uppercase and lowercase.',
       });
       return;
     }
@@ -81,10 +80,9 @@ export default function RegisterPage() {
       setData('refresh', response.data.refresh);
       router.push("/validation");
     } else {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Sorry, ${response?.data?.detail}`,
-        text2: "Try again.",
       });
     }
     setEmail('');

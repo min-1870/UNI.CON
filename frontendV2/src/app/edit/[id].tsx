@@ -13,14 +13,14 @@ import { useRoute } from '@react-navigation/native';
 import ThemedView from '@/components/ThemedView';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
-import Toast from 'react-native-toast-message';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
 import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
 
 export default function EditArticlePage() {
-
+  const { showToast } = useToast();
   // const [imgResultsOrLinks,  setImgResultsOrLinks]  = useState<(ImagePickerResult | string)[]>([]);
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
   const [imgResults,  setImgResults]  = useState<(ImagePickerResult|string)[]>([]);
@@ -85,7 +85,7 @@ export default function EditArticlePage() {
       });
 
     } else {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${response.data.detail}!`,
       });
@@ -125,7 +125,7 @@ export default function EditArticlePage() {
   const handleUpdate = async () => {
     setLoading(true);
     if (!title || !bodies) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Title and body cannot be empty!`,
       });
@@ -183,7 +183,7 @@ export default function EditArticlePage() {
         })
       );
     }else{
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${response.data.detail}!`,
       });
@@ -195,7 +195,7 @@ export default function EditArticlePage() {
     setLoading(true);
 
     if (!imgResult.assets || imgResult.assets.length === 0) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: 'No image asset found!',
       });
@@ -227,13 +227,13 @@ export default function EditArticlePage() {
       if (putResponse.ok){
         return getResponse.data.publicUrl
       }else{
-        Toast.show({
+        showToast({
           type: 'error',
           text1: `Sorry, the image uploading was unsuccessful!`,
         });
       }
     }else{
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${getResponse.data.detail}!`,
       });

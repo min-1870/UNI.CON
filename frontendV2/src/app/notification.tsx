@@ -5,12 +5,14 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { StyleSheet, FlatList, View } from 'react-native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import Toast from 'react-native-toast-message';
 import {fetchAPI} from "@/components/Utils";
 import { Animated } from 'react-native';
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 export default function NotificationPage() {
+  const { showToast } = useToast();
   const [newNotifications, setNewNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
   const [oldNotifications, setOldNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
   const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
@@ -24,6 +26,11 @@ export default function NotificationPage() {
   const fetchedNewNotificationPage = useRef(null);
   const fetchedOldNotificationPage = useRef(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    fetchNotification(true);
+    fetchNotification(false);
+  }, []);
   
   useEffect(() => {
     if (loading) {
@@ -47,7 +54,7 @@ export default function NotificationPage() {
       },
       headerTintColor: DEFAULT_TEXT,
       headerTitleAlign: 'center',
-      headerTitle: 'Update Password',
+      headerTitle: 'Notifications',
     });
   }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
 
@@ -68,8 +75,8 @@ export default function NotificationPage() {
         setNextOldNotificationPage(response.data?.next || null);
       }
     } else {
-      Toast.show({
-        type: 'success',
+      showToast({
+        type: 'error',
         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
@@ -115,8 +122,8 @@ export default function NotificationPage() {
         setNextOldNotificationPage(response.data?.next || null);
       }
     } else {
-      Toast.show({
-        type: 'success',
+      showToast({
+        type: 'error',
         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
       });
     }

@@ -16,11 +16,12 @@ import {fetchAPI, getData} from "@/components/Utils";
 import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import Toast from 'react-native-toast-message';
 import { useLayoutEffect } from 'react';
 import { Animated } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -51,6 +52,7 @@ const styles = StyleSheet.create({
 });
 
 export default function ArticlePage() {
+  const { showToast } = useToast();
   // Local states
   const [focusedComment, setFocusedComment] = useState<{ parent: any; child: any } | null>(null);
   const [isReply, setIsReply] = useState<boolean>(false);
@@ -172,9 +174,9 @@ export default function ArticlePage() {
       setNextCommentPage(response.data?.next);
       fetchedCommentPage.current = null;
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || 'An error occurred'}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
     setLoading(false);
@@ -189,9 +191,9 @@ export default function ArticlePage() {
       fetchedCommentPage.current = nextCommentPage;
       setNextCommentPage(response.data?.next);
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || 'An error occurred'}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   };
@@ -233,9 +235,9 @@ export default function ArticlePage() {
           )
         );
       } else {
-        Toast.show({
-          type: 'success',
-          text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+        showToast({
+          type: 'error',
+          text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
         });
       }
     }
@@ -273,9 +275,9 @@ export default function ArticlePage() {
          )
        );
      } else {
-       Toast.show({
-         type: 'success',
-         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+       showToast({
+         type: 'error',
+         text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
        });
      }
    };
@@ -306,9 +308,9 @@ export default function ArticlePage() {
       ]);
       setNewComment('');
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   }; 
@@ -350,9 +352,9 @@ export default function ArticlePage() {
       }
       setNewComment('');
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   };  
@@ -401,9 +403,9 @@ export default function ArticlePage() {
       setFocusedComment(null)
       setNewComment('');
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   };
@@ -448,9 +450,9 @@ export default function ArticlePage() {
       setFocusedComment(null)
       setNewComment('');
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   };
@@ -506,9 +508,9 @@ export default function ArticlePage() {
         );
       }
     } else {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
   };
@@ -534,7 +536,7 @@ export default function ArticlePage() {
   // Delete article
   const handleDelete = async () => {
     if (!article || !article.title || !article.body) {
-      Toast.show({ type: 'error', text1: 'Title and body cannot be empty!' });
+      showToast({ type: 'error', text1: 'Title and body cannot be empty!' });
       return;
     }
     setLoading(true);
@@ -551,9 +553,9 @@ export default function ArticlePage() {
         tag: [],
         deleted: true,
       });
-      Toast.show({ type: 'success', text1: response.data?.detail || 'Article deleted!' });
+      showToast({ type: 'success', text1: response.data?.detail || 'Article deleted!' });
     } else {
-      Toast.show({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
+      showToast({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
     }
     setLoading(false);
   };

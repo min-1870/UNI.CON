@@ -10,10 +10,10 @@ import ThemedCard from '@/components/ThemedCard';
 import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
 import * as AuthSession from 'expo-auth-session';
-import Toast from 'react-native-toast-message';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
-import { useTheme, ThemeMode } from '@/theme/ThemeContext';
+import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { useToast } from '@/contexts/ToastContext';
 
 
 import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
@@ -24,6 +24,7 @@ const themeOption: Option[] = [
 ];
 
 export default function SettingPage() {
+  const { showToast } = useToast();
   const { mode, setMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
@@ -61,9 +62,9 @@ export default function SettingPage() {
       });
 
       if (response.error) {
-      Toast.show({
-        type: 'success',
-        text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
       });
         return;
       }
@@ -97,8 +98,8 @@ export default function SettingPage() {
         });
 
         if (response.error) {
-          Toast.show({
-            type: 'success',
+          showToast({
+            type: 'error',
             text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
           });
           return;
@@ -116,7 +117,7 @@ export default function SettingPage() {
   const handleLogout = async () => {
     removeData();
     useArticlesStore.getState().clear();
-    Toast.show({
+    showToast({
       type: 'success',
       text1: 'Logged out successfully',
     });
@@ -171,16 +172,17 @@ export default function SettingPage() {
       <View style={{zIndex:1000}}>
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Appearance</ThemedText>
-          <View >
             <View style={styles.button}>
-              <ThemedText>Theme</ThemedText>
+              <View style={styles.buttonText}>
+                <Feather style={{marginTop:2}} name="moon" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Theme</ThemedText>
+              </View>
               <ThemedDropdown
                 options={themeOption}
                 selectedValue={mode}
                 onValueChange={(v) => setMode(v as ThemeMode)}
                 style={{width:90}}
               />
-            </View>
           </View>
         </ThemedCard>
       </View>
@@ -189,7 +191,7 @@ export default function SettingPage() {
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Notification</ThemedText>
           <View >
-            <Pressable style={styles.button} onPress={() => router.push('/newPassword')}>
+            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
               <ThemedText >Turn off email notification</ThemedText>
               <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>
@@ -215,6 +217,7 @@ const styles = StyleSheet.create({
     gap:20
   },
   button:{
+    paddingVertical: 3,
     display:'flex',
     flexDirection:'row',
     alignItems:'center',

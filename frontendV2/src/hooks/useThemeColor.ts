@@ -33,7 +33,7 @@
 // }
 // hooks/useThemeColor.ts
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/theme/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export function useThemeColor<
   K extends keyof typeof Colors.light & keyof typeof Colors.dark

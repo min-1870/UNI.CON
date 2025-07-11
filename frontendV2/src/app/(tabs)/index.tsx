@@ -19,10 +19,11 @@ import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedShimmer from '@/components/ThemedShimmer';
-import Toast from 'react-native-toast-message';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useArticlesStore } from '@/store/articleStore';
 import { useRoute } from '@react-navigation/native';
+import { useToast } from '@/contexts/ToastContext';
+
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ArticleType>);
 
@@ -195,6 +196,7 @@ const styles = StyleSheet.create({
 });
 
 export default function HomePage() {
+  const { showToast } = useToast();
   
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const BACKGROUND_GRADIENT_START = useThemeColor({}, 'BACKGROUND_GRADIENT_START');
@@ -232,7 +234,7 @@ export default function HomePage() {
         setTags(allTags.slice(0, 3));
         setData('trending_tags', allTags);
       } else {
-        Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
+        showToast({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
       }
       
     })();
@@ -267,7 +269,7 @@ export default function HomePage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
   }, [sortOption, lastResetPage]);
@@ -284,7 +286,7 @@ export default function HomePage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);

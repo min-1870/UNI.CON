@@ -6,12 +6,14 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import Toast from 'react-native-toast-message';
 import { router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 export default function forgotPasswordPage() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function forgotPasswordPage() {
     });
 
     if (!response.error) {
-      Toast.show({
+      showToast({
         type: 'success',
         text1: `Hi, Welcome Back!!`,
       });
@@ -44,10 +46,9 @@ export default function forgotPasswordPage() {
       });
     } else {
       setError(response?.data?.detail || "An error occurred");
-      Toast.show({
+      showToast({
         type: 'error',
         text1: "We couldn't find your account in.",
-        text2: "Try again.",
       });
     }
 

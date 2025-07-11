@@ -41,6 +41,9 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginBottom: 0,
+      padding: 16,
+      paddingVertical: 8,
+      marginHorizontal: 0,
     },
     dropdown: {
       marginTop: 8,
@@ -48,6 +51,7 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       width: width,
       top: '100%',
       padding: 0,
+      marginHorizontal: 0,
     },
     list: {
       width: '100%',
@@ -58,7 +62,7 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       paddingVertical: 4,
     },
     item: {
-      paddingVertical: 12,
+      paddingVertical: 8,
       paddingHorizontal: 16,
     },
   });

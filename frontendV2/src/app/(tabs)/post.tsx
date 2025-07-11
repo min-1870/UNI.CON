@@ -10,17 +10,18 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
-import Toast from 'react-native-toast-message';
 import type { TabParamList } from './_layout';
 import ThemedTag from '@/components/ThemedTag';
 import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 export default function NewArticlePage() {
   
+  const { showToast } = useToast();
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
   const [title, setTitle] = useState('');
   const [bodies,  setBodies]  = useState<string[]>([""]);
@@ -41,7 +42,7 @@ export default function NewArticlePage() {
   const handlePost = async () => {
     setLoading(true);
     if (!title || !bodies) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Title and body cannot be empty!`,
       });
@@ -98,7 +99,7 @@ export default function NewArticlePage() {
         })
       );
     }else{
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${response.data.detail}!`,
       });
@@ -110,7 +111,7 @@ export default function NewArticlePage() {
     setLoading(true);
 
     if (!imgResult.assets || imgResult.assets.length === 0) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: 'No image asset found!',
       });
@@ -142,13 +143,13 @@ export default function NewArticlePage() {
       if (putResponse.ok){
         return getResponse.data.publicUrl
       }else{
-        Toast.show({
+        showToast({
           type: 'error',
           text1: `Sorry, the image uploading was unsuccessful!`,
         });
       }
     }else{
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${getResponse.data.detail}!`,
       });

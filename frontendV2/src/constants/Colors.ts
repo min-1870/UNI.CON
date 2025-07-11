@@ -17,6 +17,7 @@ const LIGHT_MODE = {
 
     ALWAYS_BLACK: '#000000',
     ALWAYS_WHITE: '#ffffff',
+    ERROR_TEXT: '#ff4d4f',
 
     DEFAULT_TAG_BACKGROUND: '#e4e6e8',
     RANKED_TAG_BACKGROUND: '#E2F7E3',
@@ -41,6 +42,7 @@ const DARK_MODE = {
   DEFAULT_GRAY_BACKGROUND:    '#2F2F36',
   ALWAYS_BLACK:               '#000000',
   ALWAYS_WHITE:               '#FFFFFF',
+  ERROR_TEXT:                '#FF4D4F',
   DEFAULT_TAG_BACKGROUND:     '#2C3036',
   RANKED_TAG_BACKGROUND:      '#00331C',
   RANKED_TAG_TEXT:            '#00FF94',

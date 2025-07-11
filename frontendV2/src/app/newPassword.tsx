@@ -11,12 +11,13 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useToast } from '@/contexts/ToastContext';
 
-import Toast from 'react-native-toast-message';
 
 
 
 export default function NewPasswordPage() {
+  const { showToast } = useToast();
   
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -43,7 +44,7 @@ export default function NewPasswordPage() {
 
   const handleUpdatePassword = async () => {
     if (newPassword !== newConfirmPassword) {
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Passwords do not match..`,
       });
@@ -59,7 +60,7 @@ export default function NewPasswordPage() {
       },
     });
     if (!response.error) {
-      Toast.show({
+      showToast({
         type: 'success',
         text1: `Password Updated Successfully !!`,
       });
@@ -68,7 +69,7 @@ export default function NewPasswordPage() {
        setNewConfirmPassword("");
       router.push(`/profile`);
     }else{
-      Toast.show({
+      showToast({
         type: 'error',
         text1: `Hi, ${response.data.detail}!`,
       });

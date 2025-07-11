@@ -6,7 +6,6 @@ import {
   Pressable,
 } from "react-native";
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import Toast from 'react-native-toast-message';
 import { useArticlesStore } from '@/store/articleStore';
 import { ArticleType, InitialDataType } from '@/constants/types';
 import URLs from '@/constants/Urls';
@@ -18,6 +17,8 @@ import ThemedText from '@/components/ThemedText';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { router } from "expo-router";
+import { useToast } from '@/contexts/ToastContext';
+
 
 const TagHeader = memo<{
   tags: string[];
@@ -56,6 +57,7 @@ const SearchHeader = memo<{
 type SearchRoute = RouteProp<{ Search: { tag?: string } }, "Search">;
 
 export default function SearchPage() {
+  const { showToast } = useToast();
   const route = useRoute<SearchRoute>();
   const isFetchingMore = useRef(false);
   
@@ -127,7 +129,7 @@ export default function SearchPage() {
         const allTags = Array.isArray(res.data?.tags) ? res.data.tags : [];
         setTags(allTags);
       } else {
-        Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
+        showToast({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
       }
       setLoading(false);
     })();
@@ -151,7 +153,7 @@ export default function SearchPage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
   }, [searchContent, searchTag, sortOption, lastResetPage]);
@@ -168,7 +170,7 @@ export default function SearchPage() {
       useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
       useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
     } else {
-      Toast.show({ type: 'error', text1: res.data?.detail || 'Error loading more' });
+      showToast({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);

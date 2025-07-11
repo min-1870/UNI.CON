@@ -6,14 +6,16 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import Toast from 'react-native-toast-message';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 
 
 
 export default function LoginPage() {
+  const { showToast } = useToast();
   const { email = 'unknown' } = useLocalSearchParams<{ email?: string }>();
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
@@ -28,10 +30,9 @@ export default function LoginPage() {
     setLoading(true);
     if (password !== confirmedPassword) {
       setError("Passwords do not match");
-      Toast.show({
+      showToast({
         type: 'error',
         text1: "Passwords do not match.",
-        text2: "Please try again.",
       });
       setLoading(false);
       return;
@@ -43,17 +44,16 @@ export default function LoginPage() {
     });
 
     if (!response.error) {
-      Toast.show({
+      showToast({
         type: 'success',
         text1: `Hi, Welcome Back!!`,
       });
       router.push("/(tabs)");
     } else {
       setError(response?.data?.detail || "An error occurred");
-      Toast.show({
+      showToast({
         type: 'error',
         text1: "We couldn't log you in.",
-        text2: "Try again.",
       });
     }
 

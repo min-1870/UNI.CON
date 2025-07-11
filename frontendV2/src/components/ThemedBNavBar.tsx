@@ -25,12 +25,12 @@ export default function ThemedBNavBar({ state, navigation }: BottomTabBarProps) 
     const slideY = React.useRef(new Animated.Value(0)).current
 
     React.useEffect(() => {
- Animated.timing(slideY, {
-   toValue: currentRoute === 'post' ? 100 : 0,
-   duration: 300,
-   easing: Easing.out(Easing.cubic),    // ← non-linear “ease out” curve
-   useNativeDriver: true,
- }).start()
+        Animated.timing(slideY, {
+        toValue: currentRoute === 'post' ? 100 : 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),    // ← non-linear “ease out” curve
+        useNativeDriver: true,
+    }).start()
     }, [currentRoute])
 
     return (

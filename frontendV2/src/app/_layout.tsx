@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
-import { ThemeProvider } from '@/theme/ThemeContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
@@ -30,6 +31,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
+      <ToastProvider>
       <ThemedView style={styles.screen}>
         <View style={[styles.outer, { width: containerWidth }]}>
           <Stack
@@ -53,9 +55,9 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />  
           </Stack>
         </View>
-        <Toast />
         <StatusBar style="auto" />
       </ThemedView>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

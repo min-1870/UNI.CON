@@ -5,10 +5,12 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedCard from '@/components/ThemedCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import { fetchAPI, setData } from "@/components/Utils";
 import URLs from "@/constants/Urls";
+import { useToast } from '@/contexts/ToastContext';
+
 export default function EmailVerificationPage() {
+  const { showToast } = useToast();
   const { email } = useLocalSearchParams();
   const router = useRouter();
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -56,7 +58,7 @@ export default function EmailVerificationPage() {
     
     if (!response.error) {
       if (forgotPassword == '1'){
-        Toast.show({
+        showToast({
           type: 'success',
           text1: 'Code verified!',
         });
@@ -69,10 +71,9 @@ export default function EmailVerificationPage() {
           params: { email: email }, 
         });
       } else {
-        Toast.show({
+        showToast({
           type: 'success',
           text1: 'Code verified!',
-          text2: 'Redirecting you to the last step.',
         });
         setLoading(true);
         router.push({
@@ -81,10 +82,9 @@ export default function EmailVerificationPage() {
       }
     } else {
       setLoading(false);
-      Toast.show({
+      showToast({
         type: 'error',
         text1: response?.data?.detail || 'Verification failed',
-        text2: 'Please try again.',
       });
     }
     
