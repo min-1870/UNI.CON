@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
-
+import { Ionicons } from '@expo/vector-icons';   
 
 export default function forgotPasswordPage() {
   const { showToast } = useToast();
@@ -64,6 +64,7 @@ export default function forgotPasswordPage() {
     },    
     card:{
       gap:20,
+      paddingTop: 32,
     },
     header: {
       marginTop: 20,
@@ -87,10 +88,19 @@ export default function forgotPasswordPage() {
       fontWeight: '500',
       textDecorationLine: 'underline',
     },
+    backButton: {
+      position: 'absolute',
+      top: 25,
+      left: 15,
+      zIndex: 10,
+    },
   });
 
   return (
     <ThemedView style={styles.container}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color={uniconContent} />
+        </Pressable>
       <ThemedCard style={styles.card}>
 
         <View style={styles.header}>
