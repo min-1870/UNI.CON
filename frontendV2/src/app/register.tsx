@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
@@ -7,62 +7,48 @@ import ThemedInput from '@/components/ThemedInput';
 import ThemedText from '@/components/ThemedText';
 import ThemedButton from '@/components/ThemedButton';
 import { Octicons } from '@expo/vector-icons';
-import { fetchAPI, setData } from "@/components/Utils";
+import { fetchAPI, setData, passwordStrength } from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
 
-function getPasswordStrength(password: string): {
-  length: boolean;
-  upper: boolean;
-  lower: boolean;
-} {
-  return {
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-  };
-}
 
 export default function RegisterPage() {
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ length: false, upper: false, lower: false });
-
-
-  useEffect(() => {
-    setPasswordStrength(getPasswordStrength(password));
-  }, [password]);
+  const passwordStrengthState = passwordStrength(password);
 
   const handleRegister = async () => {
 
-    if (!email || !password || !confirmPassword) {
+    setLoading(true);
+    if (!password || !confirmPassword) {
       showToast({
         type: 'error',
         text1: 'Oops ! Please fill all entries.',
       });
-      return;
-    }
-    if (password !== confirmPassword) {
-      showToast({
-        type: 'error',
-        text1: 'Passwords do not match. 🙁',
-      });
-      return;
-    }
-    if (!passwordStrength.length || !passwordStrength.upper || !passwordStrength.lower) {
-      showToast({
-        type: 'error',
-        text1: 'Weak Password 🙁',
-      });
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (passwordStrengthState.overall === false) {
+      showToast({
+        type: 'error',
+        text1: 'Weak Password 🙁'
+        });
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showToast({
+        type: 'error',
+        text1: "Passwords do not match.",
+      });
+      setLoading(false);
+      return;
+    }
 
     const response = await fetchAPI(URLs.REGISTER, {
       method: 'POST',
@@ -103,31 +89,25 @@ export default function RegisterPage() {
     header: {
       marginTop: 20,
     },
+    body:{
+      gap:20,
+    },
     footer:{
       marginTop: 30,
       alignItems: 'center',
       gap: 15,
       marginBottom: 20,
     },
-    inputRows: {
-      gap: 20,
-    },
-    inputRow: {
-      gap: 5,
-    },
     inputWrapper: {
-      position: 'relative',
-    },
-    eyeIcon: {
-      position: 'absolute',
-      right: 12,
-      top: '37%',
-      transform: [{ translateY: -10 }],
-      padding: 4,
+      gap:10,
     },
     iconWrapper: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 10,
+    },
+    requirementWrapper: {
+      marginLeft: 10,
       gap: 10,
     },
   });
@@ -142,86 +122,78 @@ export default function RegisterPage() {
           <ThemedText size='bigger' font='textMedium' >Join our university community</ThemedText>
         </View>
 
-        <View style={styles.inputRows}>
-        <View style={styles.inputRow}>
-          <ThemedText>University Email</ThemedText>
-          <ThemedInput
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            type="auth"
-          />
-        </View>
-
-
-        <View style={styles.inputRow}>
-          <ThemedText>Password</ThemedText>
+        <View style={styles.body}>
           <View style={styles.inputWrapper}>
+            <ThemedText>University Email</ThemedText>
+            <ThemedInput
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              placeholder='example@university.edu.au'
+            />
+          </View>
+
+
+          <View style={styles.inputWrapper}>
+            <ThemedText>Password</ThemedText>
             <ThemedInput
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPassword}
               type="auth"
             />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Octicons name={showPassword ? 'eye-closed' : 'eye'} size={20} color="#888" />
-            </TouchableOpacity>
-          </View>
-            <View >
+            <View style={styles.requirementWrapper}>
               <View style = {styles.iconWrapper}>
                 <Octicons
-                  name={passwordStrength.length ? 'dot-fill' : 'dot'}
+                  name={passwordStrengthState.isValidLength ? 'dot-fill' : 'dot'}
                   size={15}
-                  color={passwordStrength.length ? '#059669' : '#d1d5db'}
+                  color={passwordStrengthState.isValidLength ? '#059669' : '#d1d5db'}
                 />
-                <ThemedText color={passwordStrength.length ? 'brand' : 'gray'} size='smaller'>
+                <ThemedText color={passwordStrengthState.isValidLength ? 'brand' : 'gray'} size='smaller'>
                   More than 8 characters required.
                 </ThemedText>
               </View>
               <View style = {styles.iconWrapper}>
                 <Octicons
-                  name={passwordStrength.upper ? 'dot-fill' : 'dot'}
+                  name={passwordStrengthState.hasUpperCase ? 'dot-fill' : 'dot'}
                   size={15}
-                  color={passwordStrength.upper ? '#059669' : '#d1d5db'}
+                  color={passwordStrengthState.hasUpperCase ? '#059669' : '#d1d5db'}
                 />
-                <ThemedText color={passwordStrength.upper ? 'brand' : 'gray'} size='smaller'>
+                <ThemedText color={passwordStrengthState.hasUpperCase ? 'brand' : 'gray'} size='smaller'>
                   At least one uppercase alphabet required.
                 </ThemedText>
               </View>
               <View style = {styles.iconWrapper}>
                 <Octicons
-                  name={passwordStrength.lower ? 'dot-fill' : 'dot'}
+                  name={passwordStrengthState.hasLowerCase ? 'dot-fill' : 'dot'}
                   size={15}
-                  color={passwordStrength.lower ? '#059669' : '#d1d5db'}
+                  color={passwordStrengthState.hasLowerCase ? '#059669' : '#d1d5db'}
                 />
-                <ThemedText color={passwordStrength.lower ? 'brand' : 'gray'} size='smaller'>
+                <ThemedText color={passwordStrengthState.hasLowerCase ? 'brand' : 'gray'} size='smaller'>
                   At least one lowercase alphabet required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrengthState.hasNumbers ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrengthState.hasNumbers ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrengthState.hasNumbers ? 'brand' : 'gray'} size='smaller'>
+                  At least one number required.
                 </ThemedText>
               </View>
             </View>
           </View>
 
 
-        <View style={styles.inputRow}>
-          <ThemedText>Confirm Password</ThemedText>
           <View style={styles.inputWrapper}>
+            <ThemedText>Confirm Password</ThemedText>
             <ThemedInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              secureTextEntry={!showConfirmPassword}
-                  type="auth"
+              type="auth"
             />
-            <TouchableOpacity
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              style={styles.eyeIcon}
-            >
-              <Octicons name={showConfirmPassword ? 'eye-closed' : 'eye'} size={20} color="#888" />
-            </TouchableOpacity>
           </View>
-        </View>
         </View>
 
         <View style={styles.footer}>

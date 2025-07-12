@@ -23,6 +23,7 @@ export type ThemedTextProps = TextProps & {
     | 'brand'
     | 'gray'
     | 'black'
+    | 'red'
     | 'white',
   justify?: boolean,
   underline?: boolean,
@@ -72,6 +73,7 @@ export default function ThemedText({
     gray: useThemeColor({}, 'DEFAULT_GRAY_TEXT'),
     black: useThemeColor({}, 'ALWAYS_BLACK'),
     white: useThemeColor({}, 'ALWAYS_WHITE'), 
+    red: useThemeColor({}, 'ERROR_TEXT'),
   };
 
   const styles = StyleSheet.create({

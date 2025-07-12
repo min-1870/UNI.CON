@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI, removeData} from "@/components/Utils";
+import {fetchAPI, removeData, getData} from "@/components/Utils";
 import ThemedCard from '@/components/ThemedCard';
 import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -29,6 +29,7 @@ export default function SettingPage() {
   const [loading, setLoading] = useState(false);
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const ERROR_TEXT = useThemeColor({}, 'ERROR_TEXT');
   const navigation = useNavigation();
 
   const discovery = {
@@ -50,6 +51,34 @@ export default function SettingPage() {
     });
   }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
 
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    const storedStr = await getData('initialData');
+    const initialData = storedStr ? JSON.parse(storedStr) : {};
+    const response = await fetchAPI(URLs.FORGOT_PASSWORD, {
+      method: 'POST',
+      token: false,
+      body: { email: initialData.email },
+    });
+
+    if (!response.error) {
+      showToast({
+        type: 'success',
+        text1: "We've sent you a validation code to your email.",
+      });
+      router.push({
+        pathname: '/validation',
+        params: { forgotPassword: 1 , fromSetting: 1 , email: initialData.email }, 
+      });
+    } else {
+      showToast({
+        type: 'error',
+        text1: "We couldn't find your account in.",
+      });
+    }
+
+    setLoading(false);
+  };
 
   const connectGoogle = async () => {
     const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -140,7 +169,7 @@ export default function SettingPage() {
             </Pressable>
           </View>
           <View >
-            <Pressable style={styles.button} onPress={() => router.push('/forgotPassword')}>
+            <Pressable style={styles.button} onPress={handleForgotPassword}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="lock" size={15} color={DEFAULT_TEXT} />
                 <ThemedText >Forgot Password</ThemedText>
@@ -160,10 +189,10 @@ export default function SettingPage() {
           <View >
             <Pressable style={styles.button} onPress={handleLogout}>
               <View style={styles.buttonText}>
-                <Feather style={{marginTop:2}} name="log-out" size={15} color={DEFAULT_TEXT} />
-                <ThemedText >Logout</ThemedText>
+                <Feather style={{marginTop:2}} name="log-out" size={15} color={ERROR_TEXT} />
+                <ThemedText color='red' >Logout</ThemedText>
               </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={ERROR_TEXT} />
             </Pressable>
           </View>
         </ThemedCard>
@@ -174,7 +203,7 @@ export default function SettingPage() {
           <ThemedText size='h3' font='textBold' style={styles.title}>Appearance</ThemedText>
             <View style={styles.button}>
               <View style={styles.buttonText}>
-                <Feather style={{marginTop:2}} name="moon" size={15} color={DEFAULT_TEXT} />
+                <Octicons style={{marginTop:2}} name="moon" size={15} color={DEFAULT_TEXT} />
                 <ThemedText >Theme</ThemedText>
               </View>
               <ThemedDropdown
@@ -192,8 +221,35 @@ export default function SettingPage() {
           <ThemedText size='h3' font='textBold' style={styles.title}>Notification</ThemedText>
           <View >
             <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
-              <ThemedText >Turn off email notification</ThemedText>
+              <View style={styles.buttonText}>
+                <Octicons style={{marginTop:2}} name="mail" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Turn off email notification</ThemedText>
+              </View>
               <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+            </Pressable>
+          </View>
+          <View >
+            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
+              <View style={styles.buttonText}>
+                <Octicons style={{marginTop:2}} name="bell" size={15} color={DEFAULT_TEXT} />
+                <ThemedText >Turn off push notification</ThemedText>
+              </View>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+            </Pressable>
+          </View>
+        </ThemedCard>
+      </View>
+
+      <View>
+        <ThemedCard style={styles.card}>
+          <ThemedText size='h3' font='textBold' style={styles.title}>Graduation</ThemedText>
+          <View >
+            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
+              <View style={styles.buttonText}>
+                <Octicons style={{marginTop:2}} name="mortar-board" size={15} color={ERROR_TEXT} />
+                <ThemedText color='red' >Delete your account</ThemedText>
+              </View>
+              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={ERROR_TEXT} />
             </Pressable>
           </View>
         </ThemedCard>
@@ -206,7 +262,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    gap: 15,
     paddingVertical: 20,
   },
   title:{

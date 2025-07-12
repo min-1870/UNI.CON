@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     alignItems: 'stretch',
+    marginBottom: 100,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

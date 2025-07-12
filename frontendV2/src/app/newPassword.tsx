@@ -6,12 +6,14 @@ import ThemedText from '@/components/ThemedText';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI} from "@/components/Utils";
+import {fetchAPI, passwordStrength} from "@/components/Utils";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import React, { useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useToast } from '@/contexts/ToastContext';
+import { Octicons } from '@expo/vector-icons';
+
 
 
 
@@ -21,6 +23,7 @@ export default function NewPasswordPage() {
   
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const passwordStrengthState = passwordStrength(newPassword);
   const [newConfirmPassword, setNewConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -43,14 +46,32 @@ export default function NewPasswordPage() {
   }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
 
   const handleUpdatePassword = async () => {
+    setLoading(true);
+    if (!password || !newPassword || !newConfirmPassword) {
+      showToast({
+        type: 'error',
+        text1: 'Oops ! Please fill all entries.',
+      });
+      setLoading(false);
+      return;
+    }
     if (newPassword !== newConfirmPassword) {
       showToast({
         type: 'error',
         text1: `Passwords do not match..`,
       });
+      setLoading(false);
       return;
     }
-    setLoading(true);
+    if (passwordStrengthState.overall === false) {
+      showToast({
+        type: 'error',
+        text1: 'Weak Password 🙁'
+      });
+      setLoading(false);
+      return;
+    }
+
     const response = await fetchAPI(URLs.NEW_PASSWORD, {
       method: 'POST',
       token: true,
@@ -88,7 +109,7 @@ export default function NewPasswordPage() {
               value={password}
               placeholder="Password"
               keyboardType='default'
-              secureTextEntry={true}
+              type='auth'
             />
           </View>
           <View style={styles.newPwWrapper}>
@@ -98,8 +119,50 @@ export default function NewPasswordPage() {
               value={newPassword}
               placeholder="Password"
               keyboardType='default'
-              secureTextEntry={true}
+              type='auth'
             />
+            <View style={styles.requirementWrapper}>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrengthState.isValidLength ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrengthState.isValidLength ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrengthState.isValidLength ? 'brand' : 'gray'} size='smaller'>
+                  More than 8 characters required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrengthState.hasUpperCase ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrengthState.hasUpperCase ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrengthState.hasUpperCase ? 'brand' : 'gray'} size='smaller'>
+                  At least one uppercase alphabet required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrengthState.hasLowerCase ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrengthState.hasLowerCase ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrengthState.hasLowerCase ? 'brand' : 'gray'} size='smaller'>
+                  At least one lowercase alphabet required.
+                </ThemedText>
+              </View>
+              <View style = {styles.iconWrapper}>
+                <Octicons
+                  name={passwordStrengthState.hasNumbers ? 'dot-fill' : 'dot'}
+                  size={15}
+                  color={passwordStrengthState.hasNumbers ? '#059669' : '#d1d5db'}
+                />
+                <ThemedText color={passwordStrengthState.hasNumbers ? 'brand' : 'gray'} size='smaller'>
+                  At least one number required.
+                </ThemedText>
+              </View>
+            </View>
           </View>
           <View style={styles.newPwWrapper}>
             <ThemedText>Confirm Password</ThemedText>
@@ -108,7 +171,7 @@ export default function NewPasswordPage() {
               value={newConfirmPassword}
               placeholder="Password"
               keyboardType='default'
-              secureTextEntry={true}
+              type='auth'
             />
           </View>
         </View>
@@ -155,4 +218,13 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
   },
+  requirementWrapper: {
+    marginLeft: 10,
+    gap: 10,
+  },
+    iconWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
 });

@@ -141,10 +141,16 @@ export default function LoginPage() {
     header: {
       marginTop: 20,
     },
+    body: {
+      gap:20,
+    },
     footer:{
       marginTop: 30,
       alignItems: 'center',
       gap: 15,
+    },
+    inputWrapper:{
+      gap:10,
     },
     socialButtonContainer: {
       alignItems: 'center',
@@ -174,12 +180,6 @@ export default function LoginPage() {
       width: 20,
       height: 20,
     },
-    row:{
-      gap:20,
-    },
-    inputWrapper:{
-      gap:10,
-    },
     forgotPasswordText: {
       textAlign: 'right',
     },
@@ -194,41 +194,34 @@ export default function LoginPage() {
           <ThemedText size='bigger' font='textMedium' >Sign in to continue</ThemedText>
         </View>
 
-        
-        <View style={styles.row}>
+        <View style={styles.body}>
           <View style={styles.inputWrapper}>
             <ThemedText>University Email</ThemedText>
             <ThemedInput
               onChangeText={setEmail}
               value={email}
-              type="auth"
               keyboardType='email-address'
               placeholder='example@university.edu.au'
             />
           </View>
-
-          <View style={styles.row}>
-            <View style={styles.inputWrapper}>
-              <ThemedText>Password</ThemedText>
-              <ThemedInput
-                onChangeText={setPassword}
-                value={password}
-                secureTextEntry={true}
-                placeholder='*********'
-              />
-              <ThemedText
-                underline={true}
-                size='smaller'
-                color='brand'
-                style={styles.forgotPasswordText}
-                onPress={() => router.push("/forgotPassword")}
-              >
-                Forgot Password?
-              </ThemedText>
-            </View>
+          <View style={styles.inputWrapper}>
+            <ThemedText>Password</ThemedText>
+            <ThemedInput
+              onChangeText={setPassword}
+              value={password}
+              type="auth"
+            />
+            <ThemedText
+              underline={true}
+              size='smaller'
+              color='brand'
+              style={styles.forgotPasswordText}
+              onPress={() => router.push("/forgotPassword")}
+            >
+              Forgot Password?
+            </ThemedText>
           </View>
         </View>
-
 
         <View style={styles.footer}>
           <ThemedButton  onPress={handleSubmit} disabled={loading} type='auth'>

@@ -190,6 +190,7 @@ return (
     },
     feedContainer: {
       alignItems: 'stretch',
+      marginBottom: 100,
     },
   });
 export default function ProfilePage() {

@@ -1,8 +1,7 @@
 from .utils import (
-    send_email,
+    send_validation_code_email,
     annotate_user,
     exchange_google_code_for_data,
-    get_validation_code,
     match_validation_code,
 )
 from rest_framework.exceptions import AuthenticationFailed
@@ -15,21 +14,14 @@ from rest_framework import viewsets, status
 from .serializers import UserSerializer
 from django.core.cache import cache
 from django.db import transaction
-from randomname import get_name
 from .models import User
-import urllib.parse
 import uuid
 
 from .constants import (
-    FORGOT_PASSWORD_EMAIL_SUBJECT,
-    FORGOT_PASSWORD_EMAIL_BODY,
     GOOGLE_LOGIN_CALLBACK_URL,
     GOOGLE_LINK_CALLBACK_URL,
     SSO_SESSION_CACHE_KEY,
     MYPAGE_REDIRECT_URI,
-    OTP_EMAIL_SUBJECT,
-    FEED_REDIRECT_URI,
-    OTP_EMAIL_BODY,
 )
 
 
@@ -56,13 +48,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Send OTP again whe the validation is false
         if not user_instance.is_validated:
-            send_email(OTP_EMAIL_SUBJECT, OTP_EMAIL_BODY+user_instance.validation_code, user_instance.email)
+            send_validation_code_email(user_instance)
             return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
-    def validate(self, request):
+    def validate_register(self, request):
         user_instance = request.user
 
         # Check the missing property
@@ -90,7 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
-    def newpassword(self, request):
+    def update_password(self, request):
         user_instance = request.user
         
         current_password, new_password =request.data["current_password"], request.data["new_password"]
@@ -118,8 +110,6 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=["post"])
     def forgot_password(self, request):
-        user_instance = request.user
-        
         email = request.data["email"]
         if not email:
             return Response(
@@ -136,15 +126,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        # recreate the validation code
-        validation_code = get_validation_code(user_instance)
-        
-        # send the validation code to the email
-        send_email(
-            OTP_EMAIL_SUBJECT, 
-            OTP_EMAIL_BODY + validation_code, 
-            user_instance.email
-        )
+        # recreate & send the validation code
+        send_validation_code_email(user_instance)
 
         return Response({"detail":"Sent Validation Code."}, status=status.HTTP_200_OK)
 
@@ -210,6 +193,30 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"detail":"The password has been updated."}, status=status.HTTP_200_OK)
     
     
+    @action(detail=False, methods=["post"])
+    def resend_validation_code(self, request):
+        email = request.data["email"]
+        if not email:
+            return Response(
+            {"detail": "The email is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        user_instance = User.objects.filter(email=email).first()
+
+        # Validate the email
+        if user_instance is None:
+            return Response(
+                {"detail": "The email is not registered."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # recreate & send the validation code
+        send_validation_code_email(user_instance)
+
+        return Response({"detail":"Sent Validation Code."}, status=status.HTTP_200_OK)
+    
+    
     @action(detail=False, methods=["get"])
     def google_auth_session(self, request):
         session_id = str(uuid.uuid4())
@@ -267,7 +274,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
         
-    
+    @action(detail=False, methods=["post"])
+    def whoami(self, request):
+        user_instance = request.user
+        user_instance = annotate_user(user_instance)
+        serializer = self.get_serializer(user_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         return Response(

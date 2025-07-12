@@ -1,5 +1,7 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Platform, TextStyle, TextInput, StyleSheet, type TextInputProps } from 'react-native';
+import { Platform, TextStyle, TextInput, StyleSheet, type TextInputProps, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Octicons } from '@expo/vector-icons';
 
 type ThemedInputProps = TextInputProps & {
   type?: 'auth' | 'comment' | 'search' | 'validation';
@@ -7,7 +9,7 @@ type ThemedInputProps = TextInputProps & {
 };
 
 export default function ThemedInput({
-  type='auth',
+  type,
   inputRef,
   ...rest
 }: ThemedInputProps) {
@@ -15,7 +17,8 @@ export default function ThemedInput({
     const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
     const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
     const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
-    
+    const [visible, setVisible] = useState(true);
+
     const default_style = {
       ...(Platform.OS === 'web'
         ? ({ outlineStyle: 'none' } as TextStyle)
@@ -78,16 +81,51 @@ export default function ThemedInput({
         })
       : StyleSheet.create({
           style: {
+            padding: 12,
+            paddingHorizontal: 20,
+            backgroundColor: DEFAULT_GRAY_BACKGROUND,
+            borderRadius: 50,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: DEFAULT_TEXT, 
+            width: '100%',
           },
-        });
+   });
       
 
   return (
-    <TextInput
-      style={[default_style, styles.style, rest.style]}
-      {...rest}
-      placeholderTextColor={DEFAULT_GRAY_TEXT}
-      ref={inputRef} 
-    />
+    <View style={type === 'auth' ? { position: 'relative', width: '100%' } : {}}>
+      <TextInput
+        style={[default_style, styles.style, rest.style]}
+        {...rest}
+        placeholderTextColor={DEFAULT_GRAY_TEXT}
+        ref={inputRef} 
+        secureTextEntry={type === 'auth' ? visible : false}
+        placeholder={
+          rest.placeholder !== undefined
+            ? rest.placeholder
+            : type === 'auth'
+            ? "Enter your password"
+            : type === 'search'
+            ? 'Search...'
+            : type === 'comment'
+            ? 'Add a comment...'
+            : ''
+        }
+      />
+      {type === 'auth' && (
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            right: 15,
+            top: 12,
+            zIndex: 1000
+          }}
+          onPress={() => setVisible(!visible)}
+        >
+          <Octicons name={!visible ? 'eye-closed' : 'eye'} size={20} color={DEFAULT_GRAY_TEXT} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }

@@ -46,24 +46,24 @@ export default function ThemedNotification({ notification_data, type='default' }
     <View style={[styles.container]}>
       <Pressable onPress={handleViewDetail}>
         <View style={[styles.title]}>
-          <ThemedText type="notificationTitle">
+          <ThemedText >
             New{' '}
-            <ThemedText type="notificationTitleBold">
+            <ThemedText font='textBold'>
               { notification_data.group == 0 ?
                 'Comment'
                 : 'Like'
               }
             </ThemedText>{' '}
             on your{' '}
-            <ThemedText type="notificationTitleBold">{notification_data.type_name}</ThemedText>
+            <ThemedText font='textBold'>{notification_data.type_name}</ThemedText>
             {notification_data.type_name === 'comment' ? ' in ' : ' '}
-            <ThemedText type="notificationTitleBold">
+            <ThemedText font='textBold'>
               {notification_data.title}
             </ThemedText>
           </ThemedText>
         </View>
         <View style={[styles.body]}>
-          <ThemedText type='notificationBody'>
+          <ThemedText color='gray'>
             {notification_data.body.length > 100
               ? notification_data.body.slice(0, 100) + '...'
               : notification_data.body
@@ -71,10 +71,10 @@ export default function ThemedNotification({ notification_data, type='default' }
           </ThemedText>
         </View>
         <View style={[styles.buttonContainer]}>
-          <ThemedText type='articleDate'>
+          <ThemedText size='smaller' >
             {moment(notification_data.created_at).fromNow()}
           </ThemedText>
-          <ThemedText type='notificationButton'>
+          <ThemedText size='smaller' font='textBold'>
             View Detail
           </ThemedText>
         </View>

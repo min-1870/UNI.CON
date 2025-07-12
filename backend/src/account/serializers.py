@@ -1,11 +1,10 @@
-from .utils import get_school_id_from_email, annotate_user, get_validation_code, send_email
+from .utils import get_school_id_from_email, annotate_user, send_validation_code_email
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.utils import timezone
 from .models import User, School
 import random
 import re
-from .constants import OTP_EMAIL_SUBJECT, OTP_EMAIL_BODY
 
 class UserSerializer(serializers.ModelSerializer):
     initial = serializers.CharField(read_only=True)
@@ -74,12 +73,7 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data["username"] = validated_data["email"]
 
         user_instance = User.objects.create(**validated_data)
-        validation_code = get_validation_code(user_instance)
-        send_email(
-            OTP_EMAIL_SUBJECT,
-            OTP_EMAIL_BODY + validation_code,
-            user_instance.email,
-        )
         user_instance = annotate_user(user_instance)
+        send_validation_code_email(user_instance)
 
         return user_instance

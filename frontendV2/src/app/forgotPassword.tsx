@@ -15,16 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 export default function forgotPasswordPage() {
   const { showToast } = useToast();
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const backgroundColor = useThemeColor({}, 'DEFAULT_BACKGROUND');
   const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
-  
-  const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
-  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
-  const ALWAYS_WHITE = useThemeColor({}, 'ALWAYS_WHITE');
-  
-
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -36,16 +28,11 @@ export default function forgotPasswordPage() {
     });
 
     if (!response.error) {
-      showToast({
-        type: 'success',
-        text1: `Hi, Welcome Back!!`,
-      });
       router.push({
         pathname: '/validation',
         params: { forgotPassword: 1 , email: email }, 
       });
     } else {
-      setError(response?.data?.detail || "An error occurred");
       showToast({
         type: 'error',
         text1: "We couldn't find your account in.",
@@ -54,7 +41,7 @@ export default function forgotPasswordPage() {
 
     setLoading(false);
   };
-
+  
 
   const styles = StyleSheet.create({
     container: {
@@ -114,8 +101,8 @@ export default function forgotPasswordPage() {
           <ThemedInput
             onChangeText={setEmail}
             value={email}
-            type="auth"
             keyboardType='email-address'
+            placeholder='example@university.edu.au'
           />
         </View>
         

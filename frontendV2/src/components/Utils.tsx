@@ -33,6 +33,23 @@ const removeData = async () => {
 };
 
 
+const passwordStrength = (
+  password: string
+): { overall: boolean; hasUpperCase: boolean; hasLowerCase: boolean; hasNumbers: boolean; isValidLength: boolean } => {
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const isValidLength = password.length >= 8;
+  return {
+    overall: hasUpperCase && hasLowerCase && hasNumbers && isValidLength,
+    hasUpperCase: hasUpperCase,
+    hasLowerCase: hasLowerCase,
+    hasNumbers: hasNumbers,
+    isValidLength: isValidLength,
+  };
+};
+
+
 const fetchNewAccessToken = async () => {
     
     const refreshToken = await getData('refresh');
@@ -95,4 +112,4 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
 };
 
 
-export { fetchAPI, setData, getData, removeData };
+export { fetchAPI, setData, getData, removeData, passwordStrength};

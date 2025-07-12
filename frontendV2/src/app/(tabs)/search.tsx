@@ -263,6 +263,7 @@ const styles = StyleSheet.create({
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   feedContainer: {
     alignItems: 'stretch',
-    paddingVertical: 15,
+    marginTop: 16,
+    marginBottom: 100,
   },
 });

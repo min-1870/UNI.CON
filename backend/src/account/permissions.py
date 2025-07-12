@@ -9,11 +9,20 @@ class User_IsAuthenticated(permissions.BasePermission):
     def has_permission(self, request, view):
 
         view_name = getattr(view, "action")
-        if view_name in ["validate", "create", "login", "googlelogin", "forgot_password", "validate_forgot_password", "googlelink", "google_auth_session"]:
+        if view_name in [
+            "validate_register",
+            "create",
+            "login",
+            "forgot_password",
+            "validate_forgot_password",
+            'resend_validation_code',
+            "googlelogin",
+            "googlelink",
+            "google_auth_session"
+        ]:
             return True
 
         # Block not validated user
-        print(view_name)
         if not request.user.is_validated:
             return False
 

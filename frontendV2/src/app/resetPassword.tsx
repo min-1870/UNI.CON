@@ -1,35 +1,51 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { fetchAPI } from "@/components/Utils";
+import { fetchAPI, passwordStrength } from "@/components/Utils";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import ThemedButton from '@/components/ThemedButton';
 import ThemedInput from '@/components/ThemedInput';
 import ThemedCard from '@/components/ThemedCard';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState } from "react";
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
+import { Octicons } from '@expo/vector-icons';
 
 
 
 
 export default function LoginPage() {
   const { showToast } = useToast();
-  const { email = 'unknown' } = useLocalSearchParams<{ email?: string }>();
   const [password, setPassword] = useState("");
-  const [confirmedPassword, setConfirmedPassword] = useState("");
-  const [error, setError] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const uniconContent = useThemeColor({}, 'UNICON_CONTENT');
   const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const ALWAYS_WHITE = useThemeColor({}, 'ALWAYS_WHITE');
-  
+  const passwordStrengthState = passwordStrength(password);
 
   const handleSubmit = async () => {
     setLoading(true);
-    if (password !== confirmedPassword) {
-      setError("Passwords do not match");
+    if (!password || !confirmPassword) {
+      showToast({
+        type: 'error',
+        text1: 'Oops ! Please fill all entries.',
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (passwordStrengthState.overall === false) {
+      showToast({
+        type: 'error',
+        text1: 'Weak Password 🙁'
+        });
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
       showToast({
         type: 'error',
         text1: "Passwords do not match.",
@@ -50,7 +66,6 @@ export default function LoginPage() {
       });
       router.push("/(tabs)");
     } else {
-      setError(response?.data?.detail || "An error occurred");
       showToast({
         type: 'error',
         text1: "We couldn't log you in.",
@@ -122,6 +137,15 @@ export default function LoginPage() {
       fontWeight: '500',
       textDecorationLine: 'underline',
     },
+    iconWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    requirementWrapper: {
+      marginLeft: 10,
+      gap: 10,
+    },
   });
 
   return (
@@ -135,25 +159,66 @@ export default function LoginPage() {
 
         
         <View style={styles.row}>
-
           <View style={styles.row}>
             <View style={styles.inputWrapper}>
               <ThemedText>Password</ThemedText>
               <ThemedInput
                 onChangeText={setPassword}
                 value={password}
-                secureTextEntry={true}
+                type="auth"
               />
+              <View style={styles.requirementWrapper}>
+                <View style = {styles.iconWrapper}>
+                  <Octicons
+                    name={passwordStrengthState.isValidLength ? 'dot-fill' : 'dot'}
+                    size={15}
+                    color={passwordStrengthState.isValidLength ? '#059669' : '#d1d5db'}
+                  />
+                  <ThemedText color={passwordStrengthState.isValidLength ? 'brand' : 'gray'} size='smaller'>
+                    More than 8 characters required.
+                  </ThemedText>
+                </View>
+                <View style = {styles.iconWrapper}>
+                  <Octicons
+                    name={passwordStrengthState.hasUpperCase ? 'dot-fill' : 'dot'}
+                    size={15}
+                    color={passwordStrengthState.hasUpperCase ? '#059669' : '#d1d5db'}
+                  />
+                  <ThemedText color={passwordStrengthState.hasUpperCase ? 'brand' : 'gray'} size='smaller'>
+                    At least one uppercase alphabet required.
+                  </ThemedText>
+                </View>
+                <View style = {styles.iconWrapper}>
+                  <Octicons
+                    name={passwordStrengthState.hasLowerCase ? 'dot-fill' : 'dot'}
+                    size={15}
+                    color={passwordStrengthState.hasLowerCase ? '#059669' : '#d1d5db'}
+                  />
+                  <ThemedText color={passwordStrengthState.hasLowerCase ? 'brand' : 'gray'} size='smaller'>
+                    At least one lowercase alphabet required.
+                  </ThemedText>
+                </View>
+                <View style = {styles.iconWrapper}>
+                  <Octicons
+                    name={passwordStrengthState.hasNumbers ? 'dot-fill' : 'dot'}
+                    size={15}
+                    color={passwordStrengthState.hasNumbers ? '#059669' : '#d1d5db'}
+                  />
+                  <ThemedText color={passwordStrengthState.hasNumbers ? 'brand' : 'gray'} size='smaller'>
+                    At least one number required.
+                  </ThemedText>
+                </View>
+              </View>
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={styles.inputWrapper}>
-              <ThemedText>Password</ThemedText>
+              <ThemedText>Confirm Password</ThemedText>
               <ThemedInput
-                onChangeText={setConfirmedPassword}
-                value={confirmedPassword}
-                secureTextEntry={true}
+                onChangeText={setConfirmPassword}
+                value={confirmPassword}
+                type="auth"
               />
             </View>
           </View>
