@@ -10,6 +10,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import ThemedButton from '@/components/ThemedButton';
 import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
+import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
 import type { TabParamList } from './_layout';
@@ -17,13 +18,26 @@ import ThemedTag from '@/components/ThemedTag';
 import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
-
+import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
+const postOptions: Option[] = [
+  { label: 'Article', value: 'article' },
+  { label: 'Market Place', value: 'marketplace' },
+];
+const statusOptions: Option[] = [
+  { label: 'Selling', value: 'selling' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Sold', value: 'sold' },
+];
 
 export default function NewArticlePage() {
   
   const { showToast } = useToast();
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
   const [title, setTitle] = useState('');
+  const [postType, setPostType] = useState('article');
+  const [status, setStatus] = useState('selling');
+  const [price, setPrice] = useState('');
+  const [contact, setContact] = useState('');
   const [bodies,  setBodies]  = useState<string[]>([""]);
   const [imgResults,  setImgResults]  = useState<ImagePickerResult[]>([]);
   const [inputHeights, setInputHeights] = useState<number[]>([]);
@@ -50,6 +64,16 @@ export default function NewArticlePage() {
       setLoading(false);
       return;
     }
+    if (postType === 'marketplace') {
+      if (!price || !contact) {
+        showToast({
+          type: 'error',
+          text1: `Price and contact cannot be empty!`,
+        });
+        setLoading(false);
+        return;
+      }
+    }
     
     const uploadedImageUrls = await Promise.all(
       imgResults.slice(0, bodies.length - 1).map(img => handleUploadImgs(img))
@@ -74,8 +98,11 @@ export default function NewArticlePage() {
         body: { 
           title: title, 
           body: body_raw, 
-          unicon: unicon,
-          tag: tags
+          unicon: postType === 'article' ? unicon : false,
+          tag: tags,
+          marketplace: postType === 'marketplace' ? true : false,
+          price: postType === 'marketplace' ? price : undefined,
+          contact: postType === 'marketplace' ? contact : undefined,
         },
       }
     );
@@ -102,7 +129,7 @@ export default function NewArticlePage() {
     }else{
       showToast({
         type: 'error',
-        text1: `Hi, ${response.data.detail}!`,
+        text1: `Sorry, ${response.data.detail}!`,
       });
     }    
     setLoading(false);
@@ -167,6 +194,14 @@ export default function NewArticlePage() {
       elevation: 0, // remove Android shadow
       borderWidth: 0, 
       },
+      headerTitle: () => (
+        <ThemedDropdown
+          options={postOptions}
+          selectedValue={postType}
+          onValueChange={(v)=>{setPostType(v);}}
+          style={{width:150}}
+        />
+      ),
       headerTintColor: default_text_color,
       headerLeft: () => (
         <Feather 
@@ -294,7 +329,7 @@ export default function NewArticlePage() {
       flexDirection: 'column',
     },
     cardContainer: {
-      minHeight: 700,
+      minHeight: 600,
       display: 'flex',
     },
     textAreasContainer:{
@@ -304,6 +339,7 @@ export default function NewArticlePage() {
     uniconContainer:{
       display: 'flex',
       flexDirection: 'row',
+      justifyContent: 'flex-end',
       gap: 10,
     },
     textWrapper:{
@@ -316,9 +352,9 @@ export default function NewArticlePage() {
     titleTextArea: {
       borderWidth: 0,         
       borderRadius: 4,
-      padding: 8,
       fontSize: 20,
       color: default_text_color,
+      paddingVertical: 10,
     },
     activeBodyTextArea: {
       marginBottom: 20, 
@@ -327,7 +363,6 @@ export default function NewArticlePage() {
     bodyTextArea: {
       borderWidth: 0,
       borderRadius: 4,
-      paddingHorizontal: 8,
       fontSize: 16,
       color: default_text_color,
       lineHeight: 30
@@ -363,6 +398,22 @@ export default function NewArticlePage() {
       borderRadius: 20,
       marginVertical: 10,
       maxHeight: 1000,
+    },
+    marketPlaceContainer: {
+      gap: 20,
+      marginTop: 20,
+    },
+    marketPlaceContactWrapper: {
+      display: 'flex',
+      gap: 10,
+    },
+    marketPlaceSPWrapper: {
+      display: 'flex',
+      flexDirection: 'row',
+    },
+    marketPlaceSP: {
+      flex:1,
+      gap: 10,
     }
   });
 
@@ -380,7 +431,7 @@ export default function NewArticlePage() {
             style={[removeOutline, styles.titleTextArea]}
             underlineColorAndroid="transparent" 
             numberOfLines={6}            
-            placeholder="Title"
+            placeholder={postType === 'article' ? "Title of the article" : "Title of the market place"}
             placeholderTextColor={place_holder_color}
             value={title}
             onChangeText={setTitle}
@@ -428,14 +479,17 @@ export default function NewArticlePage() {
           })}
         </View>
         <View style={styles.uniconContainer}>
-          <View style={styles.textWrapper}>
-            <ThemedText  size='smaller' color='gray'>
-              By enabling the unicon option your post will be
-            </ThemedText>
-            <ThemedText  size='smaller' color='gray'>
-              visible to other supported university students
-            </ThemedText>
-          </View>
+            {postType === 'article' && (
+              <View style={styles.textWrapper}>
+                
+                <ThemedText  size='smaller' color='gray'>
+                  By enabling the unicon option your post will be
+                </ThemedText>
+                <ThemedText  size='smaller' color='gray'>
+                  visible to other supported university students
+                </ThemedText>
+              </View>
+            )}
           <ThemedButton
             type={'toggled'}
             onPress={() => handlePickImage()}
@@ -446,13 +500,49 @@ export default function NewArticlePage() {
               color={ALWAYS_BLACK}
             />
           </ThemedButton>
-          <ThemedButton
-            type={unicon ? 'toggled' : 'unToggled'}
-            onPress={() => {setUnicon(!unicon);}}
-          >
-            <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
-          </ThemedButton>
+          {postType === 'article' && (
+            <ThemedButton
+              type={unicon ? 'toggled' : 'unToggled'}
+              onPress={() => {setUnicon(!unicon);}}
+            >
+              <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
+            </ThemedButton>
+          )}
         </View>
+          {postType === 'marketplace' && (
+            <View style={styles.marketPlaceContainer}>
+            <View style={styles.marketPlaceSPWrapper}>
+              <View style={styles.marketPlaceSP}>
+                <ThemedText size='bigger' font='textMedium' color='gray'>Status</ThemedText>
+                <ThemedDropdown
+                  options={statusOptions}
+                  selectedValue={status}
+                  onValueChange={(v)=>{setStatus(v);}}
+                  style={{width:90}}
+                />
+              </View>
+              <View style={styles.marketPlaceSP}>
+                <ThemedText size='bigger' font='textMedium' color='gray'>Price</ThemedText>
+                <ThemedInput
+                  placeholder="Price"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            
+              <View style={styles.marketPlaceContactWrapper}>
+                <ThemedText size='bigger' font='textMedium' color='gray'>Contact</ThemedText>
+                <ThemedInput
+                  placeholder="Email or Phone"
+                  value={contact}
+                  onChangeText={setContact}
+                  keyboardType="default"
+                />
+              </View>
+            </View>
+          )}
       </ThemedCard>
       <View style={styles.tagAreaContainer} >
         <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >

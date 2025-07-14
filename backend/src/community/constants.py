@@ -60,6 +60,9 @@ ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY = (
 ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY = (
     lambda school, tag: f"SCHOOL_{school}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
 )
+ARTICLE_SCHOOL_MARKETPLACE_IDS_CACHE_KEY = (
+    lambda school: f"SCHOOL_{school}_MARKETPLACE_ARTICLE_IDS"
+)
 COMMENT_SCHOOL_IDS_CACHE_KEY = (
     lambda article_id, parent_comment_id: f"ARTICLE_{article_id}_COMMENT_{parent_comment_id}_COMMENT_IDS"
 )

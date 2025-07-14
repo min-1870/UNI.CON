@@ -25,6 +25,11 @@ class Article(models.Model):
     embedding_vector = models.JSONField(null=False, blank=True, default=default_embedding_vectors)
     engagement_score = models.FloatField(default=0, null=False)
 
+    #----- market place fields -----
+    price = models.FloatField(default=0, null=False)
+    contact = models.CharField(max_length=100, default="unknown", null=False)
+    marketplace = models.BooleanField(default=False, null=False)
+
     class Meta:
         ordering = ["-created_at"]
 

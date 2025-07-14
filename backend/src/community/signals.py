@@ -119,14 +119,15 @@ def on_article_save(sender, instance, created, **kwargs):
     if created:
         update_sorted_ids_cache(
             instance,
-            ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
-        )
-        update_sorted_ids_cache(
-            instance,
             ARTICLE_USER_POSTED_IDS_CACHE_KEY(instance.user.id),
         )
-        update_article_engagement_score(instance)
-        get_n_register_embedding_vectors.delay(instance.id)
+        if not instance.marketplace:
+            update_sorted_ids_cache(
+                instance,
+                ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
+            )
+            update_article_engagement_score(instance)
+            get_n_register_embedding_vectors.delay(instance.id)
 
 @receiver(post_save, sender=ArticleTag)
 def on_articleTag_save(sender, instance, created, **kwargs):

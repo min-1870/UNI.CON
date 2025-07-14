@@ -12,6 +12,7 @@ from community.utils import (
 from community.constants import (
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_MARKETPLACE_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY,
 
@@ -61,7 +62,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
 
         return queryset
-
+    
+    def get_non_marketplace_queryset(self):
+        user_instance = self.request.user
+        
+        # Filter articles based on user's school or if the article is unicon, excluding marketplace items
+        queryset = Article.objects.filter(
+            (Q(user__school=user_instance.school) | Q(unicon=True)) & Q(marketplace=False)
+        )
+        
+        return queryset
+    
     def create(self, request, *args, **kwargs):
 
         # Create the article
@@ -82,9 +93,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset(),
+            queryset=self.get_non_marketplace_queryset(),
             sort_by="created_at",
             cache_key=ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(
+                request.user.school.id,)
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    def list_marketplace(self, request, *args, **kwargs):
+
+        response_data = get_paginated_articles(
+            request=request,
+            queryset=self.get_queryset(),
+            sort_by="created_at",
+            cache_key=ARTICLE_SCHOOL_MARKETPLACE_IDS_CACHE_KEY(
                 request.user.school.id,)
         )
 
@@ -95,7 +118,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset(),
+            queryset=self.get_non_marketplace_queryset(),
             sort_by="engagement_score",
             cache_key=ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY(
                 request.user.school.id,),
@@ -109,13 +132,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset(),
+            queryset=self.get_non_marketplace_queryset(),
             sort_by="embedding_result",
             cache_key=ARTICLE_USER_PREFERRED_IDS_CACHE_KEY(
                 request.user.id,),
             embedding_vector=request.user.embedding_vector,
-            
-
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -132,7 +153,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset(),
+            queryset=self.get_non_marketplace_queryset(),
             sort_by="embedding_result",
             cache_key=ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY(
                 request.user.school.id, search_content),
@@ -154,7 +175,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
+            queryset=self.get_non_marketplace_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
             sort_by="created_at",
             cache_key=ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
                 request.user.school.id, tag),
@@ -268,9 +289,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 user=user_instance, article=article_instance
             )
         # Update embedding vector in the user instance
-        get_n_update_preference_vector.delay(
-            article_instance.id, user_instance.id
-        )
+        if not article_instance.marketplace:
+            get_n_update_preference_vector.delay(
+                article_instance.id, user_instance.id
+            )
 
         # Update the article instance & shared article attributes cache
         updated_fields = {"views_count": F("views_count") + 1}

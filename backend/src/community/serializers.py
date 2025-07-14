@@ -13,6 +13,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             "title",
             "body",
             "unicon",
+            "price",
+            "contact",
+            "marketplace",
             # Not in Article Model
             "tag",
             "search_content",
@@ -45,7 +48,21 @@ class ArticleSerializer(serializers.ModelSerializer):
         body = data.get("body", "").strip()
         if not body:
             raise serializers.ValidationError("The body cannot be empty.")
-
+        print(data)
+        # Validate the marketplace fields
+        marketplace = data.get("marketplace", False)
+        if marketplace:
+            if not data.get("contact", "").strip():
+                raise serializers.ValidationError("The contact cannot be empty.")
+            
+            if data.get("unicon", False):
+                raise serializers.ValidationError("The unicon field is not valid for marketplace articles.")
+        else:
+            if data.get("price", False):
+                raise serializers.ValidationError("The price is only valid for marketplace articles.")
+            if data.get("contact", False):
+                raise serializers.ValidationError("The contact is only valid for marketplace articles.")
+    
         return data
 
     def create(self, validated_data):
@@ -83,7 +100,6 @@ class CommentSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-
         # Validate the whitespace of the body
         body = data.get("body", "").strip()
         if not body:

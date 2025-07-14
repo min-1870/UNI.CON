@@ -73,7 +73,9 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
         onPress={() => setOpen((prev) => !prev)}
       >
         <ThemedCard type='defaultViewed' shadow={false} style={styles.selector}>
-        <ThemedText>{selectedLabel}</ThemedText>
+        <View style={{ flex:1, alignItems: 'center', justifyContent: 'center' }}>
+          <ThemedText>{selectedLabel}</ThemedText>
+        </View>
         <Octicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={16}
@@ -98,7 +100,13 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
                   setOpen(false);
                 }}
               >
-                <ThemedText>{item.label}</ThemedText>
+                {item.value === selectedValue ? (
+                  <ThemedText color='brand'>{item.label}</ThemedText>
+                )
+                : (
+                  <ThemedText>{item.label}</ThemedText>
+                )}
+                
               </Pressable>
             )}
           />
