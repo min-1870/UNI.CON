@@ -3,7 +3,7 @@ import { Animated as RNAnimated } from 'react-native';
 import { ArticleType, CommentType, InitialDataType } from '@/constants/types';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
-import OverflowMenu from '@/components/ThemedOverflowMenu';
+import ThemedOverflowMenu from '@/components/ThemedOverflowMenu';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign, Feather } from '@expo/vector-icons';
@@ -21,7 +21,7 @@ import { Animated } from 'react-native';
 import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
-
+import ThemedPopup from '@/components/ThemedPopup';
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -52,6 +52,11 @@ const styles = StyleSheet.create({
 });
 
 export default function ArticlePage() {
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupTitle, setPopupTitle] = useState('');
+  const [popupBody, setPopupBody] = useState('');
+  const [popupFunction, setPopupFunction] = useState<() => void>(() => () => {});
+
   const { showToast } = useToast();
   // Local states
   const [focusedComment, setFocusedComment] = useState<{ parent: any; child: any } | null>(null);
@@ -616,7 +621,7 @@ export default function ArticlePage() {
           <AntDesign name="arrowright" size={25} color={ALWAYS_BLACK} />
         </ThemedButton>
       </ThemedView>
-      <OverflowMenu
+      <ThemedOverflowMenu
         visible={menuVisible}
         onDismiss={() => setMenuVisible(false)}
         options={[
@@ -630,9 +635,24 @@ export default function ArticlePage() {
           },
           {
             label: 'Delete',
-            onPress: handleDelete,
+            onPress: () => {
+              setPopupTitle('Delete Article');
+              setPopupBody('Are you sure you want to delete this article? This action cannot be undone.');
+              setPopupFunction(() => handleDelete);
+              setPopupVisible(true);
+            },
           },
         ]}
+      />
+      <ThemedPopup
+        visible={popupVisible}
+        title={popupTitle}
+        message={popupBody}
+        onCancel={() => setPopupVisible(false)}
+        onConfirm={() => {
+          setPopupVisible(false);
+          popupFunction();
+        }}
       />
     </>
   );

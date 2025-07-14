@@ -19,7 +19,6 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "password",
             "email",
-            "validation_code",
             "university_colors",
             "university",
             "initial",
@@ -69,7 +68,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         validated_data["password"] = make_password(validated_data["password"])
         validated_data["last_login"] = timezone.now()
-        validated_data["validation_code"] = str(random.randint(100000, 999999))
         validated_data["username"] = validated_data["email"]
 
         user_instance = User.objects.create(**validated_data)

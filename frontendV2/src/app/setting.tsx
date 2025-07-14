@@ -14,7 +14,7 @@ import { AntDesign, Feather } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { useToast } from '@/contexts/ToastContext';
-
+import ThemedPopup from '@/components/ThemedPopup';
 
 import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
 const themeOption: Option[] = [
@@ -24,6 +24,10 @@ const themeOption: Option[] = [
 ];
 
 export default function SettingPage() {
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupTitle, setPopupTitle] = useState('');
+  const [popupBody, setPopupBody] = useState('');
+  const [popupFunction, setPopupFunction] = useState<() => void>(() => () => {});
   const { showToast } = useToast();
   const { mode, setMode } = useTheme();
   const [loading, setLoading] = useState(false);
@@ -153,6 +157,13 @@ export default function SettingPage() {
     router.replace('/login');
   }
   
+  const handleDeleteAccount = () => {
+    showToast({
+      type: 'error',
+      text1: 'This feature is not implemented yet.',
+    });
+  }
+
   return (
     <ThemedView style={[styles.container, { overflow: 'visible' }]}>
       <View>
@@ -187,7 +198,12 @@ export default function SettingPage() {
             </Pressable>
           </View>
           <View >
-            <Pressable style={styles.button} onPress={handleLogout}>
+            <Pressable style={styles.button} onPress={()=> {
+              setPopupTitle('Logout');
+              setPopupBody('Are you sure you want to logout?');
+              setPopupFunction(() => handleLogout);
+              setPopupVisible(true);
+            }}>
               <View style={styles.buttonText}>
                 <Feather style={{marginTop:2}} name="log-out" size={15} color={ERROR_TEXT} />
                 <ThemedText color='red' >Logout</ThemedText>
@@ -220,7 +236,17 @@ export default function SettingPage() {
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Notification</ThemedText>
           <View >
-            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
+            <Pressable style={styles.button} onPress={() => {
+              setPopupTitle('Turn off email notification');
+              setPopupBody('Are you sure you want to turn off email notification? You will not receive any notifications from the app.');
+              setPopupFunction(() => () => {
+                showToast({
+                  type: 'success',
+                  text1: 'Email notification turned off successfully.',
+                });
+              });
+              setPopupVisible(true);
+            }}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="mail" size={15} color={DEFAULT_TEXT} />
                 <ThemedText >Turn off email notification</ThemedText>
@@ -229,7 +255,17 @@ export default function SettingPage() {
             </Pressable>
           </View>
           <View >
-            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
+            <Pressable style={styles.button} onPress={() => {
+              setPopupTitle('Turn off push notification');
+              setPopupBody('Are you sure you want to turn off push notification? You will not receive any notifications from the app.');
+              setPopupFunction(() => () => {
+                showToast({
+                  type: 'success',
+                  text1: 'Push notification turned off successfully.',
+                });
+              });
+              setPopupVisible(true);
+            }}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="bell" size={15} color={DEFAULT_TEXT} />
                 <ThemedText >Turn off push notification</ThemedText>
@@ -244,7 +280,12 @@ export default function SettingPage() {
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Graduation</ThemedText>
           <View >
-            <Pressable style={styles.button} onPress={() => (showToast({ type: 'error', text1: `Hi, welcomwelccomewelcomwelccomewelcomwelccomewelcomwelccome !`,}))}>
+            <Pressable style={styles.button} onPress={() => {
+              setPopupTitle('Delete Account');
+              setPopupBody('Are you sure you want to delete your account? This action cannot be undone.');
+              setPopupFunction(() => handleDeleteAccount);
+              setPopupVisible(true);
+            }}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="mortar-board" size={15} color={ERROR_TEXT} />
                 <ThemedText color='red' >Delete your account</ThemedText>
@@ -254,6 +295,16 @@ export default function SettingPage() {
           </View>
         </ThemedCard>
       </View>
+      <ThemedPopup
+        visible={popupVisible}
+        title={popupTitle}
+        message={popupBody}
+        onCancel={() => setPopupVisible(false)}
+        onConfirm={() => {
+          setPopupVisible(false);
+          popupFunction();
+        }}
+      />
     </ThemedView>
   );
 }

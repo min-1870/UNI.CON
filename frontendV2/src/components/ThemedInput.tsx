@@ -60,6 +60,7 @@ export default function ThemedInput({
             justifyContent: 'center',
             color: DEFAULT_TEXT, 
             width: '100%',
+            height: '100%',
           },
         })
       : type === 'search'
@@ -94,7 +95,7 @@ export default function ThemedInput({
       
 
   return (
-    <View style={type === 'auth' ? { position: 'relative', width: '100%' } : {}}>
+    <View style={type === 'auth' ? { position: 'relative', width: '100%' } : {flex: 1, height: '100%'}}>
       <TextInput
         style={[default_style, styles.style, rest.style]}
         {...rest}

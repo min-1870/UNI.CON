@@ -37,6 +37,7 @@ export default function EditArticlePage() {
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   const articleId = (useRoute().params as { id: string }).id;
 
   function parseMarkdownImages(raw: string): {
@@ -359,47 +360,49 @@ export default function EditArticlePage() {
       flexDirection: 'column',
     },
     cardContainer: {
-      minHeight: 500,
+      minHeight: 700,
       display: 'flex',
-      borderBottomLeftRadius: 30,
-      borderBottomRightRadius: 30,
-      padding: 20, 
-      marginBottom: 20,
     },
     textAreasContainer:{
       display: 'flex',
-      flex: 1,
+      flex: 1
     },
     uniconContainer:{
       display: 'flex',
       flexDirection: 'row',
       gap: 10,
     },
+    textWrapper:{
+      flex: 1,
+      justifyContent: 'center',
+      alignSelf: 'center',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
     titleTextArea: {
       borderWidth: 0,         
       borderRadius: 4,
       padding: 8,
       fontSize: 20,
-      color: DEFAULT_TEXT,
+      color: DEFAULT_TEXT
     },
     activeBodyTextArea: {
       marginBottom: 20, 
       flex:1
     },
-  bodyTextArea: {
-    borderWidth: 0,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    fontSize: 16,
-    color: DEFAULT_TEXT,
-    lineHeight: 30
-  },
+    bodyTextArea: {
+      borderWidth: 0,
+      borderRadius: 4,
+      paddingHorizontal: 8,
+      fontSize: 16,
+      color: DEFAULT_TEXT,
+      lineHeight: 30
+    },
     tagAreaContainer:{
       padding: 20,
       gap: 20,
       display: 'flex',
       minHeight: 200,
-      // flex: 1,
     },
     chipContainer: {
       flexDirection: 'row',
@@ -407,6 +410,7 @@ export default function EditArticlePage() {
       alignItems: 'center',
     },
     tagTextArea: {
+      color: DEFAULT_TEXT,
       flexGrow: 1,
       minWidth: 80,
       fontSize: 16,
@@ -429,8 +433,8 @@ export default function EditArticlePage() {
         showsHorizontalScrollIndicator={false}
     >
     <ThemedView style={styles.container}>
-      <ThemedCard style={styles.cardContainer}>
-        <ThemedView style={styles.textAreasContainer}>
+      <ThemedCard type='detail' style={styles.cardContainer}>
+        <View style={styles.textAreasContainer}>
           <TextInput
             style={styles.titleTextArea}
             underlineColorAndroid="transparent" 
@@ -440,7 +444,7 @@ export default function EditArticlePage() {
             value={title}
             onChangeText={setTitle}
             textAlignVertical="top"      
-            scrollEnabled                
+            scrollEnabled
           />
           {bodies.map((bodyText, idx) => {
             
@@ -489,11 +493,16 @@ export default function EditArticlePage() {
               </React.Fragment>
             );
           })}
-        </ThemedView>
-        <ThemedView style={styles.uniconContainer}>
-            <ThemedText>
-              By enabling the unicon option your post will be visible to other supported university students
-            </ThemedText>
+        </View>
+          <View style={styles.uniconContainer}>
+            <View style={styles.textWrapper}>
+              <ThemedText  size='smaller' color='gray'>
+                By enabling the unicon option your post will be
+              </ThemedText>
+              <ThemedText  size='smaller' color='gray'>
+                visible to other supported university students
+              </ThemedText>
+            </View>
             <ThemedButton
               type={'toggled'}
               onPress={() => handlePickImage()}
@@ -501,7 +510,7 @@ export default function EditArticlePage() {
               <MaterialIcons
                 name="add-to-photos" 
                 size={17} 
-                color={DEFAULT_TEXT}
+                color={ALWAYS_BLACK}
               />
             </ThemedButton>
             <ThemedButton
@@ -510,9 +519,9 @@ export default function EditArticlePage() {
             >
               <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
             </ThemedButton>
-        </ThemedView>
+          </View>
       </ThemedCard>
-      <ThemedView style={styles.tagAreaContainer}>
+      <View style={styles.tagAreaContainer}>
         <ThemedText size='h3' font='displayBold'>Add Tags</ThemedText>
         <View style={styles.chipContainer}>
           {tags.map((tag, i) => (
@@ -531,7 +540,7 @@ export default function EditArticlePage() {
             autoCapitalize="none"
           />
         </View>
-      </ThemedView>
+      </View>
     </ThemedView>
     </ScrollView>
   );

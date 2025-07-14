@@ -38,6 +38,7 @@ export default function NewArticlePage() {
   const default_card_background_color = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const place_holder_color = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const default_text_color = useThemeColor({}, 'DEFAULT_TEXT');
+  const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
   
   const handlePost = async () => {
     setLoading(true);
@@ -305,6 +306,13 @@ export default function NewArticlePage() {
       flexDirection: 'row',
       gap: 10,
     },
+    textWrapper:{
+      flex: 1,
+      justifyContent: 'center',
+      alignSelf: 'center',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
     titleTextArea: {
       borderWidth: 0,         
       borderRadius: 4,
@@ -420,26 +428,31 @@ export default function NewArticlePage() {
           })}
         </View>
         <View style={styles.uniconContainer}>
-            <ThemedText>
-              By enabling the unicon option your post will be visible to other supported university students
+          <View style={styles.textWrapper}>
+            <ThemedText  size='smaller' color='gray'>
+              By enabling the unicon option your post will be
             </ThemedText>
-            <ThemedButton
-              type={'toggled'}
-              onPress={() => handlePickImage()}
-            >
-              <MaterialIcons
-                name="add-to-photos" 
-                size={17} 
-                color={default_text_color}
-              />
-            </ThemedButton>
-            <ThemedButton
-              type={unicon ? 'toggled' : 'unToggled'}
-              onPress={() => {setUnicon(!unicon);}}
-            >
-              <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
-            </ThemedButton>
+            <ThemedText  size='smaller' color='gray'>
+              visible to other supported university students
+            </ThemedText>
           </View>
+          <ThemedButton
+            type={'toggled'}
+            onPress={() => handlePickImage()}
+          >
+            <MaterialIcons
+              name="add-to-photos" 
+              size={17} 
+              color={ALWAYS_BLACK}
+            />
+          </ThemedButton>
+          <ThemedButton
+            type={unicon ? 'toggled' : 'unToggled'}
+            onPress={() => {setUnicon(!unicon);}}
+          >
+            <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
+          </ThemedButton>
+        </View>
       </ThemedCard>
       <View style={styles.tagAreaContainer} >
         <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >
