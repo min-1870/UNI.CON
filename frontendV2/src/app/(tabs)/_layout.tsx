@@ -5,6 +5,7 @@ import NewArticlePage from './post';
 import HomePage from './index';
 import SearchPage from './search';
 import ProfilePage from './profile';
+import MarketplacePage from './marketplace';
 import { useArticlesStore } from '@/store/articleStore';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -17,39 +18,16 @@ export type TabParamList = {
   home: undefined;
   search: undefined;
   post: undefined;         
+  marketplace: undefined;  
   profile: undefined;
 };
 
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const UNICON_BACKGROUND = useThemeColor({}, 'UNICON_BACKGROUND');
   const routeName = useRef('');
-  const tabBarOptions = {
-    style: {
-      backgroundColor: colorScheme === 'dark' ? '#18181b' : '#fff',
-      borderTopWidth: 0,
-      height: 60,
-      paddingTop: 8,
-      paddingHorizontal: 16,
-    },
-    activeTintColor: UNICON_BACKGROUND, 
-    inactiveTintColor: colorScheme === 'dark' ? '#a1a1aa' : '#6b7280',
-  };
 
-  const screenOptions = {
-    tabBarActiveTintColor: tabBarOptions.activeTintColor,
-    tabBarInactiveTintColor: tabBarOptions.inactiveTintColor,
-    tabBarStyle: tabBarOptions.style,
-    tabBarItemStyle: {
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-    },
-  };
   return (
     <Tabs.Navigator 
-    
-      // screenOptions={screenOptions}
       
       tabBar={props => <ThemedBNavBar {...props} />}
       screenListeners={({ navigation, route }) => ({
@@ -68,7 +46,6 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarIcon: ({ color }) => <Octicons size={23} name="home" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -77,7 +54,6 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarIcon: ({ color }) => <Octicons size={23} name="search" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -85,10 +61,16 @@ export default function TabLayout() {
         component={NewArticlePage}
         options={{
           headerShown: true,
-          title: 'New Article',
           tabBarStyle: { display: 'none' },
           tabBarShowLabel: false,
-          tabBarIcon: ({ color }) => <Octicons size={23} name="plus" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="marketplace"
+        component={MarketplacePage}
+        options={{
+          headerShown: false,
+          tabBarShowLabel: false,
         }}
       />
       <Tabs.Screen
@@ -97,7 +79,6 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarIcon: ({ color }) => <Octicons size={23} name="person" color={color} />,
         }}
       />
     </Tabs.Navigator>

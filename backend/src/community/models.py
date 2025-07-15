@@ -4,6 +4,25 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from community.constants import NOTIFICATION_GROUP
 import numpy as np
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
+from django.contrib.postgres.search import (
+    SearchVector, SearchQuery, SearchRank
+)
+
+class ArticleQuerySet(models.QuerySet):
+    def search(self, term, *, min_rank=0.1):
+        vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('body',  weight='B')
+        )
+        query  = SearchQuery(term, config='english')
+        return (
+            self
+              .annotate(rank=SearchRank(vector, query))
+              .filter(rank__gte=min_rank)
+              .order_by('-rank')
+        )
 
 def default_embedding_vectors():
     return np.zeros(1536).tolist()
@@ -29,9 +48,19 @@ class Article(models.Model):
     price = models.FloatField(default=0, null=False)
     contact = models.CharField(max_length=100, default="unknown", null=False)
     marketplace = models.BooleanField(default=False, null=False)
+    status = models.IntegerField(default=0, null=False)  # 0: selling, 1: pending, 2: sold
+    #----- end of market place fields -----
+    
+    objects = ArticleQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            GinIndex(
+                SearchVector('title', 'body', config='english'),
+                name='article_search_gin',
+            ),
+        ]
 
 
 class ArticleUser(models.Model):

@@ -169,14 +169,26 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             {articleData.unicon && (
               <ThemedTag initialData={initialData} type='uni' unClickable={true} text={articleData.user_school.toUpperCase()}/>
             )}
-          {articleData.user_static_points > 0 && (
-            <ThemedText color="brand">
-              {articleData.user_static_points}p
+          {articleData.marketplace && (
+            <ThemedText size='bigger' font='textBold' 
+              color={
+              articleData.status === 0 
+              ? 'brand' 
+              : articleData.status === 1 
+              ? 'gray' 
+              : 'red'
+            } >
+              {articleData.status === 0 ? 'Selling' : articleData.status === 1 ? 'Pending' : 'Sold'}
             </ThemedText>
           )}
           <ThemedText color="gray" size='smaller'>
             {moment(articleData.created_at).fromNow()}
           </ThemedText>
+          {articleData.user_static_points > 0 && (
+            <ThemedText color="brand">
+              {articleData.user_static_points}p
+            </ThemedText>
+          )}
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
            <ThemedText color="gray" size='smaller' >
              {articleData.deleted? 'deleted' : articleData.edited ? 'edited' : null}

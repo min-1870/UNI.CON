@@ -30,6 +30,7 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
             "marketplace",
             "price",
             "contact",
+            "status",
             # Not in Article Model
             "like_status",
             "save_status",

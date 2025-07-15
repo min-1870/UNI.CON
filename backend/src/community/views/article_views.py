@@ -12,9 +12,12 @@ from community.utils import (
 from community.constants import (
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_MARKETPLACE_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY,
+
+    ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY,
 
     ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
     ARTICLE_USER_PREFERRED_IDS_CACHE_KEY,
@@ -55,18 +58,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user_instance = self.request.user
-
-        # Filter articles based on user's school or if the article is unicon
         queryset = Article.objects.filter(
             Q(user__school=user_instance.school) | Q(unicon=True)
         )
 
         return queryset
     
+    def get_marketplace_queryset(self):
+        user_instance = self.request.user
+        queryset = Article.objects.filter(
+            Q(user__school=user_instance.school) & Q(marketplace=True)
+        )
+        
+        return queryset
+    
     def get_non_marketplace_queryset(self):
         user_instance = self.request.user
-        
-        # Filter articles based on user's school or if the article is unicon, excluding marketplace items
         queryset = Article.objects.filter(
             (Q(user__school=user_instance.school) | Q(unicon=True)) & Q(marketplace=False)
         )
@@ -101,13 +108,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["get"])
     def list_marketplace(self, request, *args, **kwargs):
-
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_queryset(),
+            queryset=self.get_marketplace_queryset(),
             sort_by="created_at",
-            cache_key=ARTICLE_SCHOOL_MARKETPLACE_IDS_CACHE_KEY(
+            cache_key=ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY(
                 request.user.school.id,)
         )
 
@@ -154,11 +161,29 @@ class ArticleViewSet(viewsets.ModelViewSet):
         response_data = get_paginated_articles(
             request=request,
             queryset=self.get_non_marketplace_queryset(),
-            sort_by="embedding_result",
+            sort_by="search_content",
             cache_key=ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY(
                 request.user.school.id, search_content),
-            embedding_vector=get_embedding(search_content),
-            
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def search_marketplace(self, request):
+        # Block if the body or the title is empty
+        search_content = request.GET.get("search_content", "").strip()
+        if len(search_content) == 0:
+            return Response(
+                {"detail": "The search_content is empty."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_data = get_paginated_articles(
+            request=request,
+            queryset=self.get_marketplace_queryset(),
+            sort_by="search_content",
+            cache_key=ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY(
+                request.user.school.id, search_content),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -178,6 +203,26 @@ class ArticleViewSet(viewsets.ModelViewSet):
             queryset=self.get_non_marketplace_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
             sort_by="created_at",
             cache_key=ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                request.user.school.id, tag),
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
+    def search_tag_marketplace(self, request):
+        # Block if the body or the title is empty
+        tag = request.GET.get("search_content", "").strip()
+        if len(tag) == 0:
+            return Response(
+                {"detail": "The tag is empty."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        response_data = get_paginated_articles(
+            request=request,
+            queryset=self.get_marketplace_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
+            sort_by="created_at",
+            cache_key=ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
                 request.user.school.id, tag),
         )
 

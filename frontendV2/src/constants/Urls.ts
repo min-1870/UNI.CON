@@ -27,6 +27,9 @@ const URLS = {
     TIME_SORTED_ARTICLES: `${domain}/community/article`,
     HOT_SORTED_ARTICLES: `${domain}/community/article/hot`,
     PREFERENCE_SORTED_ARTICLES: `${domain}/community/article/preference`,
+    // Marketplace
+    TIME_SORTED_MARKETPLACE: `${domain}/community/article/list_marketplace`,
+    // TIME_SORTED_MARKETPLACE: `${domain}/community/article/list_marketplace`,
 
     // Feed (profile feed)
     POSTED_ARTICLES: `${domain}/community/article/posted_articles`,
@@ -57,9 +60,13 @@ const URLS = {
     COMMENT_LIKE: (commentId: string) => `${domain}/community/comment/${commentId}/like/`,
     COMMENT_UNLIKE: (commentId: string) => `${domain}/community/comment/${commentId}/unlike/`,
 
-    // Searching
+    // Searching 
     SEARCHING_ARTICLE: (searchContent: string) => `${domain}/community/article/search?search_content=${searchContent}`,
     SEARCHING_TAG: (searchContent: string) => `${domain}/community/article/search_tag?search_content=${searchContent}`,
+
+    // Searching (marketplace)
+    SEARCHING_MARKETPLACE_ARTICLE: (searchContent: string) => `${domain}/community/article/search_marketplace?search_content=${searchContent}`,
+    SEARCHING_MARKETPLACE_TAG: (searchContent: string) => `${domain}/community/article/search_tag_marketplace?search_content=${searchContent}`,
 };
 
 export default URLS;

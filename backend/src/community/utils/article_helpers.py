@@ -29,7 +29,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     requested_page = int(request.query_params.get("page", 1))
 
     if sort_by == 'embedding_result':
-        search_content = request.query_params.get("search_content", None)
+        # search_content = request.query_params.get("search_content", None)
         if not redis_conn.exists(cache_key):
             # Fetch Ids of the article based on the similarity
             ids = search_similar_embeddings(
@@ -46,6 +46,11 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
             queryset = queryset.filter(pk__in=ids)
             score = len(queryset)
 
+    elif sort_by == 'search_content':
+        search_content = request.query_params.get("search_content", None)
+        queryset = queryset.search(search_content)
+        score = len(queryset)
+
     elif sort_by == 'engagement_score':
         score = request.query_params.get("score", int(queryset.order_by("-engagement_score").first().engagement_score))
 
@@ -55,16 +60,18 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     
     # Check if the zset exists in Redis
     if not redis_conn.exists(cache_key):
-        if sort_by == 'created_at':
-            articles = queryset.values_list(
-                "id", "created_at"
-            )
+        if sort_by == 'embedding_result':
+            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
+        elif sort_by == 'search_content':
+            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
         elif sort_by == 'engagement_score':
             articles = queryset.values_list(
                 "id", "engagement_score"
             )
-        elif sort_by == 'embedding_result':
-            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
+        elif sort_by == 'created_at':
+            articles = queryset.values_list(
+                "id", "created_at"
+            )
             
         mapping = {}
         for nid, value in articles:
@@ -201,8 +208,8 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
         url = request.build_absolute_uri()
         if sort_by == 'embedding_result':
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
-            if search_content:
-                next_page += f"&search_content={search_content}"
+        elif sort_by == 'search_content':
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}&search_content={search_content}"
         elif sort_by == 'created_at':
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
         else:

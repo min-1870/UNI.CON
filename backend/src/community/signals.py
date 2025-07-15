@@ -15,6 +15,10 @@ from community.utils import (
 from community.constants import (
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
+    
+    ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY,
+    ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY,
 
     ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY,
     ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
@@ -121,7 +125,12 @@ def on_article_save(sender, instance, created, **kwargs):
             instance,
             ARTICLE_USER_POSTED_IDS_CACHE_KEY(instance.user.id),
         )
-        if not instance.marketplace:
+        if instance.marketplace:
+            update_sorted_ids_cache(
+                instance,
+                ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY(instance.user.school.id),
+            )
+        else:
             update_sorted_ids_cache(
                 instance,
                 ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
@@ -133,21 +142,36 @@ def on_article_save(sender, instance, created, **kwargs):
 def on_articleTag_save(sender, instance, created, **kwargs):
     if created:
         # Update sorted article ids cache for the tag
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                instance.article.user.school.id, instance.tag.name),
-        )
+        if instance.marketplace:
+            update_sorted_ids_cache(
+                instance.article,
+                ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
+                    instance.article.user.school.id, instance.tag.name),
+            )
+        else:
+            update_sorted_ids_cache(
+                instance.article,
+                ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                    instance.article.user.school.id, instance.tag.name),
+            )
 
 @receiver(post_delete, sender=ArticleTag)
 def on_articleTag_delete(sender, instance, **kwargs):
     # Update sorted article ids cache for the tag
-    update_sorted_ids_cache(
-        instance.article,
-        ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-            instance.article.user.school.id, instance.tag.name),
-        False
-    )
+    if instance.marketplace:
+        update_sorted_ids_cache(
+            instance.article,
+            ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
+                instance.article.user.school.id, instance.tag.name),
+            False
+        )
+    else:
+        update_sorted_ids_cache(
+            instance.article,
+            ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                instance.article.user.school.id, instance.tag.name),
+            False
+        )
 
 @receiver(post_save, sender=ArticleView)
 def on_articleView_save(sender, instance, created, **kwargs):
@@ -157,7 +181,7 @@ def on_articleView_save(sender, instance, created, **kwargs):
             ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
         )
         update_article_engagement_score(instance.article)
-        if instance.article.user != instance.user:
+        if instance.article.user != instance.user and not instance.article.deleted and not instance.marketplace:
             # Update user points
             update_user_points(
                 instance.article.user,

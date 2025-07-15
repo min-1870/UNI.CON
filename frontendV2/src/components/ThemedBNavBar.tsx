@@ -20,7 +20,6 @@ export default function ThemedBNavBar({ state, navigation }: BottomTabBarProps) 
 
     const routeName = useRef('')
     const currentRoute = state.routes[state.index].name
-
     
     const slideY = React.useRef(new Animated.Value(0)).current
 
@@ -61,10 +60,11 @@ export default function ThemedBNavBar({ state, navigation }: BottomTabBarProps) 
             }
 
             const icons: Record<string, React.ComponentProps<typeof Octicons>['name']> = {
-            home: 'home',
-            search: 'search',
-            post: 'plus',
-            profile: 'person',
+                home: 'home',
+                search: 'search',
+                post: 'plus',
+                marketplace: 'rocket',
+                profile: 'person',
             }
 
             return (
