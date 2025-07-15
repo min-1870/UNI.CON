@@ -2,7 +2,7 @@ import {View, Platform, TextStyle} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather, MaterialIcons, Octicons } from '@expo/vector-icons';
 import {  CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { ImagePickerResult } from 'expo-image-picker'
@@ -28,6 +28,11 @@ const statusOptions: Option[] = [
   { label: 'Pending', value: 'pending' },
   { label: 'Sold', value: 'sold' },
 ];
+const contactOptions: Option[] = [
+  { label: 'Comment', value: 'comment' },
+  { label: 'Phone', value: 'phone' },
+  { label: 'Other', value: 'other' },
+];
 
 export default function NewArticlePage() {
   
@@ -38,6 +43,7 @@ export default function NewArticlePage() {
   const [status, setStatus] = useState('selling');
   const [price, setPrice] = useState('');
   const [contact, setContact] = useState('');
+  const [contactType, setContactType] = useState('comment');
   const [bodies,  setBodies]  = useState<string[]>([""]);
   const [imgResults,  setImgResults]  = useState<ImagePickerResult[]>([]);
   const [inputHeights, setInputHeights] = useState<number[]>([]);
@@ -199,7 +205,9 @@ export default function NewArticlePage() {
           options={postOptions}
           selectedValue={postType}
           onValueChange={(v)=>{setPostType(v);}}
-          style={{width:150}}
+          style={{width:200}}
+          size='bigger'
+          font='textSemibold'
         />
       ),
       headerTintColor: default_text_color,
@@ -329,7 +337,7 @@ export default function NewArticlePage() {
       flexDirection: 'column',
     },
     cardContainer: {
-      minHeight: 600,
+      minHeight: 500,
       display: 'flex',
     },
     textAreasContainer:{
@@ -368,7 +376,7 @@ export default function NewArticlePage() {
       lineHeight: 30
     },
     tagAreaContainer:{
-      padding: 20,
+      paddingHorizontal: 20,
       gap: 20,
       display: 'flex',
       minHeight: 200,
@@ -400,19 +408,15 @@ export default function NewArticlePage() {
       maxHeight: 1000,
     },
     marketPlaceContainer: {
+      marginHorizontal:0,
       gap: 20,
-      marginTop: 20,
-    },
-    marketPlaceContactWrapper: {
-      display: 'flex',
-      gap: 10,
     },
     marketPlaceSPWrapper: {
       display: 'flex',
       flexDirection: 'row',
+      justifyContent: 'space-between',
     },
-    marketPlaceSP: {
-      flex:1,
+    marketPlaceTextWrapper: {
       gap: 10,
     }
   });
@@ -479,9 +483,8 @@ export default function NewArticlePage() {
           })}
         </View>
         <View style={styles.uniconContainer}>
-            {postType === 'article' && (
+            {postType === 'article' ? (
               <View style={styles.textWrapper}>
-                
                 <ThemedText  size='smaller' color='gray'>
                   By enabling the unicon option your post will be
                 </ThemedText>
@@ -489,13 +492,22 @@ export default function NewArticlePage() {
                   visible to other supported university students
                 </ThemedText>
               </View>
+            ) : (
+              <View style={styles.textWrapper}>
+                <ThemedText size='smaller' color='gray'>
+                  Please note: UNI.CON does not assume responsibility 
+                </ThemedText>
+                <ThemedText  size='smaller' color='gray'>
+                  for any trade or transaction conducted through this platform.
+                </ThemedText>
+              </View>
             )}
           <ThemedButton
             type={'toggled'}
             onPress={() => handlePickImage()}
           >
-            <MaterialIcons
-              name="add-to-photos" 
+            <Octicons
+              name="diff-added" 
               size={17} 
               color={ALWAYS_BLACK}
             />
@@ -509,41 +521,54 @@ export default function NewArticlePage() {
             </ThemedButton>
           )}
         </View>
-          {postType === 'marketplace' && (
-            <View style={styles.marketPlaceContainer}>
-            <View style={styles.marketPlaceSPWrapper}>
-              <View style={styles.marketPlaceSP}>
-                <ThemedText size='bigger' font='textMedium' color='gray'>Status</ThemedText>
-                <ThemedDropdown
-                  options={statusOptions}
-                  selectedValue={status}
-                  onValueChange={(v)=>{setStatus(v);}}
-                  style={{width:90}}
-                />
-              </View>
-              <View style={styles.marketPlaceSP}>
-                <ThemedText size='bigger' font='textMedium' color='gray'>Price</ThemedText>
-                <ThemedInput
-                  placeholder="Price"
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-            
-              <View style={styles.marketPlaceContactWrapper}>
-                <ThemedText size='bigger' font='textMedium' color='gray'>Contact</ThemedText>
-                <ThemedInput
-                  placeholder="Email or Phone"
-                  value={contact}
-                  onChangeText={setContact}
-                  keyboardType="default"
-                />
-              </View>
-            </View>
-          )}
       </ThemedCard>
+          {postType === 'marketplace' && (
+            <ThemedCard style={styles.marketPlaceContainer} >
+              <View style={[styles.marketPlaceTextWrapper,{zIndex:1000}]}>
+                <ThemedText font='textMedium' color='gray'>Contact</ThemedText>
+                <View style={{flexDirection:'row', gap:10, alignItems:'center'}}>
+                  <ThemedDropdown
+                    options={contactOptions}
+                    selectedValue={contactType}
+                    onValueChange={(v)=>{setContactType(v);}}
+                    style={{width:120, zIndex:1000}}
+                  />
+                  <ThemedInput
+                    placeholder={contactType === 'phone' ? "0400 000 000" : contactType === 'comment' ? "Leave a comment" : "Your contact"}
+                    value={contactType === 'comment' ? '' : contact}
+                    onChangeText={setContact}
+                    keyboardType="default"
+                    editable={contactType !== 'comment'}
+                  />
+                </View>
+              </View>
+              <View style={styles.marketPlaceSPWrapper}>
+                <View style={styles.marketPlaceTextWrapper}>
+                  <ThemedText  font='textMedium' color='gray'>Price</ThemedText>
+                  <View style={{flexDirection:'row', gap:10, alignItems:'center'}}>
+                  <ThemedInput
+                    placeholder="12.33"
+                    value={price}
+                    onChangeText={setPrice}
+                    keyboardType="numeric"
+                  />
+                  <ThemedText font='textMedium' color='gray'>AUD</ThemedText>
+                  </View>
+                </View>
+                <View style={[styles.marketPlaceTextWrapper,{flexDirection:'column', justifyContent:'space-between'}]}>
+                  <ThemedText  font='textMedium' color='gray'>Status</ThemedText>
+                  <ThemedDropdown
+                    options={statusOptions}
+                    selectedValue={status}
+                    onValueChange={(v)=>{setStatus(v);}}
+                    style={{width:100}}
+                    editable={false}
+                  />
+                </View>
+              </View>
+            
+            </ThemedCard>
+          )}
       <View style={styles.tagAreaContainer} >
         <Pressable  style={styles.pressableWrapper} onPress={() => tagInputRef.current?.focus()} pointerEvents="box-only" >
         <ThemedText size='h3' font='displayBold'>Add Tags</ThemedText>

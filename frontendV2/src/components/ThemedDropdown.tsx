@@ -16,6 +16,10 @@ interface InlineDropdownProps {
   onValueChange: (value: string) => void;
   placeholder?: string;
   style?: ViewStyle;
+  backgroundColor?: 'defaultGray' | 'default' | 'defaultViewed';
+  size?: 'smaller' | 'default' | 'bigger' | 'h1' | 'h2' | 'h3';
+  font?: 'textRegular' | 'textMedium' | 'textSemibold' | 'textBold' | 'displayBold';
+  editable?: boolean; // Optional prop to make the dropdown editable
 }
 
 
@@ -24,6 +28,10 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
   selectedValue,
   onValueChange,
   placeholder = 'Select…',
+  backgroundColor = 'defaultGray',
+  size = 'default',
+  font = 'textRegular',
+  editable = true,
   style,
 }) => {
   const [open, setOpen] = useState(false);
@@ -41,8 +49,8 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginBottom: 0,
-      padding: 16,
-      paddingVertical: 8,
+      padding: 12,
+      paddingHorizontal: 20,
       marginHorizontal: 0,
     },
     dropdown: {
@@ -72,9 +80,9 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       <Pressable
         onPress={() => setOpen((prev) => !prev)}
       >
-        <ThemedCard type='defaultViewed' shadow={false} style={styles.selector}>
+        <ThemedCard type={backgroundColor} shadow={false} style={styles.selector}>
         <View style={{ flex:1, alignItems: 'center', justifyContent: 'center' }}>
-          <ThemedText>{selectedLabel}</ThemedText>
+          <ThemedText size={size} font={font} >{selectedLabel}</ThemedText>
         </View>
         <Octicons
           name={open ? 'chevron-up' : 'chevron-down'}
@@ -86,7 +94,7 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
       </Pressable>
 
       {open && (
-          <ThemedCard type='defaultViewed' style={styles.dropdown}>
+          <ThemedCard type={backgroundColor} style={styles.dropdown}>
           <FlatList
             data={options}
             keyExtractor={(item) => item.value}
@@ -96,15 +104,16 @@ export const ThemedDropdown: React.FC<InlineDropdownProps> = ({
               <Pressable
                 style={styles.item}
                 onPress={() => {
+                  if (!editable) return;
                   onValueChange(item.value);
                   setOpen(false);
                 }}
               >
                 {item.value === selectedValue ? (
-                  <ThemedText color='brand'>{item.label}</ThemedText>
+                  <ThemedText size={size} font={font} color='brand'>{item.label}</ThemedText>
                 )
                 : (
-                  <ThemedText>{item.label}</ThemedText>
+                  <ThemedText size={size} font={font} color={editable ? 'default' : 'gray'}>{item.label}</ThemedText>
                 )}
                 
               </Pressable>

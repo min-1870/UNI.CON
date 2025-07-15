@@ -185,6 +185,21 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
         </View>
         <View style={styles.content}>
           <ThemedText size='h3' font='textBold'>{articleData.title}</ThemedText>
+            { articleData.marketplace && (
+              <View style={{ flexDirection: 'row', width: '100%', marginTop: 10, }}>
+                <View style={{ flexDirection: 'column', gap: 5, flex: 1 }}>
+                  <ThemedText font='textMedium' color='gray'>Contact</ThemedText>
+                  <ThemedText size='bigger' font='textBold'>{articleData.contact}</ThemedText>
+                </View>
+                <View style={{ flexDirection: 'column', gap: 5, flex: 1  }}>
+                  <ThemedText font='textMedium' color='gray'>Price</ThemedText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <ThemedText size='bigger' font='textBold'>{articleData.price}</ThemedText>
+                    <ThemedText size='bigger' font='textMedium' >AUD</ThemedText>
+                  </View>
+                </View>
+              </View>
+            )}
             {type === 'default' ? (
               <React.Fragment>
                 <ThemedText justify={true}>

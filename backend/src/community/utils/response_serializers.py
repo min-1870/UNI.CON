@@ -27,6 +27,9 @@ class ArticleResponseSerializer(serializers.ModelSerializer):
             "title",
             "body",
             "unicon",
+            "marketplace",
+            "price",
+            "contact",
             # Not in Article Model
             "like_status",
             "save_status",

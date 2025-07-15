@@ -18,6 +18,10 @@ export interface ArticleType {
   course_code: string;
   edited: boolean;
   deleted: boolean;
+  marketplace: boolean;
+  price: number;
+  contact: string;
+  status: number;
 }
 export interface InitialDataType {
     id: number;
