@@ -96,7 +96,7 @@ return (
       </View>
       <View style={styles.buttonContainer}>
         <View style={[styles.sortingButtons, { backgroundColor: DEFAULT_CARD_BACKGROUND }]}>
-          {(['all','hot','recommend'] as const).map(opt => (
+          {(['all','hot','for you', 'tag'] as const).map(opt => (
             <ThemedButton
               key={opt}
               type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
@@ -112,7 +112,7 @@ return (
           type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
           onPress={() => setUniOnly(!uniOnly)}
         >
-          <ThemedText size='smaller' color={uniOnly ? 'black' : 'gray' } font='textMedium'>{initialData?.initial.toUpperCase()+' only'}</ThemedText>
+          <ThemedText size='smaller' color={uniOnly ? 'black' : 'gray' } font='textMedium'>{initialData?.initial.toUpperCase()}</ThemedText>
         </ThemedButton>
       </View>
     </View>
@@ -130,9 +130,10 @@ return (
 });
 
 const apiEndpoints = {
-  all: URLs.TIME_SORTED_ARTICLES,
-  hot: URLs.HOT_SORTED_ARTICLES,
-  recommend: URLs.PREFERENCE_SORTED_ARTICLES,
+  'all': URLs.TIME_SORTED_ARTICLES,
+  'hot': URLs.HOT_SORTED_ARTICLES,
+  'for you': URLs.PREFERENCE_SORTED_ARTICLES,
+  'tag': URLs.PREFERENCE_SORTED_ARTICLES,
 };
 
 const styles = StyleSheet.create({

@@ -1,12 +1,12 @@
 
-import { Animated as RNAnimated } from 'react-native';
+import { Animated as RNAnimated, View } from 'react-native';
 import { ArticleType, CommentType, InitialDataType } from '@/constants/types';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
 import ThemedOverflowMenu from '@/components/ThemedOverflowMenu';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigation } from '@react-navigation/native';
-import { AntDesign, Feather } from '@expo/vector-icons';
+import { AntDesign, Feather, Octicons } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
 import ThemedArticle from '@/components/ThemedArticle';
 import ThemedComment from '@/components/ThemedComment';
@@ -22,6 +22,8 @@ import { router } from 'expo-router';
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
 import ThemedPopup from '@/components/ThemedPopup';
+import ThemedBottomSheet from '@/components/ThemedBSheet';
+import ThemedCard from '@/components/ThemedCard';
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -49,9 +51,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 15,
   },
+  button:{
+    display:'flex',
+    flexDirection:'row',
+    alignItems:'center',
+    gap: 10,
+  },
 });
 
 export default function ArticlePage() {
+  
+  const [bSheetVisible, setBSheetVisible] = useState(false);
+
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupTitle, setPopupTitle] = useState('');
   const [popupBody, setPopupBody] = useState('');
@@ -83,12 +94,10 @@ export default function ArticlePage() {
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
+  const ERROR_TEXT = useThemeColor({}, 'ERROR_TEXT');
   const articleId = (route.params as { id: string }).id;
   const articlesById = useArticlesStore((s) => s.articlesById) || {};
   const article = articlesById[Number(articleId)] || null;
-
-  // Menu visibility
-  const [menuVisible, setMenuVisible] = useState(false);
 
 
   useLayoutEffect(() => {
@@ -105,14 +114,13 @@ export default function ArticlePage() {
             headerRight: () =>
         initialData &&
         article &&
-        initialData.id === article.user &&
         !article.deleted ? (
           <Feather
             name="more-vertical"
             size={24}
             color={DEFAULT_TEXT}
             style={{ marginRight: 16 }}
-            onPress={() => setMenuVisible(true)}
+            onPress={() => setBSheetVisible(true)}
           />
         ) : null,
     });
@@ -621,29 +629,41 @@ export default function ArticlePage() {
           <AntDesign name="arrowright" size={25} color={ALWAYS_BLACK} />
         </ThemedButton>
       </ThemedView>
-      <ThemedOverflowMenu
-        visible={menuVisible}
-        onDismiss={() => setMenuVisible(false)}
-        options={[
-          {
-            label: 'Edit',
-            onPress: () => {
-              if (article) {
-                router.push({ pathname: '/edit/[id]', params: { id: String(article.id) } });
-              }
-            },
-          },
-          {
-            label: 'Delete',
-            onPress: () => {
+      <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => setBSheetVisible(false)} height={article.user === initialData?.id ? 200 : 120}>
+        <View style={{ flex: 1, gap: 20, paddingVertical: 10 }}>
+          <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+            <Octicons style={{marginTop:2}} name="share" size={15} color={DEFAULT_TEXT} />
+            <ThemedText> Share </ThemedText>
+          </Pressable>
+          {article.user === initialData?.id && (
+            <Pressable style={styles.button} onPress={() => {
+              setBSheetVisible(false);
+              router.push({
+                pathname: '/edit/[id]',
+                params: { id: articleId },
+              });
+            }}>
+              <Octicons style={{marginTop:2}} name="pencil" size={15} color={DEFAULT_TEXT} />
+              <ThemedText> Edit </ThemedText>
+            </Pressable>
+          )}
+          <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+            <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
+            <ThemedText color='red'> Report </ThemedText>
+          </Pressable>
+          {article.user === initialData?.id && (
+            <Pressable style={styles.button} onPress={() => {
               setPopupTitle('Delete Article');
               setPopupBody('Are you sure you want to delete this article? This action cannot be undone.');
               setPopupFunction(() => handleDelete);
               setPopupVisible(true);
-            },
-          },
-        ]}
-      />
+            }}>
+              <Octicons style={{marginTop:2}} name="trash" size={15} color={ERROR_TEXT} />
+              <ThemedText color='red'> Delete </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      </ThemedBottomSheet>
       <ThemedPopup
         visible={popupVisible}
         title={popupTitle}
