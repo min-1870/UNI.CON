@@ -12,12 +12,14 @@ type ThemedButtonProps = Omit<ButtonProps, 'title'> & {
   | 'elevatedToggled' 
   | 'elevatedUnToggled';
   children: ReactNode;
+  style?: any;
 };
 
 export default function ThemedButton({
   children,
   disabled = false,
   type ='auth',
+  style = {},
   ...rest
 }: ThemedButtonProps) {
     const DEFAULT_TOGGLED_COLOR = useThemeColor({}, 'UNICON_BACKGROUND');
@@ -139,7 +141,8 @@ export default function ThemedButton({
       style={({ pressed }) => [styles.button,
         { 
           opacity: (pressed || disabled) ? 0.5 : 1,
-        }
+        },
+        style,
       ]}
       {...rest}
     >

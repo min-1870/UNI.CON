@@ -18,6 +18,7 @@ import ThemedButton from '@/components/ThemedButton';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import ThemedTag from '@/components/ThemedTag';
+import ThemedBottomSheet from "@/components/ThemedBSheet";
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useArticlesStore } from '@/store/articleStore';
@@ -34,6 +35,8 @@ const Header = React.memo(function Header({
   BACKGROUND_GRADIENT_START,
   DEFAULT_TEXT,
   uniOnly,
+  setBSheetVisible,
+  selectedTag,
   sortOption,
   setSortOption,
   setUniOnly,
@@ -45,6 +48,8 @@ const Header = React.memo(function Header({
   BACKGROUND_GRADIENT_START: string;
   DEFAULT_TEXT: string;
   uniOnly: boolean;
+  setBSheetVisible: (visible: boolean) => void;
+  selectedTag: string | undefined;
   sortOption: keyof typeof apiEndpoints;
   setSortOption: (o: keyof typeof apiEndpoints) => void;
   setUniOnly: (u: boolean) => void;
@@ -87,7 +92,7 @@ return (
           Currently, they are chatting about..
         </ThemedText>
         <View style={styles.trendingTagsContainers}>
-          {tags.map((tag, i) => (
+          {tags.slice(0, 3).map((tag, i) => (
             <Pressable key={i}>
               <ThemedTag text={tag} type='bigRanked' />
             </Pressable>
@@ -100,11 +105,26 @@ return (
             <ThemedButton
               key={opt}
               type={sortOption === opt ? 'feedChecked' : 'feedUnchecked'}
-              onPress={() => setSortOption(opt)}
+              onPress={() => {
+                if(opt === 'tag'){
+                  if (!selectedTag || sortOption === 'tag') {
+                    setBSheetVisible(true);
+                  }
+                }
+                setSortOption(opt);
+              }}
+              style={selectedTag && opt === 'tag' && {
+                paddingHorizontal: 2,
+                paddingVertical: 1,}
+              }
             >
-              <ThemedText size='smaller' color={sortOption === opt ? 'black' : 'gray'} font='textMedium'>
-                {opt.charAt(0).toUpperCase() + opt.slice(1)}
-              </ThemedText>
+              {selectedTag && opt === 'tag' ? (
+                <ThemedTag text={selectedTag} type='ranked' unClickable={true}/>
+              ) : (
+                <ThemedText size='smaller' color={sortOption === opt ? 'black' : 'gray'} font='textMedium'>
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </ThemedText>
+              )}
             </ThemedButton>
           ))}
         </View>
@@ -124,6 +144,7 @@ return (
     prev.tags === next.tags &&
     prev.uniOnly === next.uniOnly &&
     prev.sortOption === next.sortOption &&
+    prev.selectedTag === next.selectedTag &&
     prev.DEFAULT_CARD_BACKGROUND === next.DEFAULT_CARD_BACKGROUND
     
   );
@@ -169,6 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf: 'flex-start',
     backgroundColor: "transparent",
+    gap: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -198,6 +220,8 @@ const styles = StyleSheet.create({
 });
 
 export default function HomePage() {
+  const [bSheetVisible, setBSheetVisible] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string|undefined>(undefined);
   const { showToast } = useToast();
   
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
@@ -217,7 +241,7 @@ export default function HomePage() {
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
   const articlesById = useArticlesStore(s => s.articlesById) || {};
-  const feedArticles = (feedIds[sortOption] ?? []).map(id => articlesById[id]) || [];
+  const feedArticles = (feedIds[sortOption === 'tag' ? selectedTag || 'tag' : sortOption] ?? []).map(id => articlesById[id]) || [];
   const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
   const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
@@ -233,7 +257,7 @@ export default function HomePage() {
       const res = await fetchAPI(URLs.TRENDING_TAGS, { method: 'GET', token: true });
       if (!res.error) {
         const allTags = Array.isArray(res.data?.tags) ? res.data.tags : [];
-        setTags(allTags.slice(0, 3));
+        setTags(allTags);
         setData('trending_tags', allTags);
       } else {
         showToast({ type: 'error', text1: res.data?.detail || 'Error loading tags' });
@@ -248,7 +272,6 @@ export default function HomePage() {
   useEffect(() => {
     if (lastResetPage && lastResetPage === route.name) {
       fetchArticles();
-
     }
   },[lastResetPage]);
 
@@ -259,22 +282,37 @@ export default function HomePage() {
     }
   }, [sortOption]);
 
+  
+  useEffect(() => {
+    fetchArticles();
+  }, [selectedTag]);
+
   // FETCH ARTICLES on mount & sortOption change
   const fetchArticles = useCallback(async () => {
     setLoading(true);
-    // await new Promise(resolve => setTimeout(resolve, 5000));
-    if (feedIds && (feedIds[sortOption]||[]).length > 0) {
-      return;
+    // await new Promise(resolve => setTimeout(resolve, 5000));D
+    if ((feedIds?.[sortOption === 'tag' ? selectedTag || 'tag' : sortOption] || []).length) return;
+    let url = apiEndpoints[sortOption]
+    if (sortOption === 'tag') {
+      if (selectedTag) {
+        url = URLs.SEARCHING_TAG(selectedTag);
+      }else{
+        url = apiEndpoints[sortOption];
+      }
     }
-    const res = await fetchAPI(apiEndpoints[sortOption], { method: 'GET', token: true });
+    const res = await fetchAPI(url, { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
+      let key = sortOption as string;
+      if (sortOption === 'tag' && selectedTag) {
+        key = selectedTag;
+      }
+      useArticlesStore.getState().setFeed(route.name, key, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, key, res.data?.next || null);
     } else {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
-  }, [sortOption, lastResetPage]);
+  }, [sortOption, lastResetPage, selectedTag]);
 
 
   const fetchMoreArticles = useCallback(async () => {
@@ -322,6 +360,8 @@ export default function HomePage() {
             DEFAULT_CARD_BACKGROUND={DEFAULT_CARD_BACKGROUND}
             DEFAULT_TEXT={DEFAULT_TEXT}
             uniOnly={uniOnly}
+            setBSheetVisible={setBSheetVisible}
+            selectedTag={selectedTag}
             sortOption={sortOption}
             setSortOption={setSortOption}
             setUniOnly={setUniOnly}
@@ -349,6 +389,25 @@ export default function HomePage() {
         windowSize={5}
         removeClippedSubviews={true}
       />
+    <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => setBSheetVisible(false)} height={250}>
+        <View style={{gap:15}}>
+          <ThemedText size='bigger' font='textMedium' > More tags for you</ThemedText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
+            {tags.map((tag, i) => (
+              <Pressable key={tag} onPress={() => {
+                if (selectedTag === tag) {
+                  setSelectedTag(undefined);
+                } else {
+                  setSelectedTag(tag);
+                }
+                setBSheetVisible(false);
+              }}>
+                <ThemedTag text={tag} unClickable={true} type={selectedTag && selectedTag == tag ? 'selectedRanked' : 'ranked'} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+    </ThemedBottomSheet>
     </ThemedView>
   );
 }

@@ -142,7 +142,7 @@ def on_article_save(sender, instance, created, **kwargs):
 def on_articleTag_save(sender, instance, created, **kwargs):
     if created:
         # Update sorted article ids cache for the tag
-        if instance.marketplace:
+        if instance.article.marketplace:
             update_sorted_ids_cache(
                 instance.article,
                 ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(

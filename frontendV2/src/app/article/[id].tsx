@@ -23,7 +23,6 @@ import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
 import ThemedPopup from '@/components/ThemedPopup';
 import ThemedBottomSheet from '@/components/ThemedBSheet';
-import ThemedCard from '@/components/ThemedCard';
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -629,41 +628,43 @@ export default function ArticlePage() {
           <AntDesign name="arrowright" size={25} color={ALWAYS_BLACK} />
         </ThemedButton>
       </ThemedView>
-      <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => setBSheetVisible(false)} height={article.user === initialData?.id ? 200 : 120}>
-        <View style={{ flex: 1, gap: 20, paddingVertical: 10 }}>
-          <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
-            <Octicons style={{marginTop:2}} name="share" size={15} color={DEFAULT_TEXT} />
-            <ThemedText> Share </ThemedText>
-          </Pressable>
-          {article.user === initialData?.id && (
-            <Pressable style={styles.button} onPress={() => {
-              setBSheetVisible(false);
-              router.push({
-                pathname: '/edit/[id]',
-                params: { id: articleId },
-              });
-            }}>
-              <Octicons style={{marginTop:2}} name="pencil" size={15} color={DEFAULT_TEXT} />
-              <ThemedText> Edit </ThemedText>
+      {article && (
+        <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => setBSheetVisible(false)} height={article.user === initialData?.id ? 200 : 120}>
+          <View style={{ flex: 1, gap: 20, paddingVertical: 10 }}>
+            <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+              <Octicons style={{marginTop:2}} name="share" size={15} color={DEFAULT_TEXT} />
+              <ThemedText> Share </ThemedText>
             </Pressable>
-          )}
-          <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
-            <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
-            <ThemedText color='red'> Report </ThemedText>
-          </Pressable>
-          {article.user === initialData?.id && (
-            <Pressable style={styles.button} onPress={() => {
-              setPopupTitle('Delete Article');
-              setPopupBody('Are you sure you want to delete this article? This action cannot be undone.');
-              setPopupFunction(() => handleDelete);
-              setPopupVisible(true);
-            }}>
-              <Octicons style={{marginTop:2}} name="trash" size={15} color={ERROR_TEXT} />
-              <ThemedText color='red'> Delete </ThemedText>
+            {article.user === initialData?.id && (
+              <Pressable style={styles.button} onPress={() => {
+                setBSheetVisible(false);
+                router.push({
+                  pathname: '/edit/[id]',
+                  params: { id: articleId },
+                });
+              }}>
+                <Octicons style={{marginTop:2}} name="pencil" size={15} color={DEFAULT_TEXT} />
+                <ThemedText> Edit </ThemedText>
+              </Pressable>
+            )}
+            <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+              <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
+              <ThemedText color='red'> Report </ThemedText>
             </Pressable>
-          )}
-        </View>
-      </ThemedBottomSheet>
+            {article.user === initialData?.id && (
+              <Pressable style={styles.button} onPress={() => {
+                setPopupTitle('Delete Article');
+                setPopupBody('Are you sure you want to delete this article? This action cannot be undone.');
+                setPopupFunction(() => handleDelete);
+                setPopupVisible(true);
+              }}>
+                <Octicons style={{marginTop:2}} name="trash" size={15} color={ERROR_TEXT} />
+                <ThemedText color='red'> Delete </ThemedText>
+              </Pressable>
+            )}
+          </View>
+        </ThemedBottomSheet>
+      )}
       <ThemedPopup
         visible={popupVisible}
         title={popupTitle}

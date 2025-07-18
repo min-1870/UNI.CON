@@ -45,7 +45,6 @@ export default function ThemedTag({
     borderRadius: type === 'bigRanked' ? 16 : 10,
     paddingHorizontal: type === 'bigRanked' ? 13 : 9,
     paddingVertical: type === 'bigRanked' ? 4 : 3,
-    marginRight: type === 'bigRanked' ? 8 : 4,
     
     }
   });

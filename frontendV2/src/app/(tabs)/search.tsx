@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     marginHorizontal:15,
   },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: '100%', },
   feedContainer: {
     alignItems: 'stretch',
     marginTop: 16,

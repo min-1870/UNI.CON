@@ -29,6 +29,7 @@ export default function ThemedBSheet({
 }: ThemedBottomSheetProps) {
     const DEFAULT_BACKGROUND = useThemeColor({}, 'DEFAULT_BACKGROUND') + '80';
     const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
+    const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
 
     const [showModal, setShowModal] = useState(visible);
 
@@ -115,7 +116,7 @@ export default function ThemedBSheet({
         >
             <ThemedCard style={styles.card} >
                 <Pressable onPress={onDismiss}>
-                    <Octicons style={styles.button} name="chevron-down" size={15} color={DEFAULT_TEXT} />
+                    <Octicons style={styles.button} name="chevron-down" size={15} color={DEFAULT_GRAY_TEXT} />
                 </Pressable>
                 
                 {children}
