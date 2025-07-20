@@ -1,6 +1,4 @@
 import React  from 'react';
-import { Octicons } from '@expo/vector-icons';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import NewArticlePage from './post';
 import HomePage from './index';
 import SearchPage from './search';
@@ -8,7 +6,6 @@ import ProfilePage from './profile';
 import MarketplacePage from './marketplace';
 import { useArticlesStore } from '@/store/articleStore';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRef } from 'react';
 import ThemedBNavBar from '@/components/ThemedBNavBar';
 

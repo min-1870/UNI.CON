@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useArticlesStore } from '@/store/articleStore';
-import { ArticleType, InitialDataType } from '@/constants/types';
+import { InitialDataType } from '@/constants/types';
 import URLs from '@/constants/Urls';
 import { fetchAPI, getData } from '@/components/Utils';
 import ThemedArticle from '@/components/ThemedArticle';
@@ -43,14 +43,17 @@ const SearchHeader = memo<{
   onSubmit: () => void;
 }>(function SearchHeader({ value, onChange, onSubmit }) {
   return (
-    <ThemedInput
-      type="search"
-      placeholder="Search…"
-      value={value}
-      onChangeText={onChange}
-      returnKeyType="search"
-      onSubmitEditing={onSubmit}
-    />
+      <>
+        <ThemedText size='h1' font='displayBold' >Market Place</ThemedText>
+        <ThemedInput
+          type="search"
+          placeholder="Search…"
+          value={value}
+          onChangeText={onChange}
+          returnKeyType="search"
+          onSubmitEditing={onSubmit}
+        />
+      </>
   );
 });
 
@@ -221,7 +224,6 @@ export default function MarketplacePage() {
                   }}
                 />
               </View>
-              <ThemedText size='h3' font='displayBold' >Tags</ThemedText>
               <View style={styles.trendingTagsContainers}>
                 <TagHeader
                   tags={tags}
@@ -256,11 +258,10 @@ const styles = StyleSheet.create({
   },
   trendingTagsContainers:{
     flexDirection: 'row',
-    alignSelf: 'flex-start',
     backgroundColor: "transparent",
-    marginHorizontal:15,
+    marginVertical: 5,
   },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: '100%',  },
   feedContainer: {
     alignItems: 'stretch',
     marginTop: 16,

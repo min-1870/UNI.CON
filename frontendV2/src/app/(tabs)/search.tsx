@@ -43,14 +43,17 @@ const SearchHeader = memo<{
   onSubmit: () => void;
 }>(function SearchHeader({ value, onChange, onSubmit }) {
   return (
-    <ThemedInput
-      type="search"
-      placeholder="Search…"
-      value={value}
-      onChangeText={onChange}
-      returnKeyType="search"
-      onSubmitEditing={onSubmit}
-    />
+    <>
+      <ThemedText size='h1' font='displayBold' >Search</ThemedText>
+      <ThemedInput
+        type="search"
+        placeholder="Search…"
+        value={value}
+        onChangeText={onChange}
+        returnKeyType="search"
+        onSubmitEditing={onSubmit}
+      />
+    </>
   );
 });
 
@@ -221,7 +224,6 @@ export default function SearchPage() {
                   }}
                 />
               </View>
-              <ThemedText size='h3' font='displayBold' >Tags</ThemedText>
               <View style={styles.trendingTagsContainers}>
                 <TagHeader
                   tags={tags}
@@ -256,11 +258,10 @@ const styles = StyleSheet.create({
   },
   trendingTagsContainers:{
     flexDirection: 'row',
-    alignSelf: 'flex-start',
     backgroundColor: "transparent",
-    marginHorizontal:15,
+    marginVertical: 5,
   },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: '100%', },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: '100%',  },
   feedContainer: {
     alignItems: 'stretch',
     marginTop: 16,

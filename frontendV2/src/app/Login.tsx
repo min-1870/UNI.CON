@@ -33,14 +33,30 @@ export default function LoginPage() {
     tokenEndpoint:         URLs.tokenEndpoint,
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (demo:boolean = false) => {
     setLoading(true);
-
-    const response = await fetchAPI(URLs.LOGIN, {
-      method: 'POST',
-      token: false,
-      body: { email, password },
-    });
+    let response;
+    if (demo) {
+      response = await fetchAPI(URLs.LOGIN, {
+        method: 'POST',
+        token: false,
+        body: { email:'root@unsw.edu.au', password:'rootroot' },
+      });
+    } else {
+      if (!email || !password) {
+        showToast({
+          type: 'error',
+          text1: 'Please enter both email and password.',
+        });
+        setLoading(false);
+        return;
+      }
+      response = await fetchAPI(URLs.LOGIN, {
+        method: 'POST',
+        token: false,
+        body: { email, password },
+      });
+    }
 
     if (!response.error) {
       setData('initialData', JSON.stringify(response.data))
@@ -224,8 +240,11 @@ export default function LoginPage() {
         </View>
 
         <View style={styles.footer}>
-          <ThemedButton  onPress={handleSubmit} disabled={loading} type='auth'>
+          <ThemedButton  onPress={()=>handleSubmit()} disabled={loading} type='auth'>
             <ThemedText size='default' color='black' font='textMedium' >{loading ? 'Logging in...' : 'Login'}</ThemedText>
+          </ThemedButton>
+          <ThemedButton  onPress={()=>handleSubmit(true)} disabled={loading} type='auth'>
+            <ThemedText size='default' color='red' font='textBold' >{loading ? 'Logging in...' : 'Demo Login'}</ThemedText>
           </ThemedButton>
           <Pressable onPress={() => router.push("/register")} disabled={loading}>
             <ThemedText color='gray'>
