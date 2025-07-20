@@ -15,7 +15,12 @@ COPY . /app/
 # DRF port
 EXPOSE 8000
 
+# CMD ["sh", "-c", "\
+#     cd src &&\
+#     gunicorn src.wsgi:application --workers 3 --bind 0.0.0.0:8000 &\
+#     tail -f /dev/null"]
 CMD ["sh", "-c", "\
-    cd src &&\
-    gunicorn src.wsgi:application --workers 3 --bind 0.0.0.0:8000 &\
+    python src/manage.py makemigrations &&\
+    python src/manage.py migrate &&\
+    python src/manage.py runserver 0.0.0.0:8000 &\
     tail -f /dev/null"]
