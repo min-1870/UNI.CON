@@ -4,6 +4,7 @@ from community.constants import (
     EMAIL_NOTIFICATIONS_THRESHOLD,
     NOTIFICATION_USER_IDS_CACHE_KEY,
     NOTIFICATION_CACHE_KEY,
+    LONG_CACHE_TIMEOUT
     
 )
 from django.db.models import OuterRef, Subquery, Case, When, Value, F
@@ -44,7 +45,7 @@ def get_paginated_notifications(request, new=True):
 
         if mapping:
             redis_conn.zadd(cache_key, mapping)
-            redis_conn.expire(cache_key, 60 * 24 * 60 * 60)
+            redis_conn.expire(cache_key, LONG_CACHE_TIMEOUT)
         
     # Fetch new notification IDs from the cache
     raw_with_scores  = redis_conn.zrevrangebyscore(

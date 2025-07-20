@@ -469,6 +469,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({"tags":cached}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
+    def notifications(self, request, *args, **kwargs):            
+        
+        response_data = get_paginated_notifications(
+            request,
+            True
+        )
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"])
     def new_notifications(self, request, *args, **kwargs):            
         
         response_data = get_paginated_notifications(
