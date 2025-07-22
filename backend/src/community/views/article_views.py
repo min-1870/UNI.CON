@@ -496,16 +496,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         s3 = boto3.client(
             's3',
-            aws_access_key_id=config("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=config("AWS_SECRET_ACCESS_KEY"),
-            region_name=config("AWS_S3_REGION_NAME"),
+            aws_access_key_id=config("AWS_ACCESS_KEY_ID_DEMO"),
+            aws_secret_access_key=config("AWS_SECRET_ACCESS_KEY_DEMO"),
+            region_name=config("AWS_S3_REGION_NAME_DEMO"),
         )
 
         # generate presigned PUT URL
         url = s3.generate_presigned_url(
             ClientMethod='put_object',
             Params={
-                'Bucket': config("AWS_STORAGE_BUCKET_NAME"),
+                'Bucket': config("AWS_STORAGE_BUCKET_NAME_DEMO"),
                 'Key': file_name,
                 'ContentType': file_type,
                 # 'ACL': 'public-read',
@@ -515,5 +515,5 @@ class ArticleViewSet(viewsets.ModelViewSet):
         file_name = quote(file_name, safe='')
         return Response({
             'uploadUrl': url,
-            'publicUrl': f"https://{config("AWS_STORAGE_BUCKET_NAME")}.s3.{config("AWS_S3_REGION_NAME")}.amazonaws.com/{file_name}"
+            'publicUrl': f"https://{config("AWS_STORAGE_BUCKET_NAME_DEMO")}.s3.{config("AWS_S3_REGION_NAME_DEMO")}.amazonaws.com/{file_name}"
         }, status=status.HTTP_200_OK)
