@@ -38,8 +38,7 @@ const URLS = {
     LIKED_ARTICLES: `${domain}/community/article/liked_articles`,
 
     // Notifications
-    OLD_NOTIFICATIONS: `${domain}/community/article/old_notifications`,
-    NEW_NOTIFICATIONS: `${domain}/community/article/new_notifications`,
+    NOTIFICATIONS: `${domain}/community/article/notifications`,
 
     // Tags
     TRENDING_TAGS: `${domain}/community/article/trending_tags`,

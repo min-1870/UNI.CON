@@ -13,23 +13,21 @@ import { useToast } from '@/contexts/ToastContext';
 
 export default function NotificationPage() {
   const { showToast } = useToast();
-  const [newNotifications, setNewNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
-  const [oldNotifications, setOldNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
-  const [nextNewNotificationPage, setNextNewNotificationPage] = useState(null);
-  const [nextOldNotificationPage, setNextOldNotificationPage] = useState(null);
+  const [notifications, setNotifications] = useState<{ id: string; [key: string]: any }[]>([]);
+  const [nextNotificationPage, setNextNotificationPage] = useState(null);
+  const [last_check_at, setLastCheckAt] = useState('');
+  const fetchedNotificationPage = useRef(null);
+  const isFetchingMore = useRef(false);
   const [loading, setLoading] = useState(false);
 
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
-  const fetchedNewNotificationPage = useRef(null);
-  const fetchedOldNotificationPage = useRef(null);
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetchNotification(true);
-    fetchNotification(false);
+    fetchNotification();
   }, []);
   
   useEffect(() => {
@@ -58,22 +56,18 @@ export default function NotificationPage() {
     });
   }, [navigation, loading, DEFAULT_CARD_BACKGROUND, DEFAULT_TEXT]);
 
-  const fetchNotification = async (isNew = true) => {
+  const fetchNotification = async () => {
     setLoading(true);
 
     const response = await fetchAPI(
-      isNew ? URLs.NEW_NOTIFICATIONS : URLs.OLD_NOTIFICATIONS, {
+      URLs.NOTIFICATIONS, {
       method: 'GET',
       token: true,
     });
     if (!response.error) {
-      if (isNew) {
-        setNewNotifications(response.data?.results?.notifications || null);
-        setNextNewNotificationPage(response.data?.next || null);
-      } else {
-        setOldNotifications(response.data?.results?.notifications || null);
-        setNextOldNotificationPage(response.data?.next || null);
-      }
+      setLastCheckAt(response.data?.last_check_at || '');
+      setNotifications(response.data?.results?.notifications || []);
+      setNextNotificationPage(response.data?.next || null);
     } else {
       showToast({
         type: 'error',
@@ -81,96 +75,54 @@ export default function NotificationPage() {
       });
     }
     setLoading(false);
-    if (isNew) {
-      fetchedNewNotificationPage.current = null;
-    } else {
-      fetchedOldNotificationPage.current = null;
-    }
+    fetchedNotificationPage.current = nextNotificationPage;
   }
 
 
-  const fetchMoreNotification = async (isNew = false) => {
-    if (isNew){
-      if (!nextNewNotificationPage || nextNewNotificationPage == fetchedNewNotificationPage.current) return;
-    }else{
-      if (!nextOldNotificationPage || nextOldNotificationPage == fetchedOldNotificationPage.current) return; 
-    }
-    const nextPage = isNew ? nextNewNotificationPage : nextOldNotificationPage;
-    
-    if (!nextPage) {
+  const fetchMoreNotification = async () => {
+    if (!nextNotificationPage || nextNotificationPage === fetchedNotificationPage.current || isFetchingMore.current) {
+
       return;
     }
+    isFetchingMore.current = true;
     const response = await fetchAPI(
-      nextPage, {
+      nextNotificationPage, {
       method: 'GET',
       token: true,
     });
     if (!response.error) {
-      if (isNew) {
-        setNewNotifications(prevNotifications => [
-          ...prevNotifications,
-          ...(response.data?.results?.notifications || []),
-        ]);
-        fetchedNewNotificationPage.current = nextNewNotificationPage;
-        setNextNewNotificationPage(response.data?.next || null);
-      } else {
-        setOldNotifications(prevNotifications => [
-          ...prevNotifications,
-          ...(response.data?.results?.notifications || []),
-        ]);
-        fetchedOldNotificationPage.current = nextOldNotificationPage;
-        setNextOldNotificationPage(response.data?.next || null);
-      }
+      setNotifications(prevNotifications => [
+        ...prevNotifications,
+        ...(response.data?.results?.notifications || []),
+      ]);
+      setNextNotificationPage(response.data?.next || null);
+      fetchedNotificationPage.current = response.data?.next || null;
     } else {
       showToast({
         type: 'error',
         text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
       });
     }
-    
+    isFetchingMore.current = false;
   };
 
   return (
     <ThemedView style={styles.container}>
       {loading ? null : (
-        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          <ThemedText size='h3' font='displayBold'>Recent</ThemedText>
-            <View style={styles.feedWrapper}>
-              <FlatList
-                data={newNotifications}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-                contentContainerStyle={styles.feedContainer}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                  
-                    <ThemedText size='h3' font='textMedium' color="gray" >No Notification found.</ThemedText>
-                  
-                }
-                onEndReachedThreshold={0.5}
-                onEndReached={() => {
-                  fetchMoreNotification(true);
-                }}
-              />
-            </View>
-          <ThemedText size='h3' font='displayBold'>Older</ThemedText>
-          <View style={styles.feedWrapper}>
-            <FlatList
-              data={oldNotifications}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <ThemedNotification notification_data={item}/>}
-              contentContainerStyle={styles.feedContainer}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <ThemedText size='h3' font='textMedium' color="gray" >No Notification found.</ThemedText>
-              }
-              onEndReachedThreshold={0.5}
-              onEndReached={() => {
-                fetchMoreNotification(false);
-              }}
-            />
-          </View>
-        </Animated.View>
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ThemedNotification last_check_at={last_check_at} notification_data={item}/>}
+          contentContainerStyle={styles.feedContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            
+              <ThemedText size='h3' font='textMedium' color="gray" >No Notification found.</ThemedText>
+            
+          }
+          onEndReachedThreshold={0.5}
+          onEndReached={fetchMoreNotification}
+        />
       )}
     </ThemedView>
   );
@@ -184,10 +136,8 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     alignItems: 'stretch',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    padding: 16,
     gap: 20,
-    alignSelf: 'center',
   },
   feedWrapper:{ 
     justifyContent: 'center',

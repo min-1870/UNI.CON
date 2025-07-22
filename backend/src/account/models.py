@@ -27,6 +27,7 @@ class User(AbstractUser):
     embedding_vector = models.JSONField(null=False, default=default_embedding_vectors)
     gmail = models.CharField(max_length=200, null=True, blank=True, unique=True)
     points = models.IntegerField(default=0, null=False)
+    last_notification_check = models.DateTimeField(default=timezone.now, null=False)
 
 class TimeTable(models.Model):
     user_id = models.ForeignKey(

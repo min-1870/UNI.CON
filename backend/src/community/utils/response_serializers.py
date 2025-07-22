@@ -75,6 +75,7 @@ class NotificationResponseSerializer(serializers.ModelSerializer):
     title = serializers.CharField(read_only=True) # Title of the article or comment
     body = serializers.CharField(read_only=True) # Body of article or comment
     type_name = serializers.CharField(read_only=True)
+    article_id = serializers.IntegerField(read_only=True)
     class Meta:
         model = Notification
         fields = [
@@ -83,8 +84,8 @@ class NotificationResponseSerializer(serializers.ModelSerializer):
             "group",
             "user",
             "created_at",
-            "object_id",
             # Not in Notification Model
+            "article_id",
             "type_name",
             "title",
             "body",

@@ -9,10 +9,11 @@ import { router } from 'expo-router';
 
 type ThemedNotificationProp = {
   notification_data: any;
+  last_check_at: any;
   type?: string;
 };
 
-export default function ThemedNotification({ notification_data, type='default' }: ThemedNotificationProp) {
+export default function ThemedNotification({ notification_data, last_check_at, type='default' }: ThemedNotificationProp) {
 
   React.useEffect(() => {
     
@@ -21,7 +22,7 @@ export default function ThemedNotification({ notification_data, type='default' }
   const handleViewDetail = () => {
     router.push({
       pathname: '/article/[id]',
-      params: { id: String(notification_data.object_id) }, 
+      params: { id: String(notification_data.article_id) }, 
     });
   }
 
@@ -40,23 +41,23 @@ export default function ThemedNotification({ notification_data, type='default' }
       justifyContent: 'space-between',
     },
   });
-
+  
   return (
     
     <View style={[styles.container]}>
       <Pressable onPress={handleViewDetail}>
         <View style={[styles.title]}>
-          <ThemedText >
-            New{' '}
+          <ThemedText  >
+            {last_check_at < notification_data.created_at
+              ? <ThemedText color='brand'>New {' '}</ThemedText>
+              : null}
             <ThemedText font='textBold'>
-              { notification_data.group == 0 ?
-                'Comment'
-                : 'Like'
+              { last_check_at < notification_data.created_at 
+                ? notification_data.type_name.toLowerCase()
+                : notification_data.type_name
               }
-            </ThemedText>{' '}
-            on your{' '}
-            <ThemedText font='textBold'>{notification_data.type_name}</ThemedText>
-            {notification_data.type_name === 'comment' ? ' in ' : ' '}
+            </ThemedText>
+            {' '} on {' '}
             <ThemedText font='textBold'>
               {notification_data.title}
             </ThemedText>

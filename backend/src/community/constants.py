@@ -29,8 +29,8 @@ NOTIFICATION_GROUP = (
     (1, "Like"),
 )
 NOTIFICATION_GROUP_KV = {
-    0: "Comment",
-    1: "Like",
+    "comment" : 0,
+    "like" : 1,
 }
 
 # general cache keys
@@ -75,7 +75,7 @@ COMMENT_SCHOOL_IDS_CACHE_KEY = (
 
 # user specific cache keys
 NOTIFICATION_USER_IDS_CACHE_KEY = (
-    lambda user_id, new: f"USER_{user_id}_NEW_{new}_NOTIFICATION_IDS"
+    lambda user_id: f"USER_{user_id}_NOTIFICATION_IDS"
 )
 ARTICLE_USER_LIKED_IDS_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_LIKED_ARTICLE_IDS"

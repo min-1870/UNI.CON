@@ -15,7 +15,7 @@ from .comment_helpers import (
 
 from .notification_helpers import (
     get_paginated_notifications,
-    add_notification
+    add_notification,
 )
 
 from .database_utils import (

@@ -13,6 +13,7 @@ from community.utils import (
     update_unsorted_ids_cache,
 )
 from community.constants import (
+    NOTIFICATION_GROUP_KV,
     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
     
@@ -51,15 +52,11 @@ def on_comment_save(sender, instance, created, **kwargs):
                 if instance.parent_comment else ''),
         )
         update_article_engagement_score(instance.article)
+        
+        add_notification(NOTIFICATION_GROUP_KV['comment'], instance)
+
         if instance.parent_comment:
             if instance.parent_comment.user != instance.user:
-                # Add notification for parent comment
-                add_notification(
-                    0,
-                    instance.parent_comment.user,
-                    Comment,
-                    instance.article.id
-                )
                 # Update user points
                 update_user_points(
                     instance.article.user,
@@ -67,13 +64,6 @@ def on_comment_save(sender, instance, created, **kwargs):
                 )
         else:
             if instance.article.user != instance.user:
-                # Add notification for article
-                add_notification(
-                    0,
-                    instance.article.user,
-                    Article,
-                    instance.article.id
-                )
                 # Update user points
                 update_user_points(
                     instance.article.user,
@@ -88,14 +78,10 @@ def on_commentLike_save(sender, instance, created, **kwargs):
             COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
                 instance.user.id),
         )
+
+        add_notification(NOTIFICATION_GROUP_KV['like'], instance)
+
         if instance.comment.user != instance.user:
-            # Add notification
-            add_notification(
-                1,
-                instance.comment.user,
-                Comment,
-                instance.comment.article.id
-            )
             # Update user points
             update_user_points(
                 instance.comment.user,
@@ -181,7 +167,7 @@ def on_articleView_save(sender, instance, created, **kwargs):
             ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
         )
         update_article_engagement_score(instance.article)
-        if instance.article.user != instance.user and not instance.article.deleted and not instance.marketplace:
+        if instance.article.user != instance.user and not instance.article.deleted and not instance.article.marketplace:
             # Update user points
             update_user_points(
                 instance.article.user,
@@ -223,15 +209,12 @@ def on_articleLike_save(sender, instance, created, **kwargs):
             instance.article,
             ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
         )
+
         update_article_engagement_score(instance.article)
+
+        add_notification(NOTIFICATION_GROUP_KV['like'], instance)
+
         if instance.article.user != instance.user:
-            # Add notification
-            add_notification(
-                1,
-                instance.user,
-                Article,
-                instance.id
-            )
 
             # Update user points
             update_user_points(

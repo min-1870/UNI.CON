@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from community.utils import (
     get_set_temp_name_static_points,
     get_paginated_notifications,
@@ -33,6 +34,7 @@ from community.constants import (
     DELETED_BODY,
     DELETED_TITLE,
 )
+from account.models import User
 from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
@@ -469,32 +471,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({"tags":cached}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
-    def notifications(self, request, *args, **kwargs):            
-        
+    def notifications(self, request, *args, **kwargs): 
+
         response_data = get_paginated_notifications(
             request,
-            True
         )
-        
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def new_notifications(self, request, *args, **kwargs):            
-        
-        response_data = get_paginated_notifications(
-            request,
-            True
-        )
-        
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def old_notifications(self, request, *args, **kwargs):            
-        
-        response_data = get_paginated_notifications(
-            request,
-            False
-        )
+
+        # Update the last notification check time
+        with transaction.atomic():
+            User.objects.filter(id=request.user.id).update(
+                last_notification_check=now()
+            )
         
         return Response(response_data, status=status.HTTP_200_OK)
     
