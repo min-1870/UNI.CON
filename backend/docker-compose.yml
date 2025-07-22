@@ -3,10 +3,10 @@ services:
     image: nginx:latest
     container_name: unicon_nginx_container
     volumes:
+      - ./index:/index
       - ./nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
       - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
-      - ../frontend/dist:/dist
     ports:
       - "80:80"
       - "443:443"
