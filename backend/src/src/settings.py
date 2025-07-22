@@ -34,15 +34,6 @@ DEMO = config("DEMO").lower() == "true"
 if DEBUG:
     ALLOWED_HOSTS = []
     CORS_ALLOW_ALL_ORIGINS = True
-    if DEMO:
-        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-        ALLOWED_HOSTS = [config("DOMAIN")]
-        SECURE_HSTS_SECONDS = 31536000  # Enable HTTP Strict Transport Security (HSTS)
-        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-        SECURE_HSTS_PRELOAD = True
-        SECURE_SSL_REDIRECT = True  # Redirect all HTTP requests to HTTPS
-        CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are sent over HTTPS
-        SESSION_COOKIE_SECURE = True  # Ensure session cookies are sent over HTTPS
 else:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     ALLOWED_HOSTS = [config("DOMAIN")]
