@@ -1,0 +1,49 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: reverse_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ../statics:/statics
+    networks:
+      - app-network
+
+  drf:
+    build: 
+      context: . 
+      dockerfile: Dockerfile.debug
+    container_name: unicon_drf_backend_container
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+      - "587:587"
+    env_file:
+      - .env 
+    networks:
+      - app-network    
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    container_name: unicon_postgres_container
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: unicon
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    name: app-network
