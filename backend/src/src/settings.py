@@ -31,7 +31,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG").lower() == "true"
 DEMO = config("DEMO").lower() == "true" 
 # HTTPS Settings
-if DEBUG and not DEMO:
+if DEBUG :
     ALLOWED_HOSTS = []
     CORS_ALLOW_ALL_ORIGINS = True
 else:
