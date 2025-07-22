@@ -28,8 +28,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if config("DEBUG").lower() == "true" else False
-
+DEBUG = config("DEBUG").lower() == "true"
+DEMO = config("DEMO").lower() == "true" 
 # HTTPS Settings
 if DEBUG:
     ALLOWED_HOSTS = []
@@ -55,7 +55,7 @@ else:
 
 
 # CELERY Settings
-if config("DEMO").lower() == "true":
+if DEMO:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_TASK_STORE_EAGER_RESULT = True
