@@ -11,17 +11,26 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from django.utils import timezone
 from decouple import config
-from django_redis import get_redis_connection
 from community.models import Article
 from account.models import User
-import smtplib
 from openai import OpenAI
 import numpy as np
+import smtplib
 import faiss
+
+
+demo = config("DEMO", default="False").lower() == "true"
+if demo:
+    from community.dummyRedis import DummyRedis
+    redis_conn = DummyRedis()
+else:
+    from django_redis import get_redis_connection
+    redis_conn = get_redis_connection("default")
 
 @shared_task
 def send_email(contents, email):
-
+    if demo:
+        return
     unicon_email = config("UNICON_EMAIL")
     unicon_password = config("UNICON_EMAIL_PASSWORD")
     
@@ -93,8 +102,8 @@ def recalc_all_engagement():
 
 @shared_task
 def recalc_dirty_engagement():
-    conn = get_redis_connection("default")
-    dirty_ids = conn.smembers("articles:dirty")
+    redis_conn = get_redis_connection("default")
+    dirty_ids = redis_conn.smembers("articles:dirty")
     if not dirty_ids:
         return  # nothing to do
     for raw_id in dirty_ids:
@@ -102,11 +111,11 @@ def recalc_dirty_engagement():
         try:
             article = Article.objects.get(pk=article_id)
         except Article.DoesNotExist:
-            conn.srem("articles:dirty", article_id)
+            redis_conn.srem("articles:dirty", article_id)
             continue
         # Compute your weighted, time-decay score here
         age_hours = (timezone.now() - article.created_at).total_seconds()/3600
         raw = 0.1*article.views_count + 1*article.likes_count + 3*article.comments_count
         new_score = raw / pow(age_hours + 2, 1.2)
         Article.objects.filter(pk=article_id).update(engagement_score=new_score)
-        conn.srem("articles:dirty", article_id)
+        redis_conn.srem("articles:dirty", article_id)

@@ -14,14 +14,20 @@ from .response_serializers import ArticleResponseSerializer
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
-from django_redis import get_redis_connection
 from django.db.models import Case, When
 from .database_utils import to_unix_ms
 from django.core.cache import cache
 from django.db import transaction
 from account.models import User
+from decouple import config
 
-redis_conn = get_redis_connection("default")
+demo = config("DEMO", default="False").lower() == "true"
+if demo:
+    from community.dummyRedis import DummyRedis
+    redis_conn = DummyRedis()
+else:
+    from django_redis import get_redis_connection
+    redis_conn = get_redis_connection("default")
     
 def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vector=None, timeout=None):
 

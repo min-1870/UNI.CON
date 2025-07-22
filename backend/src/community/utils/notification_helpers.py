@@ -20,8 +20,16 @@ from .database_utils import to_unix_ms
 from django.core.cache import cache
 from django.db import transaction
 from django.db import models
+from decouple import config
 
-redis_conn = get_redis_connection("default")
+
+demo = config("DEMO", default="False").lower() == "true"
+if demo:
+    from community.dummyRedis import DummyRedis
+    redis_conn = DummyRedis()
+else:
+    from django_redis import get_redis_connection
+    redis_conn = get_redis_connection("default")
 
 def get_paginated_notifications(request):
 

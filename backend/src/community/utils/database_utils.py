@@ -10,6 +10,7 @@ from openai import OpenAI
 import numpy as np
 import faiss
 
+
 from community.constants import (
     EMBEDDING_VECTOR_SIZE,
     EMBEDDING_VECTOR_MODEL,
@@ -17,6 +18,8 @@ from community.constants import (
     INDEX_FILE_NAME,
     CACHE_TIMEOUT,
 )
+
+
 
 # --- Embedding Functions ---
 
@@ -70,7 +73,14 @@ def reset_faiss(index):  # This function only for testcases
 
 # --- Redis Functions ---
 
-redis_conn = get_redis_connection("default")
+
+demo = config("DEMO", default="False").lower() == "true"
+if demo:
+    from community.dummyRedis import DummyRedis
+    redis_conn = DummyRedis()
+else:
+    from django_redis import get_redis_connection
+    redis_conn = get_redis_connection("default")
 def update_article_engagement_score(article_instance):
     redis_conn.sadd("articles:dirty", article_instance.id)
 

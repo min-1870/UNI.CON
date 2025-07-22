@@ -44,25 +44,49 @@ else:
     CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are sent over HTTPS
     SESSION_COOKIE_SECURE = True  # Ensure session cookies are sent over HTTPS
 
+
 # CELERY Settings
-CELERY_BROKER_URL = "redis://redis:6379/1"  # Change DB index if needed
-CELERY_RESULT_BACKEND = "redis://redis:6379/1"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-CELERY_BEAT_SCHEDULE = {
-    'recalc-engagement-every-hour': {
-        'task': 'community.tasks.recalc_dirty_engagement',
-        # run on the hour, every hour
-        'schedule': crontab(minute=0, hour='*'),
-    },
-    # Run at midnight every day:
-    'recalc-all-engagement-daily': {
-        'task': 'community.tasks.recalc_all_engagement',
-        'schedule': crontab(hour=0, minute=0),
-        'options': {'expires': 3600},
-    },
-}
+if config("DEMO").lower() == "true":
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_TASK_STORE_EAGER_RESULT = True
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+else:
+    CELERY_TASK_ALWAYS_EAGER = False
+    CELERY_TASK_EAGER_PROPAGATES = False
+    CELERY_TASK_STORE_EAGER_RESULT = False
+    CELERY_BROKER_URL = "redis://redis:6379/1"  # Change DB index if needed
+    CELERY_RESULT_BACKEND = "redis://redis:6379/1"
+    CELERY_ACCEPT_CONTENT = ["json"]
+    CELERY_TASK_SERIALIZER = "json"
+    CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+    CELERY_BEAT_SCHEDULE = {
+        'recalc-engagement-every-hour': {
+            'task': 'community.tasks.recalc_dirty_engagement',
+            # run on the hour, every hour
+            'schedule': crontab(minute=0, hour='*'),
+        },
+        # Run at midnight every day:
+        'recalc-all-engagement-daily': {
+            'task': 'community.tasks.recalc_all_engagement',
+            'schedule': crontab(hour=0, minute=0),
+            'options': {'expires': 3600},
+        },
+    }
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': 'redis://redis:6379/0',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
 
 # Application definition
 
@@ -76,16 +100,6 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-}
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis:6379/0',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
-    }
 }
 
 '''

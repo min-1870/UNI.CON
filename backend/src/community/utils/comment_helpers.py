@@ -9,13 +9,20 @@ from community.constants import (
 from community.models import ArticleUser, Comment, CommentLike
 from .response_serializers import CommentResponseSerializer
 from django.db.models import OuterRef, Subquery, Q
-from django_redis import get_redis_connection
 from .database_utils import to_unix_ms
 from django.core.cache import cache
 from django.db import transaction
 from account.models import User
+from decouple import config
 
-redis_conn = get_redis_connection("default")
+
+demo = config("DEMO", default="False").lower() == "true"
+if demo:
+    from community.dummyRedis import DummyRedis
+    redis_conn = DummyRedis()
+else:
+    from django_redis import get_redis_connection
+    redis_conn = get_redis_connection("default")
 
 def get_paginated_comments(
     request, article_instance, parent_comment_instance=None
