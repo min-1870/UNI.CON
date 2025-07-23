@@ -14,17 +14,21 @@ RUN apt-get update \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
-
 COPY . .
 
 # DRF port
 EXPOSE 8000
 
-CMD ["gunicorn", "src.wsgi:application", \
-      "--bind", "0.0.0.0:8000", \
-      "--workers", "1",           \
-      "--threads", "2",           \
-      "--worker-class", "gthread",\
-      "--worker-tmp-dir", "/dev/shm"]
+CMD ["sh", "-c", "\
+    python manage.py makemigrations --noinput && \
+    python manage.py migrate --noinput && \
+    exec gunicorn src.wsgi:application \
+      --bind 0.0.0.0:8000 \
+      --workers 1 \
+      --threads 2 \
+      --worker-class gthread \
+      --worker-tmp-dir /dev/shm \
+      --access-logfile - \
+      --error-logfile - \
+      --log-level debug \
+"]
