@@ -23,7 +23,7 @@ COPY . .
 EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["gunicorn", "src.src.wsgi:application", \
+CMD ["gunicorn", "src.wsgi:application", \
       "--bind", "0.0.0.0:8000", \
       "--workers", "2",           \
       "--threads", "2",           \
