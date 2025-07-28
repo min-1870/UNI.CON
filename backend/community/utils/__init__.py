@@ -31,7 +31,6 @@ from .database_utils import (
     get_faiss_index,
     update_sorted_ids_cache,
     update_unsorted_ids_cache,
-    DummyRedis
 )
 
 from .response_serializers import ArticleResponseSerializer, CommentResponseSerializer

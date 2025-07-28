@@ -32,7 +32,7 @@ services:
   celery:
     build: .
     container_name: unicon_celery_container
-    command: ["sh", "-c", "cd src && celery -A src worker --loglevel=info"]
+    command: ["sh", "-c", "&& celery -A src worker --loglevel=info"]
     depends_on:
       - redis
     networks:
