@@ -195,18 +195,22 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
         if results[nid] is None:
             results[nid] = missing_serialized_annotated_articles.get(ARTICLE_CACHE_KEY(nid), None)
         
-        # Attach user specific data
-        results[nid]["like_status"] = user_liked_articles.get(
-            results[nid]["id"], False
-        )
-        # Attach user specific data
-        results[nid]["view_status"] = user_viewed_articles.get(
-            results[nid]["id"], False
-        )
-        # Attach user specific data
-        results[nid]["save_status"] = user_saved_articles.get(
-            results[nid]["id"], False
-        )
+        if results[nid] is not None:
+            # Attach user specific data
+            results[nid]["like_status"] = user_liked_articles.get(
+                results[nid]["id"], False
+            )
+            # Attach user specific data
+            results[nid]["view_status"] = user_viewed_articles.get(
+                results[nid]["id"], False
+            )
+            # Attach user specific data
+            results[nid]["save_status"] = user_saved_articles.get(
+                results[nid]["id"], False
+            )
+        else:
+            del results[nid]
+            print(f"Article {nid} not found in the database or cache.")
     
     if len(results.items()) < PAGINATOR_SIZE:
         next_page = None

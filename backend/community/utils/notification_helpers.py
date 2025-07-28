@@ -210,7 +210,7 @@ def add_notification(notification_type, target_instance):
                     user=target_instance.user
                 ).values_list(
                     'user', flat=True
-                ).distinct() 
+                )
         else:
             notify_users = Comment.objects.filter(
                     parent_comment=target_instance.parent_comment
@@ -218,7 +218,10 @@ def add_notification(notification_type, target_instance):
                     user=target_instance.user
                 ).values_list(
                     'user', flat=True
-                ).distinct() 
+                )
+        notify_users = list(notify_users)
+        notify_users.append(target_instance.article.user.id)
+        notify_users = list(set(notify_users))
     
     for user_id in notify_users:
         user_instance = User.objects.get(pk=user_id)

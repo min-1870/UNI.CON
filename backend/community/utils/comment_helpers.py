@@ -133,15 +133,19 @@ def get_paginated_comments(
         user_liked_comments = {pk: True for pk in user_liked_comments}
         cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
 
-    # Insert the missing articles and attach user specific data while maintain the order
+    # Insert the missing comments and attach user specific data while maintain the order
     for nid in id_list:
         if results[nid] is None:
             results[nid] = missing_serialized_annotated_comments.get(COMMENT_CACHE_KEY(nid), None)
-        
-        # Attach user specific data
-        results[nid]["like_status"] = user_liked_comments.get(
-            results[nid]["id"], False
-        )
+
+        if results[nid] is not None:
+            # Attach user specific data
+            results[nid]["like_status"] = user_liked_comments.get(
+                nid, False
+            )
+        else:
+            del results[nid]
+            print(f"Comment {nid} not found in the database or cache.")
     
     if len(results.items()) < PAGINATOR_SIZE:
         next_page = None
