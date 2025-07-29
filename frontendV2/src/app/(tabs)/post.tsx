@@ -2,7 +2,7 @@ import {View, Platform, TextStyle} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { Feather, MaterialIcons, Octicons } from '@expo/vector-icons';
+import { Feather, Octicons } from '@expo/vector-icons';
 import {  CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { ImagePickerResult } from 'expo-image-picker'
@@ -19,6 +19,7 @@ import {fetchAPI} from "@/components/Utils";
 import URLs from "@/constants/Urls";
 import { useToast } from '@/contexts/ToastContext';
 import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
+import { useFonts } from 'expo-font';
 const postOptions: Option[] = [
   { label: 'Article', value: 'article' },
   { label: 'Market Place', value: 'marketplace' },
@@ -281,26 +282,26 @@ export default function NewArticlePage() {
     }
   };
 
-  const handleCurrentBody = async (text: string, idx: number) => {
-
+  const handleHeights = async (height: number, idx: number) => {
+    console.log(height, idx)
     setInputHeights(prev => {
       const newHeights = [...prev];
-      newHeights[idx] = ((text.match(/\n/g) || []).length + 1) * 30;
-      console.log(newHeights[idx])
+      newHeights[idx] = height;
       return newHeights;
     });
+  }
 
+  const handleCurrentBody = async (text: string, idx: number) => {
     setBodies((prevBodies) =>
       prevBodies.map((body, i) => (i === idx ? text : body))
     );
-    
   }
 
   const handleRemoveImg = async (idx: number) => {
     setImgResults(prevImgResults => prevImgResults.filter((_, i) => i !== idx))
     setBodies((prevBodies) => {
       if (prevBodies.length < 2 || idx < 0 || idx >= prevBodies.length - 1) return prevBodies;
-      const mergedBody = prevBodies[idx] + "\n" + prevBodies[idx + 1];
+      const mergedBody = prevBodies[idx] + (prevBodies[idx + 1].length > 0 ? "\n" + prevBodies[idx + 1] : '');
       return [
       ...prevBodies.slice(0, idx),
       mergedBody,
@@ -325,6 +326,10 @@ export default function NewArticlePage() {
   const removeTag = (indexToRemove: number) => {
     setTags(prev => prev.filter((_, i) => i !== indexToRemove));
   };
+  
+  const [fontsLoaded] = useFonts({
+    textRegular: require('../../assets/fonts/SF-Pro-Text-Regular.otf'),
+  });
   const removeOutline = {
         ...(Platform.OS === 'web'
           ? ({ outlineStyle: 'none' } as TextStyle)
@@ -349,6 +354,7 @@ export default function NewArticlePage() {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       gap: 10,
+      marginTop: 50,
     },
     textWrapper:{
       flex: 1,
@@ -373,7 +379,7 @@ export default function NewArticlePage() {
       borderRadius: 4,
       fontSize: 16,
       color: default_text_color,
-      lineHeight: 30
+      fontFamily: 'textRegular',
     },
     tagAreaContainer:{
       paddingHorizontal: 20,
@@ -452,16 +458,19 @@ export default function NewArticlePage() {
                 <TextInput
                     style={[
                         styles.bodyTextArea,
-                        { height: inputHeights[idx] || undefined },
                         removeOutline,
-                        isLastBlock && styles.activeBodyTextArea
+                        inputHeights[idx] > 0 ? { height: inputHeights[idx] } : {},
+                        { minHeight: 30, height: inputHeights[idx] ?? 30 }
+                        // isLastBlock && styles.activeBodyTextArea
                     ]}
                     underlineColorAndroid="transparent"
                     multiline
-                    placeholder={isLastBlock ? "Continue writing..." : ""}
+                    placeholder={isLastBlock ? "Continue writingdddd..." : ""}
                     placeholderTextColor={place_holder_color}
                     value={bodyText}
-                    onChangeText={(text) => handleCurrentBody(text, idx)}
+                    onChangeText={(text) => {
+                      handleCurrentBody(text, idx);
+                    }}
                     textAlignVertical="top"
                     scrollEnabled={false} 
                     onKeyPress={({ nativeEvent }) => {
@@ -470,6 +479,21 @@ export default function NewArticlePage() {
                       }
                     }}
                 />
+                <ThemedText
+                  size='bigger'
+                  style={{
+                    position: 'absolute',
+                    // top: 200,
+                    // opacity: 0.1,
+                    opacity: 0,
+                    width: '100%',
+                  }}
+                  onLayout={(e) => {
+                    const h = e.nativeEvent.layout.height;
+                    console.log("onLayout", h, idx);
+                    handleHeights(h, idx);
+                  }}
+                >{bodyText}</ThemedText>
                 {imgResults[idx]?.assets && imgResults[idx].assets[0]?.uri && (
                   <Pressable onPress={() => handleRemoveImg(idx)}>
                     <Image

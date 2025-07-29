@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { RefreshControl } from 'react-native';
 import {
   StyleSheet,
   FlatList,
@@ -232,6 +233,7 @@ export default function HomePage() {
   const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
   const [initialData, setInitialData] = useState<InitialDataType | null>(null);  
   const [tags, setTags] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [uniOnly, setUniOnly] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -331,6 +333,13 @@ export default function HomePage() {
     isFetchingMore.current = false;
   }, [nextArticlePage[sortOption]]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchArticles();
+    console.log('Articles refreshed');
+    setRefreshing(false);
+  }, [fetchArticles]);
+
   const renderItem = useCallback(
     ({ item }: { item: ArticleType }) => (
       <ThemedArticle trendingTags={tags} initialData={initialData} articleData={item} />
@@ -388,6 +397,13 @@ export default function HomePage() {
         maxToRenderPerBatch={8}
         windowSize={5}
         removeClippedSubviews={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={DEFAULT_TEXT}
+          />
+        }
       />
     <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => setBSheetVisible(false)} height={250}>
         <View style={{gap:15}}>
