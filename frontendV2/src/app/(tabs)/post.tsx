@@ -1,25 +1,27 @@
-import {View, Platform, TextStyle} from 'react-native';
 import { StyleSheet, TextInput, Pressable,  ScrollView, Image } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { Feather, Octicons } from '@expo/vector-icons';
+import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
+import * as ImageManipulator from 'expo-image-manipulator';
 import {  CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
-import { ImagePickerResult } from 'expo-image-picker'
+import { Feather, Octicons } from '@expo/vector-icons';
+import {View, Platform, TextStyle} from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { ImagePickerResult } from 'expo-image-picker';
 import ThemedButton from '@/components/ThemedButton';
+import { useRoute } from '@react-navigation/native';
+import { useToast } from '@/contexts/ToastContext';
+import ThemedInput from '@/components/ThemedInput';
 import ThemedView from '@/components/ThemedView';
 import ThemedCard from '@/components/ThemedCard';
-import ThemedInput from '@/components/ThemedInput';
 import * as ImagePicker from 'expo-image-picker'; 
 import ThemedText from '@/components/ThemedText';
-import type { TabParamList } from './_layout';
 import ThemedTag from '@/components/ThemedTag';
+import type { TabParamList } from './_layout';
 import {fetchAPI} from "@/components/Utils";
-import URLs from "@/constants/Urls";
-import { useToast } from '@/contexts/ToastContext';
-import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
 import { useFonts } from 'expo-font';
+import URLs from "@/constants/Urls";
 const postOptions: Option[] = [
   { label: 'Article', value: 'article' },
   { label: 'Market Place', value: 'marketplace' },
@@ -36,30 +38,107 @@ const contactOptions: Option[] = [
 ];
 
 export default function NewArticlePage() {
-  
   const { showToast } = useToast();
   const navigation = useNavigation<BottomTabNavigationProp<TabParamList, 'post'>>();
+
   const [title, setTitle] = useState('');
+  const [bodies,  setBodies]  = useState<string[]>([""]);
+  const [inputHeights, setInputHeights] = useState<number[]>([]);
+  const [unicon, setUnicon] = useState(false);
+  
+  const [imgResults,  setImgResults]  = useState<(ImagePickerResult|string)[]>([]);
+  const [ratios, setRatios] = useState<number[]>([]);
+  
   const [postType, setPostType] = useState('article');
   const [status, setStatus] = useState('selling');
   const [price, setPrice] = useState('');
   const [contact, setContact] = useState('');
   const [contactType, setContactType] = useState('comment');
-  const [bodies,  setBodies]  = useState<string[]>([""]);
-  const [imgResults,  setImgResults]  = useState<ImagePickerResult[]>([]);
-  const [inputHeights, setInputHeights] = useState<number[]>([]);
-  const [unicon, setUnicon] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [raw, setRaw] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [ratios, setRatios] = useState<number[]>([]);
 
+  const [tags, setTags] = useState<string[]>([]);
   const tagInputRef = useRef<TextInput>(null);
+  const [raw, setRaw] = useState('');
+
+  const [loading, setLoading] = useState(false);
+
+  const articleId = (useRoute().params as { id?: string })?.id || null;
 
   const default_card_background_color = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const place_holder_color = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const default_text_color = useThemeColor({}, 'DEFAULT_TEXT');
   const ALWAYS_BLACK = useThemeColor({}, 'ALWAYS_BLACK');
+  
+  useEffect(() => {
+    articleId && fetchArticle();
+  }, [articleId]);
+
+  const fetchArticle = async () => {
+
+    function parseMarkdownImages(raw: string): {
+      bodies: string[];
+      imgUris: string[];
+    } {  
+      const imgRegex = new RegExp(
+        `!\\[[^\\]]*\\]\\((${URLs.BUCKET}[^)]+)\\)`,
+        'g'
+      );
+      const bodies: string[] = [];
+      const imgUris: string[] = [];
+      let lastIndex = 0;
+      let m: RegExpExecArray | null;
+
+      while ((m = imgRegex.exec(raw)) !== null) {
+        bodies.push(raw.slice(lastIndex, m.index).trim());
+        imgUris.push(m[1]);
+        lastIndex = m.index + m[0].length;
+      }
+      bodies.push(raw.slice(lastIndex).trimStart());
+
+      return { bodies, imgUris };
+    }
+
+    setLoading(true);
+    const response = await fetchAPI(
+      URLs.ARTICLE(String(articleId)), {
+      method: 'GET',
+      token: true,
+    });
+
+    if (!response.error) {
+      const { bodies, imgUris } = parseMarkdownImages(response.data.results.article.body);
+      setBodies(bodies);
+      setImgResults(imgUris);
+      setTitle(response.data.results.article.title);
+      setUnicon(response.data?.results?.article?.unicon);
+      setTags(response.data.results.article.tag);
+      setInputHeights(prev => {
+      const newHeights = [...prev];
+        bodies.forEach((body, idx) => {
+          newHeights[idx] = ((body.match(/\n/g) || []).length + 1) * 30;
+        });
+        return newHeights;
+      });
+      console.log(response.data.results.article);
+      if (response.data.results.article.marketplace) {
+        setPostType('marketplace');
+        const responseStatus = response.data.results.article.status;
+        responseStatus == 0
+          ? setStatus('selling')
+          : responseStatus == 1 
+            ? setStatus('pending')
+            : setStatus('sold');
+        setPrice(response.data.results.article.price?.toString() || '');
+        setContact(response.data.results.article.contact || '');
+        setContactType(response.data.results.article.contact_type || 'comment');
+      }
+    } else {
+      showToast({
+        type: 'error',
+        text1: `Hi, ${response.data.detail}!`,
+      });
+    }
+    setLoading(false);
+  };
   
   const handlePost = async () => {
     setLoading(true);
@@ -72,7 +151,7 @@ export default function NewArticlePage() {
       return;
     }
     if (postType === 'marketplace') {
-      if (!price || !contact) {
+      if (!price || (contactType != 'comment' && !contact)) {
         showToast({
           type: 'error',
           text1: `Price and contact cannot be empty!`,
@@ -83,34 +162,48 @@ export default function NewArticlePage() {
     }
     
     const uploadedImageUrls = await Promise.all(
-      imgResults.slice(0, bodies.length - 1).map(img => handleUploadImgs(img))
+      imgResults
+        .slice(0, bodies.length - 1)
+        .map(img => (typeof img !== 'string' ? handleUploadImgs(img) : img))
     );
 
     let body_raw = '';
+    let img_upload_success = true;
     bodies.forEach((body, idx) => {
       body_raw += body;
-      if (idx + 1 < bodies.length) {
+      if (idx + 1 < bodies.length) {  
         const imgUrl = uploadedImageUrls[idx];
         if (imgUrl) {
           body_raw += `\n![](${imgUrl})\n`;
+        } else {
+          img_upload_success = false;
         }
       }
     });
+    if (!img_upload_success) {
+      showToast({
+        type: 'error',
+        text1: `Sorry, the image uploading was unsuccessful!`,
+      });
+      setLoading(false);
+      return;
+    }
 
     const response = await fetchAPI(
-      URLs.ARTICLE(), 
+      articleId ? URLs.ARTICLE(String(articleId) + '/') : URLs.ARTICLE(), 
       {
-        method: 'POST',
+        method: articleId ? 'PATCH':'POST',
         token: true,
-        body: { 
-          title: title, 
-          body: body_raw, 
+        body: {
+          title: title,
+          body: body_raw,
           unicon: postType === 'article' ? unicon : false,
           tag: tags,
           marketplace: postType === 'marketplace' ? true : false,
-          price: postType === 'marketplace' ? price : undefined,
-          contact: postType === 'marketplace' ? contact : undefined,
-        },
+          price: price ? parseFloat(price) : 0,
+          contact: contact || 'Leave a comment',
+          status: status === 'selling' ? 0 : status === 'pending' ? 1 : 2,
+        }
       }
     );
     if (!response.error){
@@ -128,7 +221,7 @@ export default function NewArticlePage() {
             { name: '(tabs)' }, 
             { 
               name: 'article/[id]',
-              params: { id: String(response.data.id) },
+              params: { id: articleId ? articleId : String(response.data.id) },
             },
           ],
         })
@@ -146,21 +239,30 @@ export default function NewArticlePage() {
     setLoading(true);
 
     if (!imgResult.assets || imgResult.assets.length === 0) {
-      showToast({
-        type: 'error',
-        text1: 'No image asset found!',
-      });
-      setLoading(false);
       return;
     }
 
     const asset = imgResult.assets[0]
     const { uri, mimeType, fileName } = asset
-    const type = mimeType ?? 'image/jpeg'
     const name = fileName ?? uri.split('/').pop()
     const fileKey = `uploads/${Date.now()}_${name}`
+    const isPNG = mimeType === 'image/png';
+    const outputFormat = isPNG
+      ? ImageManipulator.SaveFormat.PNG
+      : ImageManipulator.SaveFormat.JPEG;
+    const finalMimeType = isPNG ? 'image/png' : 'image/jpeg';
+    const manipulated = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 800 } }],
+      {
+        compress: isPNG ? 1 : 0.7,
+        format: outputFormat
+      }
+    );
+
+
     const getResponse = await fetchAPI(
-      URLs.ARTICLE_IMG(`?file_name=${encodeURIComponent(fileKey)}&file_type=${encodeURIComponent(type)}`), 
+      URLs.ARTICLE_IMG(`?file_name=${encodeURIComponent(fileKey)}&file_type=${encodeURIComponent(finalMimeType)}`), 
       {
         method: 'GET',
         token: true,
@@ -168,26 +270,19 @@ export default function NewArticlePage() {
       }
     );
     if (!getResponse.error){
-      const file = await fetch(uri)
+      const file = await fetch(manipulated.uri)
       const blob = await file.blob()
-      const putResponse = await fetch(getResponse.data.uploadUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: { 'Content-Type': type },
-      });
-      if (putResponse.ok){
-        return getResponse.data.publicUrl
-      }else{
-        showToast({
-          type: 'error',
-          text1: `Sorry, the image uploading was unsuccessful!`,
+      try {
+        const putResponse = await fetch(getResponse.data.uploadUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: { 'Content-Type': finalMimeType },
         });
+        if (putResponse.ok){
+          return getResponse.data.publicUrl
+        }
+      } catch (error) {
       }
-    }else{
-      showToast({
-        type: 'error',
-        text1: `Hi, ${getResponse.data.detail}!`,
-      });
     }
     setLoading(false);
     return null
@@ -202,14 +297,20 @@ export default function NewArticlePage() {
       borderWidth: 0, 
       },
       headerTitle: () => (
-        <ThemedDropdown
-          options={postOptions}
-          selectedValue={postType}
-          onValueChange={(v)=>{setPostType(v);}}
-          style={{width:200}}
-          size='bigger'
-          font='textSemibold'
-        />
+        articleId ? (
+          <ThemedText size="bigger" font="textSemibold">
+            Edit {postType === 'article' ? 'Article' : 'Market Place'}
+          </ThemedText>
+        ) : (
+          <ThemedDropdown
+            options={postOptions}
+            selectedValue={postType}
+            onValueChange={(v)=>{setPostType(v);}}
+            style={{width:200}}
+            size='bigger'
+            font='textSemibold'
+          />
+        )
       ),
       headerTintColor: default_text_color,
       headerLeft: () => (
@@ -232,15 +333,18 @@ export default function NewArticlePage() {
       ),
 
       headerRight: () => (
-        <ThemedText
-          size='smaller'
-          font='textMedium'
-          onPress={handlePost} 
-          disabled={loading}
-          style={{ marginRight: 30 }}
-        >
-          Post
-        </ThemedText>
+        <Pressable
+            onPress={handlePost} 
+            disabled={loading}>
+          <ThemedText
+            size='smaller'
+            font='textMedium'
+            color={loading ? 'gray' : 'default'}
+            style={{ marginRight: 30 }}
+          >
+            {articleId ? 'Save' : 'Post'}
+          </ThemedText>
+        </Pressable>
       ),
       headerTitleAlign: 'center',
     });
@@ -251,9 +355,12 @@ export default function NewArticlePage() {
       imgResults.map(
         img =>
           new Promise<number>(resolve => {
-            const uri = img && 'assets' in img && img.assets && img.assets[0]?.uri
-              ? img.assets[0].uri
-              : undefined;
+            let uri: string | undefined;
+            if (typeof img === 'string') {
+              uri = img;
+            } else if (img && 'assets' in img && img.assets && img.assets[0]?.uri) {
+              uri = img.assets[0].uri;
+            }
             if (uri) {
               Image.getSize(
                 uri,
@@ -283,7 +390,6 @@ export default function NewArticlePage() {
   };
 
   const handleHeights = async (height: number, idx: number) => {
-    console.log(height, idx)
     setInputHeights(prev => {
       const newHeights = [...prev];
       newHeights[idx] = height;
@@ -459,8 +565,8 @@ export default function NewArticlePage() {
                     style={[
                         styles.bodyTextArea,
                         removeOutline,
-                        inputHeights[idx] > 0 ? { height: inputHeights[idx] } : {},
-                        { minHeight: 30, height: inputHeights[idx] ?? 30 }
+                        inputHeights[idx] > 0 ? { height: inputHeights[idx]+30 } : {},
+                        // { minHeight: 30, height: inputHeights[idx] ?? 30 }
                         // isLastBlock && styles.activeBodyTextArea
                     ]}
                     underlineColorAndroid="transparent"
@@ -490,17 +596,25 @@ export default function NewArticlePage() {
                   }}
                   onLayout={(e) => {
                     const h = e.nativeEvent.layout.height;
-                    console.log("onLayout", h, idx);
                     handleHeights(h, idx);
                   }}
                 >{bodyText}</ThemedText>
-                {imgResults[idx]?.assets && imgResults[idx].assets[0]?.uri && (
-                  <Pressable onPress={() => handleRemoveImg(idx)}>
-                    <Image
-                      source={{ uri: imgResults[idx].assets![0].uri }}
-                      style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
-                    />
-                  </Pressable>
+                {imgResults[idx] && typeof imgResults[idx] === 'string' ? (
+                    <Pressable onPress={() => handleRemoveImg(idx)}>
+                      <Image
+                        source={{ uri: imgResults[idx] }}
+                        style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
+                      />
+                    </Pressable>
+                  ) : (
+                    typeof imgResults[idx] !== 'string' && imgResults[idx]?.assets && imgResults[idx].assets[0]?.uri && (
+                      <Pressable onPress={() => handleRemoveImg(idx)}>
+                        <Image
+                          source={{ uri: imgResults[idx].assets![0].uri }}
+                          style={[styles.img, { aspectRatio: ratios[idx] || 16 / 9 }]}
+                        />
+                      </Pressable>
+                    )
                 )}
               </React.Fragment>
             );
@@ -586,7 +700,7 @@ export default function NewArticlePage() {
                     selectedValue={status}
                     onValueChange={(v)=>{setStatus(v);}}
                     style={{width:100}}
-                    editable={false}
+                    editable={articleId ? true : false}
                   />
                 </View>
               </View>

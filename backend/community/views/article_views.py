@@ -320,6 +320,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
             "title": title,
             "body": body,
             "edited": True,
+            "unicon": request.data.get("unicon", False),
+            "marketplace": request.data.get("marketplace", False),
+            "price": request.data.get("price", 0),
+            "contact": request.data.get("contact", "Leave a comment"),
+            "status": request.data.get("status", 0),
         }
         update_article(article_instance, updated_fields)
         get_n_register_embedding_vectors.delay(article_instance.id)
@@ -496,24 +501,24 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         s3 = boto3.client(
             's3',
-            aws_access_key_id=config("AWS_ACCESS_KEY_ID_DEMO"),
-            aws_secret_access_key=config("AWS_SECRET_ACCESS_KEY_DEMO"),
-            region_name=config("AWS_S3_REGION_NAME_DEMO"),
+            aws_access_key_id=config("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=config("AWS_SECRET_ACCESS_KEY"),
+            region_name=config("AWS_S3_REGION_NAME"),
         )
 
         # generate presigned PUT URL
         url = s3.generate_presigned_url(
             ClientMethod='put_object',
             Params={
-                'Bucket': config("AWS_STORAGE_BUCKET_NAME_DEMO"),
+                'Bucket': config("AWS_STORAGE_BUCKET_NAME"),
                 'Key': file_name,
                 'ContentType': file_type,
                 # 'ACL': 'public-read',
             },
-            ExpiresIn=3600  
+            ExpiresIn=3600,
         )
         file_name = quote(file_name, safe='')
         return Response({
             'uploadUrl': url,
-            'publicUrl': f"https://{config("AWS_STORAGE_BUCKET_NAME_DEMO")}.s3.{config("AWS_S3_REGION_NAME_DEMO")}.amazonaws.com/{file_name}"
+            'publicUrl': f"https://{config("AWS_STORAGE_BUCKET_NAME")}.s3.{config("AWS_S3_REGION_NAME")}.amazonaws.com/{file_name}"
         }, status=status.HTTP_200_OK)

@@ -48,7 +48,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         body = data.get("body", "").strip()
         if not body:
             raise serializers.ValidationError("The body cannot be empty.")
-        print(data)
+        
         # Validate the marketplace fields
         marketplace = data.get("marketplace", False)
         if marketplace:

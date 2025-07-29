@@ -639,7 +639,7 @@ export default function ArticlePage() {
               <Pressable style={styles.button} onPress={() => {
                 setBSheetVisible(false);
                 router.push({
-                  pathname: '/edit/[id]',
+                  pathname: '/(tabs)/post',
                   params: { id: articleId },
                 });
               }}>
