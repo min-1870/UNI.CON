@@ -191,6 +191,7 @@ def on_articleSave_delete(sender, instance, **kwargs):
         update_sorted_ids_cache(
             instance.article,
             ARTICLE_USER_SAVED_IDS_CACHE_KEY(instance.user.id),
+            False
         )
         update_unsorted_ids_cache(
             instance.article,
