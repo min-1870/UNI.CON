@@ -1,10 +1,11 @@
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
-import React,  { useState, useEffect, useCallback, useMemo, useRef  } from "react";
 import { CommentType, InitialDataType } from '@/constants/types';
+import ThemedShimmer from '@/components/ThemedShimmer';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import React,  { useState, useEffect  } from "react";
+import { numberToString } from '@/components/Utils';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
-import ThemedShimmer from '@/components/ThemedShimmer';
 import { AntDesign } from '@expo/vector-icons';
 import moment from 'moment';
 
@@ -13,15 +14,15 @@ type CommentProps = {
   setFocusedComment?: any;
   isReplying?: any;
   likeComment?: any;
-  deleteComment?: any;
   fetchNestedComments?: any;
   fetchMoreNestedComment?: any;
+  handleCommentBSheet?: any;
   isChild?: boolean;
   isUnicon?: boolean;
   initialData?: InitialDataType;
 };
 
-function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, deleteComment, likeComment, isChild, initialData}: CommentProps) {
+function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, likeComment, isChild, initialData}: CommentProps) {
 
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
   const [loading, setLoading] = useState(false);
@@ -60,6 +61,11 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       justifyContent: 'space-between',
       gap: 10,
     },
+    like_reply_container: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 10,
+    },
     view_replies_button_container: {
       display: 'flex',
       flexDirection: 'row',
@@ -68,6 +74,7 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
     button: {
       display: 'flex',
       gap: 7,
+      minWidth: 30,
       alignItems: 'center',
       flexDirection: 'row',
     },
@@ -100,79 +107,57 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
       <View style={styles.button_container}>
         {initialData && (
             
-          <View style={styles.button}>
+          <>
+            <View style={styles.like_reply_container}>
+            <Pressable style={[styles.button]} onPress={() => likeComment && likeComment(commentData.id, commentData.parent_comment)} > 
+              <AntDesign
+                name={commentData.like_status ? 'heart' : 'hearto'} 
+                size={15}
+                color={DEFAULT_GRAY_TEXT} 
+              />
+              <ThemedText color="gray" size='smaller' font='textMedium'>
+                {numberToString(commentData.likes_count)}
+              </ThemedText>
+            </Pressable> 
+
             {!commentData.parent_comment &&(
-                <>
-                  <Pressable onPress={() => {
-                    if (setFocusedComment) {
-                      if (isChild) {
-                        setFocusedComment({parent:commentData.parent_comment, child:commentData.id});
-                      } else {
-                        setFocusedComment({parent:commentData.id, child:null});
-                      }
-                    }
-                    if (isReplying) {
-                      isReplying(true);
-                    }
-                  }}>
-                    <ThemedText color="gray" size='smaller' font='textMedium' justify={true}>
-                      Reply
-                    </ThemedText>
-                  </Pressable>
-                </>
+              <Pressable style={styles.button} onPress={() => {
+                if (setFocusedComment) {
+                  if (isChild) {
+                    setFocusedComment({parent:commentData.parent_comment, child:commentData.id});
+                  } else {
+                    setFocusedComment({parent:commentData.id, child:null});
+                  }
+                }
+                if (isReplying) {
+                  isReplying(true);
+                }
+              }}>
+                <ThemedText color="gray" size='smaller' font='textMedium' justify={true}>
+                  Reply
+                </ThemedText>
+              </Pressable>
             )}
-            {(commentData.user == initialData.id && !commentData.deleted) ? (
-                <>
-                  <Pressable onPress={() => {
-                    if (setFocusedComment) {
-                      if (isChild) {
-                        setFocusedComment({parent:commentData.parent_comment, child:commentData.id});
-                      } else {
-                        setFocusedComment({parent:commentData.id, child:null});
-                      }
-                    }
-                    if (isReplying) {
-                      isReplying(false);
-                    }
-                  }}>
-                    <ThemedText color="gray" size='smaller' font='textMedium'>
-                      Edit
-                    </ThemedText>
-                  </Pressable>
-                </>
-            ):null}
-            {(commentData.user == initialData.id && !commentData.deleted) ? (
-                <>
-                  <Pressable onPress={() => {
-                    if (deleteComment) {
-                      deleteComment(commentData.id, commentData.parent_comment);
-                    }
-                  }}>
-                    <ThemedText color="gray" size='smaller' font='textMedium'>
-                      Delete
-                    </ThemedText>
-                  </Pressable>
-                </>
-            ):null}
-          </View>
+            </View>
+
+            <Pressable style={styles.button} onPress={() => {
+              if (setFocusedComment) {
+                if (isChild) {
+                  handleCommentBSheet(commentData.parent_comment, commentData.id,  commentData.user, commentData.deleted);
+                } else {
+                  handleCommentBSheet(commentData.id, null, commentData.user, commentData.deleted);
+                }
+              }
+              if (isReplying) {
+                isReplying(true);
+              }
+            }}>
+              <ThemedText color="gray" size='smaller' font='textMedium' justify={true}>
+                More
+              </ThemedText>
+            </Pressable>
+          </>
         )}
-        
-        <View style={styles.button}>
-          <Pressable style={[styles.button]} onPress={() => likeComment && likeComment(commentData.id, commentData.parent_comment)} >
-            
-            <AntDesign
-              name={commentData.like_status ? 'heart' : 'hearto'} 
-              size={15}
-              color={DEFAULT_GRAY_TEXT} 
-            />
-            <ThemedText color="gray" size='smaller' font='textMedium'>
-              {commentData.likes_count}
-            </ThemedText>
-          </Pressable> 
-        </View>
-
-
-
       </View>
       <View style={styles.view_replies_button_container}>
         {commentData.parent_comment ? null : (
@@ -239,10 +224,10 @@ function ThemedComment({ commentData, setFocusedComment, isReplying, isUnicon, f
           commentData={item}
           setFocusedComment={setFocusedComment}
           likeComment={likeComment}
-          deleteComment={deleteComment}
           isUnicon={isUnicon}
           isChild={true}
           isReplying={isReplying}
+          handleCommentBSheet={handleCommentBSheet}
         />}
       showsVerticalScrollIndicator={false}
       scrollEnabled={false} 

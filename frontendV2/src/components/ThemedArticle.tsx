@@ -5,7 +5,8 @@ import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useArticlesStore } from '@/store/articleStore';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
-import Markdown from 'react-native-markdown-display'
+import Markdown from 'react-native-markdown-display';
+import { numberToString } from '@/components/Utils';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
@@ -38,8 +39,10 @@ import moment from 'moment';
     button: {
       display: 'flex',
       gap: 4,
-      alignItems: 'flex-end',
+      alignItems: 'center',
       flexDirection: 'row',
+      justifyContent: 'space-between',
+      minWidth: 30,
     },
     body: {
       width:'100%'
@@ -285,7 +288,7 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
             color={articleData.like_status ? active_button_color: button_color}
           />
           <ThemedText size='smaller' color="gray" font='textMedium'>
-            {articleData.likes_count}
+            {numberToString(articleData.likes_count)}
           </ThemedText>
         </Pressable>
         <View style={[styles.button]}>

@@ -32,7 +32,6 @@ export default function RootLayout() {
               <Stack.Screen name="validation" />
               <Stack.Screen name="tnc" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="edit/[id]" options={{ headerShown: true }} />
               <Stack.Screen name="article/[id]" options={{ headerShown: true }} />
               <Stack.Screen name="notification" options={{ headerShown: true }} />
               <Stack.Screen name="newPassword" options={{ headerShown: true }} />

@@ -32,6 +32,14 @@ const removeData = async () => {
   }
 };
 
+const numberToString = (num: number): string => {
+  if (num >= 1_000_000) {
+    return (Math.round(num / 1_000_000 * 10) / 10).toFixed(1) + 'M';
+  } else if (num >= 1_000) {
+    return (Math.round(num / 1_000 * 10) / 10).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
 
 const passwordStrength = (
   password: string
@@ -112,4 +120,4 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
 };
 
 
-export { fetchAPI, setData, getData, removeData, passwordStrength};
+export { fetchAPI, setData, getData, removeData, passwordStrength, numberToString};

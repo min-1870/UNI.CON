@@ -326,6 +326,7 @@ export default function NewArticlePage() {
             setUnicon(false);
             setRaw('');
             setTags([]);
+            setPostType('article');
             navigation.navigate('home');
           }}
           style={{ marginLeft: 20 }}
@@ -566,12 +567,10 @@ export default function NewArticlePage() {
                         styles.bodyTextArea,
                         removeOutline,
                         inputHeights[idx] > 0 ? { height: inputHeights[idx]+30 } : {},
-                        // { minHeight: 30, height: inputHeights[idx] ?? 30 }
-                        // isLastBlock && styles.activeBodyTextArea
                     ]}
                     underlineColorAndroid="transparent"
                     multiline
-                    placeholder={isLastBlock ? "Continue writingdddd..." : ""}
+                    placeholder={isLastBlock ? "Continue writing..." : ""}
                     placeholderTextColor={place_holder_color}
                     value={bodyText}
                     onChangeText={(text) => {
