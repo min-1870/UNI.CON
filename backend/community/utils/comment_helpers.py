@@ -141,7 +141,7 @@ def get_paginated_comments(
         if results[nid] is not None:
             # Attach user specific data
             results[nid]["like_status"] = user_liked_comments.get(
-                nid, False
+                results[nid]["id"], False
             )
         else:
             del results[nid]

@@ -6,7 +6,7 @@ import React,  { useState, useEffect  } from "react";
 import { numberToString } from '@/components/Utils';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Feather } from '@expo/vector-icons';
 import moment from 'moment';
 
 type CommentProps = {
@@ -25,6 +25,7 @@ type CommentProps = {
 function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isReplying, isUnicon, fetchNestedComments, fetchMoreNestedComment, likeComment, isChild, initialData}: CommentProps) {
 
   const DEFAULT_GRAY_TEXT = useThemeColor({}, 'DEFAULT_GRAY_TEXT');
+  const UNICON_CONTENT = useThemeColor({}, 'UNICON_CONTENT');
   const [loading, setLoading] = useState(false);
   // const prevNestedCommentsCount = useRef(commentData.nested_comments?.length ?? 0);
 
@@ -64,7 +65,7 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
     like_reply_container: {
       display: 'flex',
       flexDirection: 'row',
-      gap: 10,
+      gap: 8,
     },
     view_replies_button_container: {
       display: 'flex',
@@ -112,8 +113,8 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
             <Pressable style={[styles.button]} onPress={() => likeComment && likeComment(commentData.id, commentData.parent_comment)} > 
               <AntDesign
                 name={commentData.like_status ? 'heart' : 'hearto'} 
-                size={15}
-                color={DEFAULT_GRAY_TEXT} 
+                size={13}
+                color={commentData.like_status ? UNICON_CONTENT : DEFAULT_GRAY_TEXT} 
               />
               <ThemedText color="gray" size='smaller' font='textMedium'>
                 {numberToString(commentData.likes_count)}
@@ -140,7 +141,7 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
             )}
             </View>
 
-            <Pressable style={styles.button} onPress={() => {
+            <Pressable  onPress={() => {
               if (setFocusedComment) {
                 if (isChild) {
                   handleCommentBSheet(commentData.parent_comment, commentData.id,  commentData.user, commentData.deleted);
@@ -152,9 +153,11 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
                 isReplying(true);
               }
             }}>
-              <ThemedText color="gray" size='smaller' font='textMedium' justify={true}>
-                More
-              </ThemedText>
+              <Feather
+                name={'more-horizontal'} 
+                size={15}
+                color={DEFAULT_GRAY_TEXT} 
+              />
             </Pressable>
           </>
         )}
