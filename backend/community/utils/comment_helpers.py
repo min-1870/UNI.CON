@@ -62,11 +62,17 @@ def get_paginated_comments(
         max=dt,
         min=0,
         start= (requested_page - 1) * PAGINATOR_SIZE,
-        num= PAGINATOR_SIZE,
+        num= PAGINATOR_SIZE+1,
         withscores=True 
     )
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }
     id_list = list(mapping.keys())
+
+    # If no enough comments found, do not provide next page
+    moreComments = False
+    if len(id_list) == PAGINATOR_SIZE + 1:
+        id_list.pop()
+        moreComments = True
 
     # Bulk get article from cache
     cache_keys = [COMMENT_CACHE_KEY(nid) for nid in id_list]
@@ -147,11 +153,11 @@ def get_paginated_comments(
             del results[nid]
             print(f"Comment {nid} not found in the database or cache.")
     
-    if len(results.items()) < PAGINATOR_SIZE:
-        next_page = None
-    else:
+    if moreComments:
         url = request.build_absolute_uri()
         next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
+    else:
+        next_page = None
         
     return {
         "next": next_page,

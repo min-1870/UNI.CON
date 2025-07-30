@@ -66,6 +66,12 @@ def get_paginated_notifications(request):
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }
     id_list = list(mapping.keys())
 
+    # If no enough notifications found, do not provide next page
+    moreNotifications = False
+    if len(id_list) == PAGINATOR_SIZE + 1:
+        id_list.pop()
+        moreNotifications = True
+
     # Bulk get notifications from cache
     cache_keys = [NOTIFICATION_CACHE_KEY(nid) for nid in id_list]
     cached = cache.get_many(cache_keys)
@@ -167,11 +173,11 @@ def get_paginated_notifications(request):
             if item[1] == None:
                 results[item[0]] = serialized_notifications[NOTIFICATION_CACHE_KEY(item[0])]
 
-    if len(results.items()) < PAGINATOR_SIZE:
-        next_page = None
-    else:
+    if moreNotifications:
         url = request.build_absolute_uri()
         next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
+    else:
+        next_page = None
         
     return {
         "next": next_page,

@@ -101,6 +101,12 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }
     id_list = list(mapping.keys())
 
+    # If no enough articles found, do not provide next page
+    moreArticles = False
+    if len(id_list) == PAGINATOR_SIZE + 1:
+        id_list.pop()
+        moreArticles = True
+
     # Bulk get article from cache
     cache_keys = [ARTICLE_CACHE_KEY(nid) for nid in id_list]
     cached = cache.get_many(cache_keys)
@@ -212,9 +218,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
             del results[nid]
             print(f"Article {nid} not found in the database or cache.")
     
-    if len(results.items()) < PAGINATOR_SIZE:
-        next_page = None
-    else:
+    if moreArticles:
         url = request.build_absolute_uri()
         if sort_by == 'embedding_result':
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
@@ -224,7 +228,9 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
         else:
             next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
-    # print(results)
+    else:
+        next_page = None
+
     return {
         "next": next_page,
         "results": {"articles": results.values()},
