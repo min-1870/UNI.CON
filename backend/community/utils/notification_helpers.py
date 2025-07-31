@@ -59,7 +59,7 @@ def get_paginated_notifications(request):
         max=dt,
         min=0,
         start= (requested_page - 1) * PAGINATOR_SIZE,
-        num= PAGINATOR_SIZE,
+        num= PAGINATOR_SIZE + 1,
         withscores=True 
     )
 

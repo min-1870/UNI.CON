@@ -141,24 +141,26 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
             )}
             </View>
 
-            <Pressable  onPress={() => {
-              if (setFocusedComment) {
-                if (isChild) {
-                  handleCommentBSheet(commentData.parent_comment, commentData.id,  commentData.user, commentData.deleted);
-                } else {
-                  handleCommentBSheet(commentData.id, null, commentData.user, commentData.deleted);
+            {!commentData.deleted && (
+              <Pressable  onPress={() => {
+                if (setFocusedComment) {
+                  if (isChild) {
+                    handleCommentBSheet(commentData.parent_comment, commentData.id,  commentData.user);
+                  } else {
+                    handleCommentBSheet(commentData.id, null, commentData.user);
+                  }
                 }
-              }
-              if (isReplying) {
-                isReplying(true);
-              }
-            }}>
-              <Feather
-                name={'more-horizontal'} 
-                size={15}
-                color={DEFAULT_GRAY_TEXT} 
-              />
-            </Pressable>
+                if (isReplying) {
+                  isReplying(true);
+                }
+              }}>
+                <Feather
+                  name={'more-horizontal'} 
+                  size={15}
+                  color={DEFAULT_GRAY_TEXT} 
+                />
+              </Pressable>
+            )}
           </>
         )}
       </View>

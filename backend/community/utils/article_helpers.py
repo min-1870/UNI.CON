@@ -95,7 +95,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
         max=dt if sort_by == 'created_at' else score,
         min=0,
         start= (requested_page - 1) * PAGINATOR_SIZE,
-        num= PAGINATOR_SIZE,
+        num= PAGINATOR_SIZE + 1,
         withscores=True 
     )
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }

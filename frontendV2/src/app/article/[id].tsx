@@ -73,7 +73,6 @@ export default function ArticlePage() {
   const [bSheetComment, setBSheetComment] = useState<{ parent: any; child: any } | null>(null);
   const [bSheetCommentAuthor, seBSheetCommentAuthor] = useState<any>(null);
   const [bSheetArticleMode, setBSheetArticleMode] = useState<boolean>(true);
-  const [bSheetCommentDeleted, setBSheetCommentDeleted] = useState<boolean>(false);
   const [isReply, setIsReply] = useState<boolean>(false);
   const [orgComment, setOrgComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -217,6 +216,34 @@ export default function ArticlePage() {
     }
   };
 
+  // Delete article
+  const deleteArticle = async () => {
+    if (!article || !article.title || !article.body) {
+      showToast({ type: 'error', text1: 'Title and body cannot be empty!' });
+      return;
+    }
+    setLoading(true);
+    const response = await fetchAPI(URLs.ARTICLE(String(articleId)), {
+      method: 'DELETE',
+      token: true,
+      body: {},
+    });
+    if (!response.error) {
+      useArticlesStore.getState().updateArticle(article.id, {
+        ...article,
+        title: '[DELETED ARTICLE]',
+        body: '[DELETED CONTENT]',
+        tag: [],
+        deleted: true,
+      });
+      showToast({ type: 'success', text1: response.data?.detail || 'Article deleted!' });
+    } else {
+      showToast({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
+    }
+    setBSheetVisible(false);
+    setLoading(false);
+  };
+
   const fetchNestedComments = async (commentId: string) => {
     let comment = comments.find((comment) => String(comment.id) === String(commentId))
     if (comment?.showReplies) {
@@ -302,12 +329,11 @@ export default function ArticlePage() {
    };
   
   
-  const handleCommentBSheet = ( parent: any, child: any, author: any , deleted:boolean) => {
+  const handleCommentBSheet = ( parent: any, child: any, author: any) => {
     setBSheetComment({ parent, child });
     setBSheetVisible(true);
     setBSheetArticleMode(false);
     seBSheetCommentAuthor(author);
-    setBSheetCommentDeleted(deleted);
   }
 
   // Send top-level comment
@@ -567,33 +593,6 @@ export default function ArticlePage() {
     [comments, initialData]
   );
 
-  // Delete article
-  const handleDelete = async () => {
-    if (!article || !article.title || !article.body) {
-      showToast({ type: 'error', text1: 'Title and body cannot be empty!' });
-      return;
-    }
-    setLoading(true);
-    const response = await fetchAPI(URLs.ARTICLE(String(articleId)), {
-      method: 'DELETE',
-      token: true,
-      body: {},
-    });
-    if (!response.error) {
-      useArticlesStore.getState().updateArticle(article.id, {
-        ...article,
-        title: '[DELETED ARTICLE]',
-        body: '[DELETED CONTENT]',
-        tag: [],
-        deleted: true,
-      });
-      showToast({ type: 'success', text1: response.data?.detail || 'Article deleted!' });
-    } else {
-      showToast({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
-    }
-    setLoading(false);
-  };
-
   return (
     <>
       <ThemedView style={styles.container}>
@@ -654,11 +653,10 @@ export default function ArticlePage() {
         <ThemedBottomSheet visible={bSheetVisible} onDismiss={() => {setBSheetVisible(false)}} height={
           article.user === initialData?.id 
             ? 200 
-            : !bSheetArticleMode
-            ? Number(bSheetCommentAuthor) === initialData?.id && !bSheetCommentDeleted
-              ? 160
-              : 85 
-            : 120
+            : !bSheetArticleMode && Number(bSheetCommentAuthor) === initialData?.id
+            ? 160
+            : 85 
+            
           }>
           <View style={{ flex: 1, gap: 20, paddingVertical: 10 }}>
             {bSheetArticleMode ? (
@@ -679,7 +677,10 @@ export default function ArticlePage() {
                     <ThemedText> Edit </ThemedText>
                   </Pressable>
                 )}
-                <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+                <Pressable style={styles.button} onPress={()=>{
+                  showToast({ type: 'info', text1: 'This feature is not implemented yet.' });
+                  setBSheetVisible(false);
+                  }}>
                   <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
                   <ThemedText color='red'> Report </ThemedText>
                 </Pressable>
@@ -687,7 +688,7 @@ export default function ArticlePage() {
                   <Pressable style={styles.button} onPress={() => {
                     setPopupTitle('Delete Article');
                     setPopupBody('Are you sure you want to delete this article? This action cannot be undone.');
-                    setPopupFunction(() => handleDelete);
+                    setPopupFunction(() => deleteArticle);
                     setPopupVisible(true);
                   }}>
                     <Octicons style={{marginTop:2}} name="trash" size={15} color={ERROR_TEXT} />
@@ -697,7 +698,7 @@ export default function ArticlePage() {
               </>
             ):(
               <>
-                {Number(bSheetCommentAuthor) === initialData?.id && !bSheetCommentDeleted  && (
+                {Number(bSheetCommentAuthor) === initialData?.id  && (
                   <Pressable style={styles.button} onPress={() => {
                     setBSheetVisible(false);
                     setIsReply(false);
@@ -711,7 +712,7 @@ export default function ArticlePage() {
                   <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
                   <ThemedText color='red'> Report </ThemedText>
                 </Pressable>
-                {Number(bSheetCommentAuthor) === initialData?.id && !bSheetCommentDeleted && (
+                {Number(bSheetCommentAuthor) === initialData?.id && (
                   <Pressable style={styles.button} onPress={() => {
                     setPopupTitle('Delete Comment');
                     setPopupBody('Are you sure you want to delete this comment? This action cannot be undone.');
