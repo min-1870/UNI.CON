@@ -28,6 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
             "access",
             "gmail",
             "is_validated",
+            "email_notifications_threshold",
         ]
         extra_kwargs = {
             "id": {"read_only": True},

@@ -26,6 +26,7 @@ class User(AbstractUser):
     school = models.ForeignKey(School, on_delete=models.CASCADE, null=True)
     embedding_vector = models.JSONField(null=False, default=default_embedding_vectors)
     gmail = models.CharField(max_length=200, null=True, blank=True, unique=True)
+    email_notifications_threshold = models.IntegerField(default=5, null=False)
     points = models.IntegerField(default=0, null=False)
     last_notification_check = models.DateTimeField(default=timezone.now, null=False)
 

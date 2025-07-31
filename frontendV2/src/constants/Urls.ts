@@ -10,6 +10,7 @@ const URLS = {
     LOGIN: `${domain}/account/user/login/`,
     REGISTER: `${domain}/account/user/`,
     VALIDATE: `${domain}/account/user/validate_register/`,
+    WHOAMI: `${domain}/account/user/whoami/`,
     FORGOT_PASSWORD: `${domain}/account/user/forgot_password/`,
     VALIDATE_FORGOT_PASSWORD: `${domain}/account/user/validate_forgot_password/`,
     RESET_FORGOT_PASSWORD: `${domain}/account/user/reset_forgot_password/`,
@@ -39,6 +40,7 @@ const URLS = {
 
     // Notifications
     NOTIFICATIONS: `${domain}/community/article/notifications`,
+    EMAIL_NOTIFICATION_THRESHOLD: `${domain}/account/user/email_notification_threshold/`,
 
     // Tags
     TRENDING_TAGS: `${domain}/community/article/trending_tags`,

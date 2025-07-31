@@ -7,13 +7,13 @@ import Octicons from '@expo/vector-icons/Octicons';
 
 export interface Option {
   label: string;
-  value: string;
+  value: any;
 }
 
 interface InlineDropdownProps {
   options: Option[];
-  selectedValue: string;
-  onValueChange: (value: string) => void;
+  selectedValue: any;
+  onValueChange: (value: any) => void;
   placeholder?: string;
   style?: ViewStyle;
   backgroundColor?: 'defaultGray' | 'default' | 'defaultViewed';

@@ -259,7 +259,9 @@ def add_notification(notification_type, target_instance):
         )
         
             # Fetch the latest notifications that have not been emailed
-        if notification_queryset.count() % EMAIL_NOTIFICATIONS_THRESHOLD == 0:
+        if user_instance.email_notifications_threshold <= 0:
+            continue
+        if notification_queryset.count() % user_instance.email_notifications_threshold == 0:
             notification_queryset = notification_queryset.annotate(
                 title=Coalesce(
                     Case(

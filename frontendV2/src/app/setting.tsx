@@ -5,9 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
 import URLs from "@/constants/Urls";
-import {fetchAPI, removeData, getData} from "@/components/Utils";
+import {fetchAPI, removeData, getData, setData} from "@/components/Utils";
 import ThemedCard from '@/components/ThemedCard';
-import React, { useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useThemeColor } from '@/hooks/useThemeColor';
 import * as AuthSession from 'expo-auth-session';
 import { AntDesign, Feather } from '@expo/vector-icons';
@@ -17,10 +17,17 @@ import { useToast } from '@/contexts/ToastContext';
 import ThemedPopup from '@/components/ThemedPopup';
 
 import { ThemedDropdown, Option } from '@/components/ThemedDropdown';
+import { InitialDataType } from '@/constants/types';
 const themeOption: Option[] = [
   { label: 'Auto', value: 'auto' },
   { label: 'Light', value: 'light' },
   { label: 'Dark', value: 'dark' },
+];
+const emailNotificationPreferenceOption: Option[] = [
+  { label: 'Always', value: 5 },
+  { label: 'Sometimes', value: 10 }, 
+  { label: 'Rarely', value: 20 }, 
+  { label: 'Never', value: 0 }, 
 ];
 
 export default function SettingPage() {
@@ -30,6 +37,9 @@ export default function SettingPage() {
   const [popupFunction, setPopupFunction] = useState<() => void>(() => () => {});
   const { showToast } = useToast();
   const { mode, setMode } = useTheme();
+  const [emailNotificationPreference, setEmailNotificationPreference] = useState<Number>(5);
+  const [gmail, setGmail] = useState<String|null>(null);
+  const [initialData, setInitialData] = useState<InitialDataType|null>(null);
   const [loading, setLoading] = useState(false);
   const DEFAULT_CARD_BACKGROUND = useThemeColor({}, 'DEFAULT_CARD_BACKGROUND');
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
@@ -40,6 +50,33 @@ export default function SettingPage() {
     authorizationEndpoint: URLs.authorizationEndpoint,
     tokenEndpoint: URLs.tokenEndpoint,
   };
+
+  useEffect(() => {
+      const fetchWhoami = async () => {
+        setLoading(true);
+        const response = await fetchAPI(URLs.WHOAMI, {
+          method: 'POST',
+          token: true,
+        });
+
+        if (!response.error) {
+          setData('initialData', JSON.stringify(response.data));
+          setData('access', response.data.access);
+          setData('refresh', response.data.refresh);
+          setInitialData(response.data);
+          setEmailNotificationPreference(response.data.email_notifications_threshold);
+          setGmail(response.data.gmail);
+        } else {
+          showToast({
+            type: 'error',
+            text1: "Failed to fetch user data.",
+          });
+        }
+
+        setLoading(false);
+      };
+      fetchWhoami();
+  }, []);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -61,7 +98,7 @@ export default function SettingPage() {
     const initialData = storedStr ? JSON.parse(storedStr) : {};
     const response = await fetchAPI(URLs.FORGOT_PASSWORD, {
       method: 'POST',
-      token: false,
+      token: true,
       body: { email: initialData.email },
     });
 
@@ -83,6 +120,30 @@ export default function SettingPage() {
 
     setLoading(false);
   };
+    
+  
+  const handleEmailNotificationPreference = async (threshold:Number) => {
+    setLoading(true);
+    const response = await fetchAPI(URLs.EMAIL_NOTIFICATION_THRESHOLD, {
+      method: 'POST',
+      token: true,
+      body: { threshold },
+    });
+
+    if (!response.error) {
+      showToast({
+        type: 'success',
+        text1: response.data?.detail || 'Email notification preference updated successfully.',
+      });
+      setEmailNotificationPreference(threshold);
+    } else {
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
+      });
+    }
+    setLoading(false);
+  };
 
   const connectGoogle = async () => {
     const GOOGLE_LINK_CALLBACK_URL = AuthSession.makeRedirectUri();
@@ -95,13 +156,13 @@ export default function SettingPage() {
       });
 
       if (response.error) {
-      showToast({
-        type: 'error',
-        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
-      });
+        showToast({
+          type: 'error',
+          text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
+        });
         return;
       }
-
+      const state = response.data.state;
       // Generate a code verifier and challenge for PKCE
       const request = new AuthSession.AuthRequest({
         clientId: URLs.GOOGLE_CLIENT_ID,
@@ -111,7 +172,7 @@ export default function SettingPage() {
         extraParams: {
           access_type: 'offline',
           prompt: 'consent',
-          state: response.data.state,
+          state: state,
         },
       });
 
@@ -120,7 +181,7 @@ export default function SettingPage() {
       const result = await request.promptAsync(discovery);
 
       if (result.type === 'success') {
-        const { code, state } = result.params;
+        const { code } = result.params;
 
         // Send back the response to API server
         const response = await fetchAPI(
@@ -130,12 +191,17 @@ export default function SettingPage() {
           body: { code, state, code_verifier: request.codeVerifier }
         });
 
-        if (response.error) {
+        if (!response.error) {
+          showToast({
+            type: 'success',
+            text1: 'Google account connected successfully.',
+          });
+
+        } else {
           showToast({
             type: 'error',
-            text1: `Hi, ${response?.data?.detail || "An error occurred"}!`,
+            text1: `Sorry, ${response?.data?.detail || "Unexpected Error"}!`
           });
-          return;
         }
 
       } else {
@@ -189,12 +255,16 @@ export default function SettingPage() {
             </Pressable>
           </View>
           <View >
-            <Pressable style={styles.button} onPress={connectGoogle}>
+            <Pressable style={styles.button} onPress={()=>{gmail ? null : connectGoogle()}}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="link" size={15} color={DEFAULT_TEXT} />
-                <ThemedText >Connect Google Account</ThemedText>
+                <ThemedText >{gmail ? 'Google Account' : 'Connect Google Account'}</ThemedText>
               </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+              {gmail ? (
+                <ThemedText size='smaller' color='gray'>{gmail}</ThemedText>
+              ):(
+                <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
+              )}
             </Pressable>
           </View>
           <View >
@@ -232,27 +302,20 @@ export default function SettingPage() {
         </ThemedCard>
       </View>
 
-      <View>
+      <View style={{zIndex:900}}>
         <ThemedCard style={styles.card}>
           <ThemedText size='h3' font='textBold' style={styles.title}>Notification</ThemedText>
-          <View >
-            <Pressable style={styles.button} onPress={() => {
-              setPopupTitle('Turn off email notification');
-              setPopupBody('Are you sure you want to turn off email notification? You will not receive any notifications from the app.');
-              setPopupFunction(() => () => {
-                showToast({
-                  type: 'success',
-                  text1: 'Email notification turned off successfully.',
-                });
-              });
-              setPopupVisible(true);
-            }}>
-              <View style={styles.buttonText}>
-                <Octicons style={{marginTop:2}} name="mail" size={15} color={DEFAULT_TEXT} />
-                <ThemedText >Turn off email notification</ThemedText>
-              </View>
-              <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
-            </Pressable>
+          <View style={[styles.button, {zIndex:1}]}>
+            <View style={styles.buttonText}>
+              <Octicons style={{marginTop:2}} name="mail" size={15} color={DEFAULT_TEXT} />
+              <ThemedText >Email notifications</ThemedText>
+            </View>
+            <ThemedDropdown
+              options={emailNotificationPreferenceOption}
+              selectedValue={emailNotificationPreference}
+              onValueChange={(v) => {handleEmailNotificationPreference(v);}}
+              style={{width:130}}
+            />
           </View>
           <View >
             <Pressable style={styles.button} onPress={() => {
@@ -268,7 +331,7 @@ export default function SettingPage() {
             }}>
               <View style={styles.buttonText}>
                 <Octicons style={{marginTop:2}} name="bell" size={15} color={DEFAULT_TEXT} />
-                <ThemedText >Turn off push notification</ThemedText>
+                <ThemedText >Push notifications</ThemedText>
               </View>
               <AntDesign style={{marginTop:2}} name="arrowright" size={15} color={DEFAULT_TEXT} />
             </Pressable>

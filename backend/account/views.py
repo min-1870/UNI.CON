@@ -13,7 +13,7 @@ from django.http import HttpResponseRedirect
 from rest_framework import viewsets, status
 from .serializers import UserSerializer
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from .models import User
 import uuid
 
@@ -21,7 +21,6 @@ from .constants import (
     GOOGLE_LOGIN_CALLBACK_URL,
     GOOGLE_LINK_CALLBACK_URL,
     SSO_SESSION_CACHE_KEY,
-    MYPAGE_REDIRECT_URI,
 )
 
 
@@ -110,7 +109,7 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=["post"])
     def forgot_password(self, request):
-        email = request.data["email"]
+        email = request.data.get("email")
         if not email:
             return Response(
             {"detail": "The email is required."},
@@ -220,8 +219,11 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def google_auth_session(self, request):
         session_id = str(uuid.uuid4())
+        if cache.get(SSO_SESSION_CACHE_KEY(session_id)) is not None:
+            cache.delete(SSO_SESSION_CACHE_KEY(session_id))
         cache.set(SSO_SESSION_CACHE_KEY(session_id), request.user.id, timeout=300)
         return Response({"state": session_id})
+    
     
     @action(detail=False, methods=["post"])
     def googlelink(self, request): 
@@ -240,12 +242,27 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
         # Extract user details and update
-        gmail = decoded_data.get("email")   
-        with transaction.atomic():
-            if user_id and gmail:
-                User.objects.filter(id=user_id).update(gmail=gmail)
+        gmail = decoded_data.get("email", None)
+        
+        if gmail is None:
+            return Response(
+                {"detail": "The email is not provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if User.objects.filter(gmail=gmail).exists():
+            return Response(
+                {"detail": "The email is already associated with another account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if user_id and gmail:
+            user_instance = User.objects.get(id=user_id)
+            user_instance.gmail = gmail
+            user_instance.save()
 
-        return HttpResponseRedirect(MYPAGE_REDIRECT_URI)
+        return Response(
+            {"detail": "The Google account has been linked successfully."},
+            status=status.HTTP_200_OK
+        )
     
     @action(detail=False, methods=["post"])
     def googlelogin(self, request): 
@@ -280,6 +297,28 @@ class UserViewSet(viewsets.ModelViewSet):
         user_instance = annotate_user(user_instance)
         serializer = self.get_serializer(user_instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=["post"])
+    def email_notification_threshold(self, request):
+        
+        threshold = request.data.get("threshold", None)
+        if threshold is None:
+            return Response(
+                {"detail": "The  preference is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if not isinstance(threshold, int) or threshold < 0:
+            return Response(
+                {"detail": "The preference must be a non-negative integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Update the user's email notification preference
+        user_instance = request.user
+        user_instance.email_notifications_threshold = threshold
+        user_instance.save()
+        return Response({'detail': 'The preference has been updated'}, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         return Response(

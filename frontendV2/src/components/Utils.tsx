@@ -81,7 +81,7 @@ const fetchNewAccessToken = async () => {
     }
 };
 
-type fetchAPIPProm = { error: boolean; data?: any; status?: number };
+type fetchAPIPProm = { error: boolean; data: any; status: number };
 const fetchAPI = async (url: string, { token = true, method = "GET", body = {} } = {}): Promise<fetchAPIPProm> => {
 
   const request = async () => {
@@ -95,8 +95,7 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
               },
               ...(method !== "GET" ? { data: body } : {}), // Only add body for non-GET requests
           });
-          // console.log(response.data)
-            return { status: response.status, error: false, data: response.data };
+          return { status: response.status, error: !(response.status >= 200), data: response.data };
       } catch (error) {
           throw error; // Throw to be caught in the outer try-catch
       }
@@ -106,8 +105,16 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
       return await request();
   } catch (error) {
       try {
+        if ((error as any).response?.status === 401) {
           await fetchNewAccessToken();
-          return await request();
+        }
+        const err = error as any; // Explicitly cast error to any
+        // fix to show error msg 
+        return {
+            status: err.response?.status, 
+            error: true,
+            data: err.response?.data?.detail || err.response?.data || "An error occurred",
+        };
       } catch (error: unknown) {
           const err = error as any; // Explicitly cast error to any
           return {
