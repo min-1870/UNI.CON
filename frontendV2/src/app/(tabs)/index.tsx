@@ -51,8 +51,8 @@ const Header = React.memo(function Header({
   uniOnly: boolean;
   setBSheetVisible: (visible: boolean) => void;
   selectedTag: string | undefined;
-  sortOption: keyof typeof apiEndpoints;
-  setSortOption: (o: keyof typeof apiEndpoints) => void;
+  sortOption: string;
+  setSortOption: (o: 'all'|'hot'|'for you'|'tag') => void;
   setUniOnly: (u: boolean) => void;
   scrollY: Animated.Value;
 }) {
@@ -151,12 +151,13 @@ return (
   );
 });
 
-const apiEndpoints = {
-  'all': URLs.TIME_SORTED_ARTICLES,
-  'hot': URLs.HOT_SORTED_ARTICLES,
-  'for you': URLs.PREFERENCE_SORTED_ARTICLES,
-  'tag': URLs.PREFERENCE_SORTED_ARTICLES,
-};
+const apiEndpoints = ['all', 'hot', 'for you', 'tag'];
+// {
+//   'all': URLs.TIME_SORTED_ARTICLES,
+//   'hot': URLs.HOT_SORTED_ARTICLES,
+//   'for you': URLs.PREFERENCE_SORTED_ARTICLES,
+//   'tag': URLs.PREFERENCE_SORTED_ARTICLES,
+//};
 
 const styles = StyleSheet.create({
   container: {
@@ -230,20 +231,36 @@ export default function HomePage() {
   const DEFAULT_TEXT = useThemeColor({}, 'DEFAULT_TEXT');
   const route = useRoute();
   
-  const [sortOption, setSortOption] = useState<keyof typeof apiEndpoints>("all");
+  const [sortOption, setSortOption] = useState<'all'|'hot'|'for you'|'tag'>("all");
   const [initialData, setInitialData] = useState<InitialDataType | null>(null);  
   const [tags, setTags] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [uniOnly, setUniOnly] = useState<boolean>(false);
+  const [uniOnly, setUniOnly] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
   const isFetchingMore = useRef(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-
+  let url = ''
+      if (sortOption === 'tag') {
+        if (selectedTag) {
+          url = URLs.SEARCHING_TAG(selectedTag, uniOnly ? 0 : 1);
+        }else{
+          url = URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1);
+        }
+      } 
+      else if (sortOption === 'hot') {
+        url = URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1);
+      }
+      else if (sortOption === 'for you') {
+        url = URLs.PREFERENCE_SORTED_ARTICLES(uniOnly ? 0 : 1);
+      }
+      else {
+        url = URLs.TIME_SORTED_ARTICLES(uniOnly ? 0 : 1);
+      }
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
   const articlesById = useArticlesStore(s => s.articlesById) || {};
-  const feedArticles = (feedIds[sortOption === 'tag' ? selectedTag || 'tag' : sortOption] ?? []).map(id => articlesById[id]) || [];
+  const feedArticles = (feedIds[url] ?? []).map(id => articlesById[id]) || [];
   const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
   const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
@@ -279,10 +296,10 @@ export default function HomePage() {
 
   // Fetch articles when sortOption changes
   useEffect(() => {
-    if (!feedIds[sortOption] || feedIds[sortOption].length === 0) {
+    if (!feedIds[url] || feedIds[url].length === 0) {
       fetchArticles();
     }
-  }, [sortOption]);
+  }, [sortOption, uniOnly, selectedTag]);
 
   
   useEffect(() => {
@@ -293,50 +310,40 @@ export default function HomePage() {
   const fetchArticles = useCallback(async () => {
     setLoading(true);
     // await new Promise(resolve => setTimeout(resolve, 5000));D
-    if ((feedIds?.[sortOption === 'tag' ? selectedTag || 'tag' : sortOption] || []).length) return;
-    let url = apiEndpoints[sortOption]
-    if (sortOption === 'tag') {
-      if (selectedTag) {
-        url = URLs.SEARCHING_TAG(selectedTag);
-      }else{
-        url = apiEndpoints[sortOption];
-      }
-    }
+    if ((feedIds?.[url] || []).length) return;
+    
     const res = await fetchAPI(url, { method: 'GET', token: true });
     if (!res.error) {
-      let key = sortOption as string;
-      if (sortOption === 'tag' && selectedTag) {
-        key = selectedTag;
-      }
-      useArticlesStore.getState().setFeed(route.name, key, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(route.name, key, res.data?.next || null);
+      
+      useArticlesStore.getState().setFeed(route.name, url, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, url, res.data?.next || null);
     } else {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
-  }, [sortOption, lastResetPage, selectedTag]);
+  }, [sortOption, uniOnly, lastResetPage, selectedTag]);
 
 
   const fetchMoreArticles = useCallback(async () => {
-    if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
+    if (!nextArticlePage[url] || nextArticlePage[url] === currentArticlePage[url] || isFetchingMore.current) {
       return;
     }
-    
+    if (!nextArticlePage[url]) return;
+
     isFetchingMore.current = true;
-    const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
+    const res = await fetchAPI(nextArticlePage[url] as string, { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
-      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, url, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(route.name, url, res.data?.next || null);
     } else {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
-  }, [nextArticlePage[sortOption]]);
+  }, [nextArticlePage[url]]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchArticles();
-    console.log('Articles refreshed');
     setRefreshing(false);
   }, [fetchArticles]);
 
@@ -349,10 +356,7 @@ export default function HomePage() {
   return (
     <ThemedView style={styles.container}>
       <AnimatedFlatList
-        data={
-          uniOnly
-            ? feedArticles.filter(a => a.unicon === false)
-            : feedArticles
+        data={feedArticles
         }
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}

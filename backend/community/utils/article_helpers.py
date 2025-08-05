@@ -29,7 +29,7 @@ else:
     from django_redis import get_redis_connection
     redis_conn = get_redis_connection("default")
     
-def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vector=None, timeout=None):
+def get_paginated_articles(request, queryset, sort_by, cache_key, timeout=None, unicon=False):
 
     user_instance = request.user
     requested_page = int(request.query_params.get("page", 1))
@@ -39,45 +39,54 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
         if not redis_conn.exists(cache_key):
             # Fetch Ids of the article based on the similarity
             ids = search_similar_embeddings(
-                get_faiss_index(), embedding_vector, len(queryset)
+                get_faiss_index(), user_instance.embedding_vector, len(queryset)
             )
 
             # Fetch the article based on the fetched id while maintaining the order
             order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
             queryset = queryset.filter(pk__in=ids).order_by(order)
-            score = len(queryset)
+            max_score = len(queryset)
+            articles = [(article.id, max_score - idx) for idx, article in enumerate(queryset)]
         else:
             # Fetch the article based on the cached ids
             ids = redis_conn.zrevrange(cache_key, 0, -1)
             queryset = queryset.filter(pk__in=ids)
-            score = len(queryset)
+            max_score = len(queryset)
 
     elif sort_by == 'search_content':
-        search_content = request.query_params.get("search_content", None)
-        queryset = queryset.search(search_content)
-        score = len(queryset)
+        if not redis_conn.exists(cache_key):
+            max_score = request.query_params.get("max_score", len(queryset))
+            articles = [(article.id, max_score - idx) for idx, article in enumerate(queryset)]
+        else:
+            ids = redis_conn.zrevrange(cache_key, 0, -1)
+            max_score = request.query_params.get("max_score", len(ids))
 
     elif sort_by == 'engagement_score':
-        score = request.query_params.get("score", int(queryset.order_by("-engagement_score").first().engagement_score))
+        if not redis_conn.exists(cache_key):
+            max_score = request.query_params.get("max_score", int(queryset.order_by("-engagement_score").first().engagement_score))
+            articles = queryset.values_list("id", "engagement_score")
+        else:
+            ids = redis_conn.zrevrange(cache_key, 0, -1)
+            max_score = request.query_params.get("max_score", len(ids))
 
     else:
-        dt = request.query_params.get("dt", to_unix_ms(None))
-
+        if not redis_conn.exists(cache_key):
+            max_score = request.query_params.get("max_score", to_unix_ms(queryset.order_by("-created_at").first().created_at))
+            articles = queryset.values_list("id", "created_at")
+        else:
+            ids = redis_conn.zrevrange(cache_key, 0, -1)
+            max_score = request.query_params.get("max_score", to_unix_ms(None))
     
     # Check if the zset exists in Redis
     if not redis_conn.exists(cache_key):
-        if sort_by == 'embedding_result':
-            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
-        elif sort_by == 'search_content':
-            articles = [(article.id, score - idx) for idx, article in enumerate(queryset)]
-        elif sort_by == 'engagement_score':
-            articles = queryset.values_list(
-                "id", "engagement_score"
-            )
-        elif sort_by == 'created_at':
-            articles = queryset.values_list(
-                "id", "created_at"
-            )
+        # if sort_by == 'embedding_result':
+        #     articles = [(article.id, max_score - idx) for idx, article in enumerate(queryset)]
+        # elif sort_by == 'search_content':
+        #     articles = [(article.id, max_score - idx) for idx, article in enumerate(queryset)]
+        # elif sort_by == 'engagement_score':
+        #     articles = queryset.values_list("id", "engagement_score")
+        # elif sort_by == 'created_at':
+        #     articles = queryset.values_list("id", "created_at")
             
         mapping = {}
         for nid, value in articles:
@@ -92,7 +101,7 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     # Fetch new article IDs from the cache
     raw_with_scores  = redis_conn.zrevrangebyscore(
         cache_key,
-        max=dt if sort_by == 'created_at' else score,
+        max=max_score,
         min=0,
         start= (requested_page - 1) * PAGINATOR_SIZE,
         num= PAGINATOR_SIZE + 1,
@@ -220,14 +229,13 @@ def get_paginated_articles(request, queryset, sort_by, cache_key, embedding_vect
     
     if moreArticles:
         url = request.build_absolute_uri()
-        if sort_by == 'embedding_result':
-            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
-        elif sort_by == 'search_content':
-            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}&search_content={search_content}"
-        elif sort_by == 'created_at':
-            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&dt={dt}"
+        unicon = int(unicon)
+        search_content = request.query_params.get("search_content", '')
+        if sort_by == 'search_content':
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={max_score}&unicon={unicon}&search_content={search_content}"
         else:
-            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={score}"
+            next_page = f"{url.split('?')[0]}?page={requested_page + 1}&score={max_score}&unicon={unicon}"
+        
     else:
         next_page = None
 

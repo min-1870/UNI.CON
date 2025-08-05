@@ -112,7 +112,7 @@ export default function ArticlePage() {
       },
       headerTintColor: DEFAULT_TEXT,
       headerTitleAlign: 'center',
-      headerTitle: article.marketplace ? 'Market Place':'Article',    
+      headerTitle: article && article.marketplace ? 'Market Place':'Article',    
             headerRight: () =>
         initialData &&
         article &&

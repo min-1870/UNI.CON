@@ -67,16 +67,17 @@ export default function SearchPage() {
   const [searchTag, setSearchTag] = useState<string | undefined>(route.params?.tag || undefined);
   const [initialData, setInitialData] = useState<InitialDataType | null>(null);
   const [searched, setSearched] = useState<boolean>(false);
+  const [uniOnly, setUniOnly] = useState<boolean>(true);
   const [searchContent, setSearchContent] = useState('');
-  const [sortOption, setSortOption] = useState('hot');
+  const [url, setUrl] = useState(URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1));
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);  
     
-    
+
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
   const articlesById = useArticlesStore(s => s.articlesById) || {};
-  const feedArticles = (feedIds[sortOption] ?? []).map(id => articlesById[id]) || [];
+  const feedArticles = (feedIds[url] ?? []).map(id => articlesById[id]) || [];
   const nextArticlePage = useArticlesStore(s => s.nextArticlePage[route.name]) || {};
   const currentArticlePage = useArticlesStore(s => s.currentArticlePage[route.name]) || {};
 
@@ -89,25 +90,28 @@ export default function SearchPage() {
   useEffect(() => {  
     if (searchContent.length > 0 && searched) { 
       setSearched(false);
-      setSortOption(searchContent);
+      setUrl(URLs.SEARCHING_ARTICLE(searchContent, uniOnly ? 0 : 1));
       setSearchTag(undefined);
     }else if (searchContent.length == 0 && searched) {
       setSearched(false);
-      setSortOption(searchTag || 'hot');
+      setUrl(searchTag 
+        ? URLs.SEARCHING_TAG(searchTag, uniOnly ? 0 : 1) 
+        : URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1)
+      );
     }
   },[searched]);
   
   useEffect(() => {
     if (searchContent.length == 0 && searchTag) { 
-      setSortOption(searchTag);
+      setUrl(URLs.SEARCHING_TAG(searchTag, uniOnly ? 0 : 1));
     }else if (searchContent.length == 0 && !searchTag) {
-      setSortOption('hot');
+      setUrl(URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1));
     }
   },[searchTag]);
 
   useEffect(() => {
     fetchArticles();
-  },[sortOption])
+  },[url])
     
   useEffect(() => {
     if (route.params?.tag) {
@@ -140,43 +144,36 @@ export default function SearchPage() {
   
   const fetchArticles = useCallback(async () => {
     setLoading(true);
-    if (feedIds && (feedIds[sortOption]||[]).length > 0) {
+    if (feedIds && (feedIds[url]||[]).length > 0) {
       return;      
     }
-    let url = '';
-    if (searchContent.length > 0) {
-      url = URLs.SEARCHING_ARTICLE(searchContent);
-    } else if (searchTag) {
-      url = URLs.SEARCHING_TAG(searchTag);
-    } else {
-      url = URLs.HOT_SORTED_ARTICLES;
-    } 
     const res = await fetchAPI(url, { method: 'GET', token: true });
     if (!res.error) {      
-      useArticlesStore.getState().setFeed(route.name, sortOption, res.data?.results?.articles || []);
-      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, url, res.data?.results?.articles || []);
+      useArticlesStore.getState().setNextArticlePage(route.name, url, res.data?.next || null);
     } else {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
-  }, [searchContent, searchTag, sortOption, lastResetPage]);
+  }, [searchContent, searchTag, url, lastResetPage]);
 
 
   const fetchMoreArticles = useCallback(async () => {
-    if (!nextArticlePage[sortOption] || nextArticlePage[sortOption] === currentArticlePage[sortOption] || isFetchingMore.current) {
+    if (!nextArticlePage[url] || nextArticlePage[url] === currentArticlePage[url] || isFetchingMore.current) {
       return;
     }
-    
+    if (!nextArticlePage[url]) return;
+
     isFetchingMore.current = true;
-    const res = await fetchAPI(nextArticlePage[sortOption], { method: 'GET', token: true });
+    const res = await fetchAPI(nextArticlePage[url] as string, { method: 'GET', token: true });
     if (!res.error) {
-      useArticlesStore.getState().setFeed(route.name, sortOption, [...feedArticles, ...(res.data?.results?.articles || [])]);
-      useArticlesStore.getState().setNextArticlePage(route.name, sortOption, res.data?.next || null);
+      useArticlesStore.getState().setFeed(route.name, url, [...feedArticles, ...(res.data?.results?.articles || [])]);
+      useArticlesStore.getState().setNextArticlePage(route.name, url, res.data?.next || null);
     } else {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading more' });
     }
     isFetchingMore.current = false;
-  }, [nextArticlePage[sortOption]]);
+  }, [nextArticlePage[url]]);
 
   return (
     <ThemedView style={styles.container}>

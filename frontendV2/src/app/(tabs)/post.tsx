@@ -118,7 +118,6 @@ export default function NewArticlePage() {
         });
         return newHeights;
       });
-      console.log(response.data.results.article);
       if (response.data.results.article.marketplace) {
         setPostType('marketplace');
         const responseStatus = response.data.results.article.status;
@@ -192,18 +191,20 @@ export default function NewArticlePage() {
     const response = await fetchAPI(
       articleId ? URLs.ARTICLE(String(articleId) + '/') : URLs.ARTICLE(), 
       {
-        method: articleId ? 'PATCH':'POST',
-        token: true,
-        body: {
-          title: title,
-          body: body_raw,
-          unicon: postType === 'article' ? unicon : false,
-          tag: tags,
-          marketplace: postType === 'marketplace' ? true : false,
-          price: price ? parseFloat(price) : 0,
-          contact: contact || 'Leave a comment',
-          status: status === 'selling' ? 0 : status === 'pending' ? 1 : 2,
-        }
+      method: articleId ? 'PATCH':'POST',
+      token: true,
+      body: {
+        title: title,
+        body: body_raw,
+        unicon: postType === 'article' ? unicon : false,
+        tag: tags,
+        ...(postType === 'marketplace' && {
+        marketplace: true,
+        price: price ? parseFloat(price) : 0,
+        contact: contact || 'Leave a comment',
+        status: status === 'selling' ? 0 : status === 'pending' ? 1 : 2,
+        }),
+      }
       }
     );
     if (!response.error){

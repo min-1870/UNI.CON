@@ -100,12 +100,23 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
 
+        try:
+            unicon = int(request.GET.get("unicon", 0)) == 1
+        except ValueError:
+            unicon = False
+        
+        if unicon:
+            queryset = self.get_non_marketplace_queryset()
+        else:
+            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
+
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_non_marketplace_queryset(),
+            queryset=queryset,
             sort_by="created_at",
+            unicon=unicon,
             cache_key=ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(
-                request.user.school.id,)
+                request.user.school.id, unicon)
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -124,34 +135,61 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def hot(self, request):
+        try:
+            unicon = int(request.GET.get("unicon", 0)) == 1
+        except ValueError:
+            unicon = False
+        if unicon:
+            queryset = self.get_non_marketplace_queryset()
+        else:
+            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_non_marketplace_queryset(),
+            queryset=queryset,
             sort_by="engagement_score",
+            unicon=unicon,
             cache_key=ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY(
-                request.user.school.id,),
+                request.user.school.id, unicon),
             timeout=CACHE_TIMEOUT
         )
-
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def preference(self, request):
+        try:
+            unicon = int(request.GET.get("unicon", 0)) == 1
+        except ValueError:
+            unicon = False
+        
+        if unicon:
+            queryset = self.get_non_marketplace_queryset()
+        else:
+            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_non_marketplace_queryset(),
+            queryset=queryset,
             sort_by="embedding_result",
+            unicon=unicon,
             cache_key=ARTICLE_USER_PREFERRED_IDS_CACHE_KEY(
-                request.user.id,),
-            embedding_vector=request.user.embedding_vector,
+                request.user.id, unicon),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def search(self, request):
+        try:
+            unicon = int(request.GET.get("unicon", 0)) == 1
+        except ValueError:
+            unicon = False
+        
+        if unicon:
+            queryset = self.get_non_marketplace_queryset()
+        else:
+            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
+
         # Block if the body or the title is empty
         search_content = request.GET.get("search_content", "").strip()
         if len(search_content) == 0:
@@ -162,10 +200,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_non_marketplace_queryset(),
+            queryset=queryset.search(search_content),
             sort_by="search_content",
+            unicon=unicon,
             cache_key=ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY(
-                request.user.school.id, search_content),
+                request.user.school.id, search_content, unicon),
         )
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -193,6 +232,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def search_tag(self, request):
         # Block if the body or the title is empty
+        try:
+            unicon = int(request.GET.get("unicon", 0)) == 1
+        except ValueError:
+            unicon = False
+        
+        if unicon:
+            queryset = self.get_non_marketplace_queryset()
+        else:
+            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
+
         tag = request.GET.get("search_content", "").strip()
         if len(tag) == 0:
             return Response(
@@ -202,7 +251,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         response_data = get_paginated_articles(
             request=request,
-            queryset=self.get_non_marketplace_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
+            queryset=queryset.filter(
+                articletag__tag__name__icontains=tag
+                ).distinct(),
+            unicon=unicon,
             sort_by="created_at",
             cache_key=ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
                 request.user.school.id, tag),

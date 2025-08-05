@@ -49,16 +49,16 @@ TRENDING_TAGS_CACHE_KEY = (
     lambda school: f"SCHOOL_{school}_TRENDING_TAGS"
 )
 ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY = (
-    lambda school: f"SCHOOL_{school}_RECENT_ARTICLE_IDS"
+    lambda school, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_RECENT_ARTICLE_IDS"
 )
 ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY = (
-    lambda school: f"SCHOOL_{school}_HOT_ARTICLE_IDS"
+    lambda school, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_HOT_ARTICLE_IDS"
 )
 ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, content: f"SCHOOL_{school}_SEARCHED_{content}_ARTICLE_IDS"
+    lambda school, content, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_SEARCHED_{content}_ARTICLE_IDS"
 )
 ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, tag: f"SCHOOL_{school}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
+    lambda school, tag, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
 )
 ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY = (
     lambda school: f"SCHOOL_{school}_MARKETPLACE_ARTICLE_IDS"
@@ -90,7 +90,7 @@ ARTICLE_USER_SAVED_IDS_CACHE_KEY = (
     lambda user_id: f"USER_{user_id}_SAVED_ARTICLE_IDS"
 )
 ARTICLE_USER_PREFERRED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_PREFERRED_ARTICLE_IDS"
+    lambda user_id, unicon=False: f"USER_{user_id}_UNICON_{unicon}_PREFERRED_ARTICLE_IDS"
 )
 
 # user specific & non-sorted cache keys
