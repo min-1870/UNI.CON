@@ -458,11 +458,20 @@ export default function NewArticlePage() {
       flex: 1,
     },
     uniconContainer:{
+      marginTop: 50,
+      gap: 30,
+    },
+    uniconButtonContainer: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      flexDirection: 'row',
+      gap: 10,
+    },
+    uniconTextContainer: {
       display: 'flex',
       flexDirection: 'row',
-      justifyContent: 'flex-end',
       gap: 10,
-      marginTop: 50,
+      alignItems: 'center',
     },
     textWrapper:{
       flex: 1,
@@ -621,6 +630,7 @@ export default function NewArticlePage() {
           })}
         </View>
         <View style={styles.uniconContainer}>
+          <View style={styles.uniconTextContainer}>
             {postType === 'article' ? (
               <View style={styles.textWrapper}>
                 <ThemedText  size='smaller' color='gray'>
@@ -636,28 +646,31 @@ export default function NewArticlePage() {
                   Please note: UNI.CON does not assume responsibility 
                 </ThemedText>
                 <ThemedText  size='smaller' color='gray'>
-                  for any trade or transaction conducted through this platform.
+                  for any trade conducted through this platform.
                 </ThemedText>
               </View>
             )}
-          <ThemedButton
-            type={'toggled'}
-            onPress={() => handlePickImage()}
-          >
-            <Octicons
-              name="diff-added" 
-              size={17} 
-              color={ALWAYS_BLACK}
-            />
-          </ThemedButton>
-          {postType === 'article' && (
+          </View>
+          <View style={styles.uniconButtonContainer}>
+            {postType === 'article' && (
+              <ThemedButton
+                type={unicon ? 'toggled' : 'unToggled'}
+                onPress={() => {setUnicon(!unicon);}}
+              >
+                <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>Global</ThemedText>
+              </ThemedButton>
+            )}
             <ThemedButton
-              type={unicon ? 'toggled' : 'unToggled'}
-              onPress={() => {setUnicon(!unicon);}}
+              type={'toggled'}
+              onPress={() => handlePickImage()}
             >
-              <ThemedText size='smaller' color={unicon ? 'black' : 'gray' }>UNI.CON</ThemedText>
+              <Octicons
+                name="diff-added" 
+                size={17} 
+                color={ALWAYS_BLACK}
+              />
             </ThemedButton>
-          )}
+          </View>
         </View>
       </ThemedCard>
           {postType === 'marketplace' && (

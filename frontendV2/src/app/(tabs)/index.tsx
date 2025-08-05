@@ -35,12 +35,12 @@ const Header = React.memo(function Header({
   DEFAULT_CARD_BACKGROUND,
   BACKGROUND_GRADIENT_START,
   DEFAULT_TEXT,
-  uniOnly,
+  unicon,
   setBSheetVisible,
   selectedTag,
   sortOption,
   setSortOption,
-  setUniOnly,
+  setUnicon,
   scrollY,
 }: {
   initialData: InitialDataType | null;
@@ -48,12 +48,12 @@ const Header = React.memo(function Header({
   DEFAULT_CARD_BACKGROUND: string;
   BACKGROUND_GRADIENT_START: string;
   DEFAULT_TEXT: string;
-  uniOnly: boolean;
+  unicon: boolean;
   setBSheetVisible: (visible: boolean) => void;
   selectedTag: string | undefined;
   sortOption: string;
   setSortOption: (o: 'all'|'hot'|'for you'|'tag') => void;
-  setUniOnly: (u: boolean) => void;
+  setUnicon: (u: boolean) => void;
   scrollY: Animated.Value;
 }) {
 
@@ -130,10 +130,10 @@ return (
           ))}
         </View>
         <ThemedButton
-          type={uniOnly ? 'elevatedToggled' : 'elevatedUnToggled'}
-          onPress={() => setUniOnly(!uniOnly)}
+          type={unicon ? 'elevatedToggled' : 'elevatedUnToggled'}
+          onPress={() => setUnicon(!unicon)}
         >
-          <ThemedText size='smaller' color={uniOnly ? 'black' : 'gray' } font='textMedium'>{initialData?.initial.toUpperCase()}</ThemedText>
+          <ThemedText size='smaller' color={unicon ? 'black' : 'gray' } font='textMedium'>Global</ThemedText>
         </ThemedButton>
       </View>
     </View>
@@ -143,7 +143,7 @@ return (
   return (
     prev.initialData === next.initialData &&
     prev.tags === next.tags &&
-    prev.uniOnly === next.uniOnly &&
+    prev.unicon === next.unicon &&
     prev.sortOption === next.sortOption &&
     prev.selectedTag === next.selectedTag &&
     prev.DEFAULT_CARD_BACKGROUND === next.DEFAULT_CARD_BACKGROUND
@@ -235,7 +235,7 @@ export default function HomePage() {
   const [initialData, setInitialData] = useState<InitialDataType | null>(null);  
   const [tags, setTags] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [uniOnly, setUniOnly] = useState<boolean>(true);
+  const [unicon, setUnicon] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const isFetchingMore = useRef(false);
@@ -243,19 +243,19 @@ export default function HomePage() {
   let url = ''
       if (sortOption === 'tag') {
         if (selectedTag) {
-          url = URLs.SEARCHING_TAG(selectedTag, uniOnly ? 0 : 1);
+          url = URLs.SEARCHING_TAG(selectedTag, unicon ? 1 : 0);
         }else{
-          url = URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1);
+          url = URLs.HOT_SORTED_ARTICLES(unicon ? 1 : 0);
         }
       } 
       else if (sortOption === 'hot') {
-        url = URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1);
+        url = URLs.HOT_SORTED_ARTICLES(unicon ? 1 : 0);
       }
       else if (sortOption === 'for you') {
-        url = URLs.PREFERENCE_SORTED_ARTICLES(uniOnly ? 0 : 1);
+        url = URLs.PREFERENCE_SORTED_ARTICLES(unicon ? 1 : 0);
       }
       else {
-        url = URLs.TIME_SORTED_ARTICLES(uniOnly ? 0 : 1);
+        url = URLs.TIME_SORTED_ARTICLES(unicon ? 1 : 0);
       }
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
@@ -299,7 +299,7 @@ export default function HomePage() {
     if (!feedIds[url] || feedIds[url].length === 0) {
       fetchArticles();
     }
-  }, [sortOption, uniOnly, selectedTag]);
+  }, [sortOption, unicon, selectedTag]);
 
   
   useEffect(() => {
@@ -321,7 +321,7 @@ export default function HomePage() {
       showToast({ type: 'error', text1: res.data?.detail || 'Error loading articles' });
     }
     setLoading(false);
-  }, [sortOption, uniOnly, lastResetPage, selectedTag]);
+  }, [sortOption, unicon, lastResetPage, selectedTag]);
 
 
   const fetchMoreArticles = useCallback(async () => {
@@ -372,12 +372,12 @@ export default function HomePage() {
             tags={tags}
             DEFAULT_CARD_BACKGROUND={DEFAULT_CARD_BACKGROUND}
             DEFAULT_TEXT={DEFAULT_TEXT}
-            uniOnly={uniOnly}
+            unicon={unicon}
             setBSheetVisible={setBSheetVisible}
             selectedTag={selectedTag}
             sortOption={sortOption}
             setSortOption={setSortOption}
-            setUniOnly={setUniOnly}
+            setUnicon={setUnicon}
             scrollY={scrollY}
             BACKGROUND_GRADIENT_START={BACKGROUND_GRADIENT_START}
           />

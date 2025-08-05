@@ -4,7 +4,7 @@ from django_redis import get_redis_connection
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
-from randomname import get_name
+import randomname
 from decouple import config
 from openai import OpenAI
 import numpy as np
@@ -116,7 +116,15 @@ def get_set_temp_name_static_points(article_instance, user_instance):
     if not ArticleUser.objects.filter(
         user=user_instance, article=article_instance
     ).exists():
-        user_temp_name = get_name()
+        if article_instance.user.id == user_instance.id:
+            # If the user is the author of the article, set the temp name to "Author"
+            user_temp_name = "Author"
+        else:
+            user_temp_name = randomname.generate(
+                'adj/emotions',
+                'adj/appearance',
+                ('n/ghosts', 'n/coding', 'n/apex_predators', 'n/food', 'n/furniture', 'n/cheese')
+            )
         user_static_points = user_instance.points
         
         with transaction.atomic():

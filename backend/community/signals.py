@@ -122,11 +122,10 @@ def on_article_save(sender, instance, created, **kwargs):
                     instance,
                     ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id, unicon=True),
                 )
-            else:
-                update_sorted_ids_cache(
-                    instance,
-                    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
-                )
+            update_sorted_ids_cache(
+                instance,
+                ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
+            )
             update_article_engagement_score(instance)
             get_n_register_embedding_vectors.delay(instance.id)
 
@@ -147,12 +146,11 @@ def on_articleTag_save(sender, instance, created, **kwargs):
                     ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
                         instance.article.user.school.id, instance.tag.name, unicon=True),
                 )
-            else:
-                update_sorted_ids_cache(
-                    instance.article,
-                    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                        instance.article.user.school.id, instance.tag.name),
-                )
+            update_sorted_ids_cache(
+                instance.article,
+                ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                    instance.article.user.school.id, instance.tag.name),
+            )
 
 @receiver(post_delete, sender=ArticleTag)
 def on_articleTag_delete(sender, instance, **kwargs):
@@ -172,13 +170,12 @@ def on_articleTag_delete(sender, instance, **kwargs):
                     instance.article.user.school.id, instance.tag.name, unicon=True),
                 False
             )
-        else:
-            update_sorted_ids_cache(
-                instance.article,
-                ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                    instance.article.user.school.id, instance.tag.name),
-                False
-            )
+        update_sorted_ids_cache(
+            instance.article,
+            ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
+                instance.article.user.school.id, instance.tag.name),
+            False
+        )
 
 @receiver(post_save, sender=ArticleView)
 def on_articleView_save(sender, instance, created, **kwargs):

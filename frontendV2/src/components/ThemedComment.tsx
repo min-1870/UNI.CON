@@ -3,7 +3,7 @@ import { CommentType, InitialDataType } from '@/constants/types';
 import ThemedShimmer from '@/components/ThemedShimmer';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import React,  { useState, useEffect  } from "react";
-import { numberToString } from '@/components/Utils';
+import { numberToString, pointToTitle } from '@/components/Utils';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import { AntDesign, Feather } from '@expo/vector-icons';
@@ -87,14 +87,12 @@ function ThemedComment({handleCommentBSheet, commentData, setFocusedComment, isR
           {isUnicon && (
             <ThemedTag unClickable={true} initialData={initialData} type='uni' text={commentData.user_school.toUpperCase()}/>
           )}
+        <ThemedText color="brand">
+          {pointToTitle(commentData.user_static_points)}
+        </ThemedText>
         <ThemedText size='smaller' >
           {commentData.user_temp_name}
         </ThemedText>
-        {commentData.user_static_points > 0 && (
-          <ThemedText color="brand">
-            {commentData.user_static_points}p
-          </ThemedText>
-        )}
         <ThemedText color="gray" size='smaller'>
           {moment(commentData.created_at).fromNow()}
         </ThemedText>

@@ -41,6 +41,16 @@ const numberToString = (num: number): string => {
   return num.toString();
 }
 
+const pointToTitle = (point: number): string => {
+  if (point < 0) return "Invalid Score";
+  if (point <= 50) return "First Year";
+  if (point <= 100) return "Second Year";
+  if (point <= 200) return "Third Year";
+  if (point <= 400) return "Honours Student";
+  if (point <= 800) return "Postgrad";
+  return "🧠 PhD Candidate";
+}
+
 const passwordStrength = (
   password: string
 ): { overall: boolean; hasUpperCase: boolean; hasLowerCase: boolean; hasNumbers: boolean; isValidLength: boolean } => {
@@ -127,4 +137,4 @@ const fetchAPI = async (url: string, { token = true, method = "GET", body = {} }
 };
 
 
-export { fetchAPI, setData, getData, removeData, passwordStrength, numberToString};
+export { fetchAPI, setData, getData, removeData, passwordStrength, numberToString, pointToTitle};

@@ -61,10 +61,23 @@ export default function ThemedButton({
     : type === 'toggled'
     ? StyleSheet.create({
         button: {
-          paddingHorizontal: 20,
-          paddingVertical: 10,
+          paddingHorizontal: 15,
+          paddingVertical: 5,
           borderRadius: 50,
           backgroundColor: DEFAULT_TOGGLED_COLOR,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      })
+    : type === 'unToggled'
+    ? StyleSheet.create({
+        button: {
+          paddingHorizontal: 13,
+          paddingVertical: 3,
+          borderRadius: 50,
+          borderWidth: 2,
+          borderColor: DEFAULT_TOGGLED_COLOR,
+          backgroundColor: DEFAULT_UNTOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -85,40 +98,17 @@ export default function ThemedButton({
           elevation: 10, // For Android shadow
         },
       })
-    : type === 'unToggled'
-    ? StyleSheet.create({
-        button: {
-          paddingHorizontal: 15,
-          paddingVertical: 5,
-          borderRadius: 50,
-          borderWidth: 5,
-          borderColor: DEFAULT_TOGGLED_COLOR,
-          backgroundColor: DEFAULT_UNTOGGLED_COLOR,
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-      })
     : type === 'elevatedUnToggled'
     ? StyleSheet.create({
         button: {
-          paddingHorizontal: 15,
-          paddingVertical: 5,
+          paddingHorizontal: 13,
+          paddingVertical: 3,
           borderRadius: 50,
           borderWidth: 2,
           borderColor: DEFAULT_TOGGLED_COLOR,
           backgroundColor: DEFAULT_UNTOGGLED_COLOR,
           alignItems: 'center',
           justifyContent: 'center',
-              // Inner shadow effect
-              // shadowColor: DEFAULT_TOGGLED_COLOR,
-              // shadowOffset: { width: 0, height: 0 },
-              // shadowOpacity: 0.5,
-              // shadowRadius: 5,
-              // // Web-specific inner shadow
-              // boxShadow: `inset 0px 0px 5px 2px ${DEFAULT_TOGGLED_COLOR}, 0px 3px 13px rgba(0, 0, 0, 0.08)`,
-              // backdropFilter: 'blur(10px)', // For web platforms
-              // elevation: 10, // For Android shadow
-      
       
           boxShadow: '0px 3px 13px rgba(0, 0, 0, 0.08)',
           backdropFilter: 'blur(10px)', // For web platforms

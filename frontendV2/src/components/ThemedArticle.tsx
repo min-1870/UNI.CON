@@ -6,7 +6,7 @@ import { useArticlesStore } from '@/store/articleStore';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {fetchAPI, getData} from "@/components/Utils";
 import Markdown from 'react-native-markdown-display';
-import { numberToString } from '@/components/Utils';
+import { numberToString, pointToTitle } from '@/components/Utils';
 import ThemedText from '@/components/ThemedText';
 import ThemedTag from '@/components/ThemedTag';
 import ThemedCard from '@/components/ThemedCard';
@@ -184,14 +184,12 @@ function ThemedArticle({ articleData, initialData, trendingTags, type='default',
               {articleData.status === 0 ? 'Selling' : articleData.status === 1 ? 'Pending' : 'Sold'}
             </ThemedText>
           )}
+          <ThemedText color="brand">
+            {pointToTitle(articleData.user_static_points)}
+          </ThemedText>
           <ThemedText color="gray" size='smaller'>
             {moment(articleData.created_at).fromNow()}
           </ThemedText>
-          {articleData.user_static_points > 0 && (
-            <ThemedText color="brand">
-              {articleData.user_static_points}p
-            </ThemedText>
-          )}
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
            <ThemedText color="gray" size='smaller' >
              {articleData.deleted? 'deleted' : articleData.edited ? 'edited' : null}
