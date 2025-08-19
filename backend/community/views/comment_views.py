@@ -7,7 +7,7 @@ from community.utils import (
 )
 from community.permissions import Comment_IsAuthenticated
 from community.serializers import CommentSerializer
-from community.models import Comment, CommentLike
+from community.models import Comment, CommentLike, CommentReport
 from community.constants import DELETED_BODY
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -118,6 +118,24 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         return Response(paginated_comments)
 
+    @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
+    def report(self, request, pk=None):
+        comment_instance = self.get_object()
+        user_instance = request.user
+
+        # Create relational data
+        with transaction.atomic():
+            _, created = CommentReport.objects.get_or_create(
+                user=user_instance, comment=comment_instance
+            )
+        if not created:
+            return Response(
+                {"detail": "The comment already reported by the user."},
+                status=status.HTTP_304_NOT_MODIFIED,
+            )
+        
+        return Response({"detail":"The comment has been reported by user."}, status=status.HTTP_200_OK)
+    
     @action(detail=True, methods=["post"], permission_classes=[Comment_IsAuthenticated])
     def like(self, request, pk=None):
         comment_instance = self.get_object()

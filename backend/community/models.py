@@ -73,6 +73,11 @@ class ArticleUser(models.Model):
         unique_together = ("user", "article")
 
 
+class ArticleReport(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+
+
 class ArticleLike(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
@@ -116,6 +121,10 @@ class Comment(models.Model):
 
 
 class CommentLike(models.Model):
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+
+class CommentReport(models.Model):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 

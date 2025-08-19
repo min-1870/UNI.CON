@@ -14,7 +14,7 @@ from community.constants import (
     DELETED_TITLE,
 )
 from account.models import User
-from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave
+from community.models import Article, ArticleLike, Tag, ArticleView, ArticleSave, ArticleReport
 from community.permissions import Article_IsAuthenticated
 from community.serializers import ArticleSerializer
 from rest_framework.response import Response
@@ -154,6 +154,25 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
+    def report(self, request, pk=None):
+
+        article_instance = self.get_object()
+        user_instance = request.user
+
+        # Create relational data
+        with transaction.atomic():
+            _, created = ArticleReport.objects.get_or_create(
+                user=user_instance, article=article_instance
+            )
+        if not created:
+            return Response(
+                {"detail": "The article already reported by the user."},
+                status=status.HTTP_304_NOT_MODIFIED,
+            )
+
+        return Response({"detail":"The article has been reported."}, status=status.HTTP_200_OK)
+    
     @action(detail=True, methods=["post"], permission_classes=[Article_IsAuthenticated])
     def save(self, request, pk=None):
 

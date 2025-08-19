@@ -57,11 +57,13 @@ const URLS = {
     ARTICLE_UNLIKE: (articleId: string) => `${domain}/community/article/${articleId}/unlike/`,
     ARTICLE_SAVE: (articleId: string) => `${domain}/community/article/${articleId}/save/`,
     ARTICLE_UNSAVE: (articleId: string) => `${domain}/community/article/${articleId}/unsave/`,
+    ARTICLE_REPORT: (articleId: string) => `${domain}/community/article/${articleId}/report/`,
 
     // CRUDE comment
     COMMENT: (commentId: string = '') => `${domain}/community/comment/${commentId}`,
     COMMENT_LIKE: (commentId: string) => `${domain}/community/comment/${commentId}/like/`,
     COMMENT_UNLIKE: (commentId: string) => `${domain}/community/comment/${commentId}/unlike/`,
+    COMMENT_REPORT: (commentId: string) => `${domain}/community/comment/${commentId}/report/`,
 
     // Searching 
     SEARCHING_ARTICLE: (searchContent: string, unicon: number = 0) => `${domain}/community/article/search?search_content=${searchContent}&unicon=${unicon}`,

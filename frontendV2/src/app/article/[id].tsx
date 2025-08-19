@@ -200,22 +200,6 @@ export default function ArticlePage() {
     setLoading(false);
   };
 
-  // Handling infinite scroll for top-level comments
-  const fetchMoreComments = async () => {
-    if (!nextCommentPage || nextCommentPage === fetchedCommentPage.current) return;
-    const response = await fetchAPI(nextCommentPage, { method: 'GET', token: true });
-    if (!response.error) {
-      setComments((prev) => [...prev, ...response.data?.results?.comments]);
-      fetchedCommentPage.current = nextCommentPage;
-      setNextCommentPage(response.data?.next);
-    } else {
-      showToast({
-        type: 'error',
-        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
-      });
-    }
-  };
-
   // Delete article
   const deleteArticle = async () => {
     if (!article || !article.title || !article.body) {
@@ -242,6 +226,55 @@ export default function ArticlePage() {
     }
     setBSheetVisible(false);
     setLoading(false);
+  };
+
+  const reportArticle = async () => {
+    setLoading(true);
+    const response = await fetchAPI(URLs.ARTICLE_REPORT(String(articleId)), {
+      method: 'POST',
+      token: true,
+      body: {},
+    });
+    if (!response.error) {
+      showToast({ type: 'success', text1: response.data?.detail || 'Article reported!' });
+    } else {
+      showToast({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
+    }
+    setBSheetVisible(false);
+    setLoading(false);
+  }
+
+  const reportComment = async () => {
+    const commentId = bSheetComment?.child ? bSheetComment.child : bSheetComment?.parent;
+    setLoading(true);
+    const response = await fetchAPI(URLs.COMMENT_REPORT(String(commentId)), {
+      method: 'POST',
+      token: true,
+      body: {},
+    });
+    if (!response.error) {
+      showToast({ type: 'success', text1: response.data?.detail || 'Comment reported!' });
+    } else {
+      showToast({ type: 'error', text1: response?.data?.detail || 'An error occurred!' });
+    }
+    setBSheetVisible(false);
+    setLoading(false);
+  }
+
+  // Handling infinite scroll for top-level comments
+  const fetchMoreComments = async () => {
+    if (!nextCommentPage || nextCommentPage === fetchedCommentPage.current) return;
+    const response = await fetchAPI(nextCommentPage, { method: 'GET', token: true });
+    if (!response.error) {
+      setComments((prev) => [...prev, ...response.data?.results?.comments]);
+      fetchedCommentPage.current = nextCommentPage;
+      setNextCommentPage(response.data?.next);
+    } else {
+      showToast({
+        type: 'error',
+        text1: `Sorry, ${response?.data?.detail || "An error occurred"}!`,
+      });
+    }
   };
 
   const fetchNestedComments = async (commentId: string) => {
@@ -678,7 +711,7 @@ export default function ArticlePage() {
                   </Pressable>
                 )}
                 <Pressable style={styles.button} onPress={()=>{
-                  showToast({ type: 'info', text1: 'This feature is not implemented yet.' });
+                  reportArticle();
                   setBSheetVisible(false);
                   }}>
                   <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
@@ -708,7 +741,10 @@ export default function ArticlePage() {
                     <ThemedText> Edit </ThemedText>
                   </Pressable>
                 )}
-                <Pressable style={styles.button} onPress={()=>(showToast({ type: 'info', text1: 'This feature is not implemented yet.' }))}>
+                <Pressable style={styles.button} onPress={()=>{
+                  reportComment();
+                  setBSheetVisible(false);
+                  }}>
                   <Octicons style={{marginTop:2}} name="report" size={15} color={ERROR_TEXT} />
                   <ThemedText color='red'> Report </ThemedText>
                 </Pressable>
