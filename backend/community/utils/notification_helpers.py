@@ -31,7 +31,7 @@ else:
     from django_redis import get_redis_connection
     redis_conn = get_redis_connection("default")
 
-def get_paginated_notifications(request):
+def get_notifications(request):
 
     user_instance = request.user
     requested_page = int(request.query_params.get("page", 1))
@@ -225,9 +225,7 @@ def add_notification(notification_type, target_instance):
                 ).values_list(
                     'user', flat=True
                 )
-        notify_users = list(notify_users)
-        notify_users.append(target_instance.article.user.id)
-        notify_users = list(set(notify_users))
+        notify_users = list(set(list(notify_users)))
     
     for user_id in notify_users:
         user_instance = User.objects.get(pk=user_id)

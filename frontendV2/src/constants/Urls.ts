@@ -24,11 +24,6 @@ const URLS = {
     NEW_PASSWORD: `${domain}/account/user/update_password/`,
     NEW_TOKEN: `${domain}/account/token/refresh`,
 
-    // Feed (main feed)
-    TIME_SORTED_ARTICLES: (unicon: number = 0) => `${domain}/community/article?unicon=${unicon}`,
-    HOT_SORTED_ARTICLES: (unicon: number = 0) => `${domain}/community/article/hot?unicon=${unicon}`,
-    PREFERENCE_SORTED_ARTICLES: (unicon: number = 0) => `${domain}/community/article/preference?unicon=${unicon}`,
-
     // Marketplace
     TIME_SORTED_MARKETPLACE: `${domain}/community/article/list_marketplace`,
 
@@ -50,6 +45,12 @@ const URLS = {
 
     // CRUDE Article
     POST_ARTICLE: `${domain}/community/article`,
+    LIST_ARTICLES: (
+        marketplace: string = '0',
+        unicon: string = '0',
+        feed: string = '',
+        variable: string = '',
+    ) => `${domain}/community/article?marketplace=${marketplace}&unicon=${unicon}&feed=${feed}&variable=${encodeURIComponent(variable)}`,
     ARTICLE: (articleId: string = '') => `${domain}/community/article/${articleId}`,
     ARTICLE_IMG: (param: string = '') => `${domain}/community/article/get_s3_upload_url/${param}`,
     ARTICLE_LIKE: (articleId: string) => `${domain}/community/article/${articleId}/like/`,
@@ -66,9 +67,6 @@ const URLS = {
     SEARCHING_ARTICLE: (searchContent: string, unicon: number = 0) => `${domain}/community/article/search?search_content=${searchContent}&unicon=${unicon}`,
     SEARCHING_TAG: (searchContent: string, unicon: number = 0) => `${domain}/community/article/search_tag?search_content=${searchContent}&unicon=${unicon}`,
 
-    // Searching (marketplace)
-    SEARCHING_MARKETPLACE_ARTICLE: (searchContent: string) => `${domain}/community/article/search_marketplace?search_content=${searchContent}`,
-    SEARCHING_MARKETPLACE_TAG: (searchContent: string) => `${domain}/community/article/search_tag_marketplace?search_content=${searchContent}`,
 };
 
 export default URLS;

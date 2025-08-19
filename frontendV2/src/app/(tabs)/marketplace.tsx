@@ -145,11 +145,26 @@ export default function MarketplacePage() {
     }
     let url = '';
     if (searchContent.length > 0) {
-      url = URLs.SEARCHING_MARKETPLACE_ARTICLE(searchContent);
+      url = URLs.LIST_ARTICLES(
+            '1', // marketplace
+            '0', // unicon
+            'keyword', // feed
+            searchContent, // variable
+          );
     } else if (searchTag) {
-      url = URLs.SEARCHING_MARKETPLACE_TAG(searchTag);
+      url = URLs.LIST_ARTICLES(
+            '1', // marketplace
+            '0', // unicon
+            'tag', // feed
+            searchTag, // variable
+          );
     } else {
-      url = URLs.TIME_SORTED_MARKETPLACE;
+      url = URLs.LIST_ARTICLES(
+            '1', // marketplace
+            '0', // unicon
+            'recent', // feed
+            '', // variable
+          );
     } 
     const res = await fetchAPI(url, { method: 'GET', token: true });
     if (!res.error) {      

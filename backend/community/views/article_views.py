@@ -1,36 +1,15 @@
 from django.utils.timezone import now
 from community.utils import (
     get_set_temp_name_static_points,
-    get_paginated_notifications,
-    get_serialized_article,
-    get_paginated_comments,
-    get_paginated_articles,
-    update_article_tag,
+    get_notifications,
+    get_comments,
     update_article,
-    get_embedding,
-
+    get_article,
+    get_articles
 )
 from community.constants import (
-    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY,
-
-    ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY,
-
-    ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
-    ARTICLE_USER_PREFERRED_IDS_CACHE_KEY,
-    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
-    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
-    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
-
     TRENDING_TAGS_CACHE_KEY,
-
     SHORT_CACHE_TIMEOUT,
-    CACHE_TIMEOUT,
-
     DELETED_BODY,
     DELETED_TITLE,
 )
@@ -66,22 +45,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
         return queryset
     
-    def get_marketplace_queryset(self):
-        user_instance = self.request.user
-        queryset = Article.objects.filter(
-            Q(user__school=user_instance.school) & Q(marketplace=True)
-        )
-        
-        return queryset
-    
-    def get_non_marketplace_queryset(self):
-        user_instance = self.request.user
-        queryset = Article.objects.filter(
-            (Q(user__school=user_instance.school) | Q(unicon=True)) & Q(marketplace=False)
-        )
-        
-        return queryset
-    
     def create(self, request, *args, **kwargs):
 
         # Create the article
@@ -99,240 +62,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({"detail":"The article has been created.", 'id': article_instance.id}, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-
-        try:
-            unicon = int(request.GET.get("unicon", 0)) == 1
-        except ValueError:
-            unicon = False
-        
-        if unicon:
-            queryset = self.get_non_marketplace_queryset()
-        else:
-            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=queryset,
-            sort_by="created_at",
-            unicon=unicon,
-            cache_key=ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(
-                request.user.school.id, unicon)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def list_marketplace(self, request, *args, **kwargs):
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_marketplace_queryset(),
-            sort_by="created_at",
-            cache_key=ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY(
-                request.user.school.id,)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def hot(self, request):
-        try:
-            unicon = int(request.GET.get("unicon", 0)) == 1
-        except ValueError:
-            unicon = False
-        if unicon:
-            queryset = self.get_non_marketplace_queryset()
-        else:
-            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=queryset,
-            sort_by="engagement_score",
-            unicon=unicon,
-            cache_key=ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY(
-                request.user.school.id, unicon),
-            timeout=CACHE_TIMEOUT
-        )
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def preference(self, request):
-        try:
-            unicon = int(request.GET.get("unicon", 0)) == 1
-        except ValueError:
-            unicon = False
-        
-        if unicon:
-            queryset = self.get_non_marketplace_queryset()
-        else:
-            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=queryset,
-            sort_by="embedding_result",
-            unicon=unicon,
-            cache_key=ARTICLE_USER_PREFERRED_IDS_CACHE_KEY(
-                request.user.id, unicon),
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def search(self, request):
-        try:
-            unicon = int(request.GET.get("unicon", 0)) == 1
-        except ValueError:
-            unicon = False
-        
-        if unicon:
-            queryset = self.get_non_marketplace_queryset()
-        else:
-            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
-
-        # Block if the body or the title is empty
-        search_content = request.GET.get("search_content", "").strip()
-        if len(search_content) == 0:
-            return Response(
-                {"detail": "The search_content is empty."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=queryset.search(search_content),
-            sort_by="search_content",
-            unicon=unicon,
-            cache_key=ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY(
-                request.user.school.id, search_content, unicon),
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def search_marketplace(self, request):
-        # Block if the body or the title is empty
-        search_content = request.GET.get("search_content", "").strip()
-        if len(search_content) == 0:
-            return Response(
-                {"detail": "The search_content is empty."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_marketplace_queryset(),
-            sort_by="search_content",
-            cache_key=ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY(
-                request.user.school.id, search_content),
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def search_tag(self, request):
-        # Block if the body or the title is empty
-        try:
-            unicon = int(request.GET.get("unicon", 0)) == 1
-        except ValueError:
-            unicon = False
-        
-        if unicon:
-            queryset = self.get_non_marketplace_queryset()
-        else:
-            queryset = self.get_non_marketplace_queryset().filter(unicon=unicon)
-
-        tag = request.GET.get("search_content", "").strip()
-        if len(tag) == 0:
-            return Response(
-                {"detail": "The tag is empty."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=queryset.filter(
-                articletag__tag__name__icontains=tag
-                ).distinct(),
-            unicon=unicon,
-            sort_by="created_at",
-            cache_key=ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                request.user.school.id, tag),
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def search_tag_marketplace(self, request):
-        # Block if the body or the title is empty
-        tag = request.GET.get("search_content", "").strip()
-        if len(tag) == 0:
-            return Response(
-                {"detail": "The tag is empty."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_marketplace_queryset().filter(articletag__tag__name__icontains=tag).distinct(),
-            sort_by="created_at",
-            cache_key=ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
-                request.user.school.id, tag),
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"])
-    def posted_articles(self, request, *args, **kwargs):
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_queryset().filter(user=request.user),
-            sort_by="created_at",
-            cache_key=ARTICLE_USER_POSTED_IDS_CACHE_KEY(
-                request.user.id,)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def commented_articles(self, request, *args, **kwargs):
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_queryset().filter(comment__user=request.user).distinct(),
-            sort_by="created_at",
-            cache_key=ARTICLE_USER_COMMENTED_IDS_CACHE_KEY(
-                request.user.id,)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def saved_articles(self, request, *args, **kwargs):
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_queryset().filter(articlesave__user=request.user),
-            sort_by="created_at",
-            cache_key=ARTICLE_USER_SAVED_IDS_CACHE_KEY(
-                request.user.id,)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["get"])
-    def liked_articles(self, request, *args, **kwargs):
-
-        response_data = get_paginated_articles(
-            request=request,
-            queryset=self.get_queryset().filter(articlelike__user=request.user),
-            sort_by="created_at",
-            cache_key=ARTICLE_USER_LIKED_IDS_CACHE_KEY(
-                request.user.id,)
-        )
-
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(get_articles(request), status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
         return Response(
@@ -366,17 +96,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         # Update the article instance & shared article attributes cache
-        tags = request.data.get("tag", [])
-        update_article_tag(article_instance, tags)
         updated_fields = {
-            "title": title,
-            "body": body,
+            "title": request.data.get("title", "").strip(),
+            "body": request.data.get("body", "").strip(),
             "edited": True,
             "unicon": request.data.get("unicon", False),
             "marketplace": request.data.get("marketplace", False),
             "price": request.data.get("price", 0),
             "contact": request.data.get("contact", "Leave a comment"),
             "status": request.data.get("status", 0),
+            "tags": request.data.get("tag", []),
         }
         update_article(article_instance, updated_fields)
         get_n_register_embedding_vectors.delay(article_instance.id)
@@ -403,8 +132,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         update_article(article_instance, updated_fields)
 
         # Fetch the article response data
-        article_response_data = get_serialized_article(request, article_instance)
-        comments_response_data = get_paginated_comments(request, article_instance)
+        article_response_data = get_article(request, article_instance)
+        comments_response_data = get_comments(request, article_instance)
         comments_response_data["results"]["article"] = article_response_data
 
         return Response(comments_response_data)
@@ -421,8 +150,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         # Update the article instance & shared article attributes cache
         updated_fields = {"title": DELETED_TITLE, "body": DELETED_BODY, "deleted": True}
-        tags = request.data.get("tag", [])
-        update_article_tag(article_instance, tags)
         update_article(article_instance, updated_fields)
 
         return Response({"detail":"The article has been deleted by user."}, status=status.HTTP_200_OK)
@@ -530,9 +257,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def notifications(self, request, *args, **kwargs): 
 
-        response_data = get_paginated_notifications(
-            request,
-        )
+        response_data = get_notifications(request)
 
         # Update the last notification check time
         with transaction.atomic():

@@ -69,7 +69,12 @@ export default function SearchPage() {
   const [searched, setSearched] = useState<boolean>(false);
   const [uniOnly, setUniOnly] = useState<boolean>(true);
   const [searchContent, setSearchContent] = useState('');
-  const [url, setUrl] = useState(URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1));
+  const [url, setUrl] = useState(URLs.LIST_ARTICLES(
+    '0', // marketplace
+    uniOnly ? '1' : '0', // unicon
+    'hot', // feed
+    '', // variable
+  ));
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);  
     
@@ -90,22 +95,48 @@ export default function SearchPage() {
   useEffect(() => {  
     if (searchContent.length > 0 && searched) { 
       setSearched(false);
-      setUrl(URLs.SEARCHING_ARTICLE(searchContent, uniOnly ? 0 : 1));
+      // setUrl(URLs.SEARCHING_ARTICLE(searchContent, uniOnly ? 0 : 1));
+      setUrl(URLs.LIST_ARTICLES(
+        '0', // marketplace
+        uniOnly ? '1' : '0', // unicon
+        'keyword', // feed
+        searchContent, // variable
+      ));
       setSearchTag(undefined);
     }else if (searchContent.length == 0 && searched) {
       setSearched(false);
       setUrl(searchTag 
-        ? URLs.SEARCHING_TAG(searchTag, uniOnly ? 0 : 1) 
-        : URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1)
+        ? URLs.LIST_ARTICLES(
+            '0', // marketplace
+            uniOnly ? '1' : '0', // unicon
+            'tag', // feed
+            searchTag, // variable
+          ) 
+        : URLs.LIST_ARTICLES(
+            '0', // marketplace
+            uniOnly ? '1' : '0', // unicon
+            'hot', // feed
+            '', // variable
+          )
       );
     }
   },[searched]);
   
   useEffect(() => {
     if (searchContent.length == 0 && searchTag) { 
-      setUrl(URLs.SEARCHING_TAG(searchTag, uniOnly ? 0 : 1));
+      setUrl(URLs.LIST_ARTICLES(
+        '0', // marketplace
+        uniOnly ? '1' : '0', // unicon
+        'tag', // feed
+        searchTag, // variable
+      ));
     }else if (searchContent.length == 0 && !searchTag) {
-      setUrl(URLs.HOT_SORTED_ARTICLES(uniOnly ? 0 : 1));
+      setUrl(URLs.LIST_ARTICLES(
+        '0', // marketplace
+        uniOnly ? '1' : '0', // unicon
+        'hot', // feed
+        '', // variable
+      ));
     }
   },[searchTag]);
 

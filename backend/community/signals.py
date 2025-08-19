@@ -10,29 +10,13 @@ from community.utils import (
     update_article_engagement_score,
 
     update_sorted_ids_cache,
-    update_unsorted_ids_cache,
+    bump_facet_version,
+    update_article_action,
+    update_comment_action
 )
 from community.constants import (
     NOTIFICATION_GROUP_KV,
-    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY,
-    
-    ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY,
-    ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY,
-
-    ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY,
-    ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
-    ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY,
-
-    ARTICLE_USER_COMMENTED_IDS_CACHE_KEY,
-    ARTICLE_USER_POSTED_IDS_CACHE_KEY,
-    ARTICLE_USER_LIKED_IDS_CACHE_KEY,
-    ARTICLE_USER_SAVED_IDS_CACHE_KEY,
-
-    COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
     COMMENT_SCHOOL_IDS_CACHE_KEY,
-
     USER_POINT_DELTA,
 )
 
@@ -41,10 +25,8 @@ article_viewed = Signal()
 @receiver(post_save, sender=Comment)
 def on_comment_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_COMMENTED_IDS_CACHE_KEY(instance.user.id),
-        )
+
+        bump_facet_version({'feed':'commented'},  instance.user)
         update_sorted_ids_cache(
             instance,
             COMMENT_SCHOOL_IDS_CACHE_KEY(
@@ -73,12 +55,7 @@ def on_comment_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CommentLike)
 def on_commentLike_save(sender, instance, created, **kwargs):
     if created:
-        update_unsorted_ids_cache(
-            instance.comment,
-            COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
-                instance.user.id),
-        )
-
+        update_comment_action('liked', True, instance.user, instance.comment)
         add_notification(NOTIFICATION_GROUP_KV['like'], instance)
 
         if instance.comment.user != instance.user:
@@ -90,12 +67,8 @@ def on_commentLike_save(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=CommentLike)
 def on_commentLike_delete(sender, instance, **kwargs):
-    update_unsorted_ids_cache(
-        instance.comment,
-        COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(
-            instance.user.id),
-        False
-    )
+    update_comment_action('liked', False, instance.user, instance.comment)
+
     if instance.comment.user != instance.user:
         # Update user points
         update_user_points(
@@ -107,83 +80,34 @@ def on_commentLike_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=Article)
 def on_article_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_ids_cache(
-            instance,
-            ARTICLE_USER_POSTED_IDS_CACHE_KEY(instance.user.id),
-        )
+        bump_facet_version({'feed':'posted'}, instance.user)
         if instance.marketplace:
-            update_sorted_ids_cache(
-                instance,
-                ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY(instance.user.school.id),
-            )
+            bump_facet_version({'marketplace':True}, instance.user)
         else:
-            if instance.unicon:
-                update_sorted_ids_cache(
-                    instance,
-                    ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id, unicon=True),
-                )
-            update_sorted_ids_cache(
-                instance,
-                ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY(instance.user.school.id),
-            )
+            bump_facet_version({'unicon':True}, instance.user)
+            bump_facet_version({'unicon':False}, instance.user)
             update_article_engagement_score(instance)
             get_n_register_embedding_vectors.delay(instance.id)
 
 @receiver(post_save, sender=ArticleTag)
 def on_articleTag_save(sender, instance, created, **kwargs):
     if created:
-        # Update sorted article ids cache for the tag
-        if instance.article.marketplace:
-            update_sorted_ids_cache(
-                instance.article,
-                ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
-                    instance.article.user.school.id, instance.tag.name),
-            )
-        else:
-            if instance.article.unicon:
-                update_sorted_ids_cache(
-                    instance.article,
-                    ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                        instance.article.user.school.id, instance.tag.name, unicon=True),
-                )
-            update_sorted_ids_cache(
-                instance.article,
-                ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                    instance.article.user.school.id, instance.tag.name),
-            )
+        bump_facet_version(
+            {'feed':'tag', 'variable':instance.tag.name},
+            instance.article.user
+        )
 
 @receiver(post_delete, sender=ArticleTag)
 def on_articleTag_delete(sender, instance, **kwargs):
-    # Update sorted article ids cache for the tag
-    if instance.article.marketplace:
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY(
-                instance.article.user.school.id, instance.tag.name),
-            False
-        )
-    else:
-        if instance.article.unicon:
-            update_sorted_ids_cache(
-                instance.article,
-                ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                    instance.article.user.school.id, instance.tag.name, unicon=True),
-                False
-            )
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY(
-                instance.article.user.school.id, instance.tag.name),
-            False
-        )
+    bump_facet_version(
+        {'feed':'tag', 'variable':instance.tag.name},
+        instance.article.user
+    )
 
 @receiver(post_save, sender=ArticleView)
 def on_articleView_save(sender, instance, created, **kwargs):
     if created:
-        update_unsorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-        )
+        update_article_action('viewed', True, instance.user, instance.article)
         update_article_engagement_score(instance.article)
         if instance.article.user != instance.user and not instance.article.deleted and not instance.article.marketplace:
             # Update user points
@@ -195,39 +119,19 @@ def on_articleView_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=ArticleSave)
 def on_articleSave_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_SAVED_IDS_CACHE_KEY(instance.user.id),
-        )
-        update_unsorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-        )
+        update_article_action('saved', True, instance.user, instance.article)
+        bump_facet_version({'feed':'saved'}, instance.user)
     
 @receiver(post_delete, sender=ArticleSave)
 def on_articleSave_delete(sender, instance, **kwargs):
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_SAVED_IDS_CACHE_KEY(instance.user.id),
-            False
-        )
-        update_unsorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-            False
-        )
+        update_article_action('saved', False, instance.user, instance.article)
+        bump_facet_version({'feed':'saved'}, instance.user)
 
 @receiver(post_save, sender=ArticleLike)
 def on_articleLike_save(sender, instance, created, **kwargs):
     if created:
-        update_sorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_LIKED_IDS_CACHE_KEY(instance.user.id),
-        )
-        update_unsorted_ids_cache(
-            instance.article,
-            ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-        )
+        update_article_action('liked', True, instance.user, instance.article)
+        bump_facet_version({'feed':'liked'}, instance.user)
 
         update_article_engagement_score(instance.article)
 
@@ -243,16 +147,8 @@ def on_articleLike_save(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=ArticleLike)
 def on_articleLike_delete(sender, instance, **kwargs):
-    update_sorted_ids_cache(
-        instance.article,
-        ARTICLE_USER_LIKED_IDS_CACHE_KEY(instance.user.id),
-        False
-    )
-    update_unsorted_ids_cache(
-        instance.article,
-        ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY(instance.user.id),
-        False
-    )
+    update_article_action('liked', False, instance.user, instance.article)
+    bump_facet_version({'feed':'liked'}, instance.user)
     update_article_engagement_score(instance.article)
     if instance.article.user != instance.user:
         # Update user points

@@ -1,20 +1,23 @@
 from .article_helpers import (
-    get_paginated_articles,
-    get_serialized_article,
-    
-    update_article_tag,
+    get_articles,
+    get_article,
+
     update_article,
+    update_article_action,
+
+    bump_facet_version,
 )
 
 from .comment_helpers import (
-    get_paginated_comments,
-    get_serialized_comment,
+    get_comments,
+    get_comment,
 
     update_comment,
+    update_comment_action,
 )
 
 from .notification_helpers import (
-    get_paginated_notifications,
+    get_notifications,
     add_notification,
 )
 
@@ -32,5 +35,6 @@ from .database_utils import (
     update_sorted_ids_cache,
     update_unsorted_ids_cache,
 )
+
 
 from .response_serializers import ArticleResponseSerializer, CommentResponseSerializer

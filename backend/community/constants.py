@@ -10,6 +10,7 @@ USER_POINT_DELTA = {
     }
 }
 
+
 SHORT_CACHE_TIMEOUT = 60 * 10 # 10 Minutes
 CACHE_TIMEOUT = 60 * 60 # 1 Hour
 LONG_CACHE_TIMEOUT = 60 * 60 * 24 # 1 Day
@@ -33,80 +34,51 @@ NOTIFICATION_GROUP_KV = {
     "like" : 1,
 }
 
-# general cache keys
+# Article cache keys
 ARTICLE_CACHE_KEY = (
     lambda article_id: f"ARTICLE_{article_id}"
 )
+USER_LIKED_ARTICLES_KEY = (
+    lambda user_id: f"USER_{user_id}_LIKED_ARTICLES"
+)
+USER_VIEWED_ARTICLES_KEY = (
+    lambda user_id: f"USER_{user_id}_VIEWED_ARTICLES"
+)
+USER_SAVED_ARTICLES_KEY = (
+    lambda user_id: f"USER_{user_id}_SAVED_ARTICLES"
+)
+ARTICLE_FACETS_KEY = (
+    lambda facets, values: f"ARTICLE_FACETS_{'_'.join(facets) if isinstance(facets, list) else facets}_{'_'.join(values) if isinstance(values, list) else values}"
+)
+ARTICLE_IDS_KEY = (
+    lambda facets, versions: f"ARTICLE_IDS_{facets}_{versions}"
+)
+
+
+# Comment cache keys
 COMMENT_CACHE_KEY = (
     lambda article_id: f"COMMENT_{article_id}"
 )
+USER_LIKED_COMMENTS_KEY = (
+    lambda user_id: f"USER_{user_id}_LIKED_COMMENTS"
+)
+COMMENT_SCHOOL_IDS_CACHE_KEY = (
+    lambda article_id, parent_comment_id: f"ARTICLE_{article_id}_COMMENT_{parent_comment_id}_COMMENT_IDS"
+)
+
+
+# Notification cache keys
 NOTIFICATION_CACHE_KEY = (
     lambda notification_id: f"NOTIFICATION_{notification_id}"
+)
+NOTIFICATION_USER_IDS_CACHE_KEY = (
+    lambda user_id: f"USER_{user_id}_NOTIFICATION_IDS"
 )
 
 # school specific cache keys
 TRENDING_TAGS_CACHE_KEY = (
     lambda school: f"SCHOOL_{school}_TRENDING_TAGS"
 )
-ARTICLE_SCHOOL_RECENT_IDS_CACHE_KEY = (
-    lambda school, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_RECENT_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_HOT_IDS_CACHE_KEY = (
-    lambda school, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_HOT_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, content, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_SEARCHED_{content}_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_TAG_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, tag, unicon=False: f"SCHOOL_{school}_UNICON_{unicon}_TAG_SEARCHED_{tag}_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_MARKETPLACE_RECENT_IDS_CACHE_KEY = (
-    lambda school: f"SCHOOL_{school}_MARKETPLACE_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_MARKETPLACE_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, content: f"SCHOOL_{school}_MARKETPLACE_SEARCHED_{content}_ARTICLE_IDS"
-)
-ARTICLE_SCHOOL_MARKETPLACE_TAG_SEARCHED_IDS_CACHE_KEY = (
-    lambda school, tag: f"SCHOOL_{school}_MARKETPLACE_TAG_SEARCHED_{tag}_ARTICLE_IDS"
-)
-COMMENT_SCHOOL_IDS_CACHE_KEY = (
-    lambda article_id, parent_comment_id: f"ARTICLE_{article_id}_COMMENT_{parent_comment_id}_COMMENT_IDS"
-)
-
-# user specific cache keys
-NOTIFICATION_USER_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_NOTIFICATION_IDS"
-)
-ARTICLE_USER_LIKED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_LIKED_ARTICLE_IDS"
-)
-ARTICLE_USER_COMMENTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_COMMENTED_ARTICLE_IDS"
-)
-ARTICLE_USER_POSTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_POSTED_ARTICLE_IDS"
-)
-ARTICLE_USER_SAVED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_SAVED_ARTICLE_IDS"
-)
-ARTICLE_USER_PREFERRED_IDS_CACHE_KEY = (
-    lambda user_id, unicon=False: f"USER_{user_id}_UNICON_{unicon}_PREFERRED_ARTICLE_IDS"
-)
-
-# user specific & non-sorted cache keys
-ARTICLE_USER_VIEWED_UNSORTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_VIEWED_UNSORTED_ARTICLE_IDS"
-)
-ARTICLE_USER_LIKED_UNSORTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_LIKED_UNSORTED_ARTICLE_IDS"
-)
-ARTICLE_USER_SAVED_UNSORTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_SAVED_UNSORTED_ARTICLE_IDS"
-)
-COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY = (
-    lambda user_id: f"USER_{user_id}_LIKED_UNSORTED_COMMENT_IDS"
-)
-
 
 EMAIL_NOTIFICATIONS_THRESHOLD = 5
 

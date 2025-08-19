@@ -1,7 +1,7 @@
 from community.utils import (
     get_set_temp_name_static_points,
-    get_paginated_comments,
-    get_serialized_comment,
+    get_comments,
+    get_comment,
     update_article,
     update_comment,
 )
@@ -51,7 +51,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         if comment_instance.parent_comment:
             update_comment(comment_instance.parent_comment, updated_fields)
         
-        comment_data = get_serialized_comment(request, comment_instance)
+        comment_data = get_comment(request, comment_instance)
 
         return Response(comment_data, status=status.HTTP_201_CREATED)
 
@@ -112,7 +112,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         comment_instance = self.get_object()
 
-        paginated_comments = get_paginated_comments(
+        paginated_comments = get_comments(
             request, comment_instance.article, comment_instance
         )
 

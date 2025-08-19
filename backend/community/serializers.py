@@ -1,5 +1,4 @@
 from community.models import Article, Comment, Tag, ArticleTag
-from community.utils import update_article_tag
 from rest_framework import serializers
 from django.db import transaction
 class ArticleSerializer(serializers.ModelSerializer):
@@ -79,7 +78,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             article_instance = Article.objects.create(**validated_data)
 
         # Link the foreign key for each tag if necessary
-        update_article_tag(article_instance, tags)
+        for tag in tags:
+            tag_instance, created = Tag.objects.get_or_create(name=tag)
+            ArticleTag.objects.create(article=article_instance, tag=tag_instance)
 
         return article_instance
 

@@ -3,8 +3,8 @@ from community.constants import (
     PAGINATOR_SIZE,
     LONG_CACHE_TIMEOUT,
     COMMENT_SCHOOL_IDS_CACHE_KEY,
-    COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY,
-    COMMENT_CACHE_KEY
+    COMMENT_CACHE_KEY,
+    USER_LIKED_COMMENTS_KEY
 )
 from community.models import ArticleUser, Comment, CommentLike
 from .response_serializers import CommentResponseSerializer
@@ -24,7 +24,7 @@ else:
     from django_redis import get_redis_connection
     redis_conn = get_redis_connection("default")
 
-def get_paginated_comments(
+def get_comments(
     request, article_instance, parent_comment_instance=None
 ):
     user_instance = request.user
@@ -66,33 +66,33 @@ def get_paginated_comments(
         withscores=True 
     )
     mapping = {member.decode(): int(score) for member, score in raw_with_scores }
-    id_list = list(mapping.keys())
+    ids = list(mapping.keys())
 
     # If no enough comments found, do not provide next page
     moreComments = False
-    if len(id_list) == PAGINATOR_SIZE + 1:
-        id_list.pop()
+    if len(ids) == PAGINATOR_SIZE + 1:
+        ids.pop()
         moreComments = True
 
     # Bulk get article from cache
-    cache_keys = [COMMENT_CACHE_KEY(nid) for nid in id_list]
+    cache_keys = [COMMENT_CACHE_KEY(nid) for nid in ids]
     cached = cache.get_many(cache_keys)
 
     # Build the results dictionary
-    results = {}
+    raw_comments = {}
     missing_ids = []
-    for nid in id_list:
+    for nid in ids:
         key = COMMENT_CACHE_KEY(nid)
-        serialized_article = cached.get(key)
-        if serialized_article is None:
+        serialized_comment = cached.get(key)
+        if serialized_comment is None:
             missing_ids.append(nid)
-            results[nid] = None
+            raw_comments[nid] = None
         else:
-            results[nid] = serialized_article
+            raw_comments[nid] = serialized_comment
 
     missing_annotated_comment_queryset = {}
     if len(missing_ids) > 0:
-        # Query all of the missing article ids
+        # Query all of the missing comment ids
         missing_annotated_comment_queryset = (
             Comment.objects.filter(article=article_instance)
             .filter(
@@ -117,41 +117,39 @@ def get_paginated_comments(
             )
         )
 
-    # Serialized the missing comments
-    missing_serialized_annotated_comments = CommentResponseSerializer(
-        missing_annotated_comment_queryset, many=True
-    ).data
+        # Serialized the missing comments
+        missing_serialized_annotated_comments = CommentResponseSerializer(
+            missing_annotated_comment_queryset, many=True
+        ).data
 
-    # Set annotated comment cache in bulk
-    missing_serialized_annotated_comments = {
-        COMMENT_CACHE_KEY(comment["id"]): comment
-        for comment in missing_serialized_annotated_comments
-    }
-    cache.set_many(missing_serialized_annotated_comments, timeout=CACHE_TIMEOUT)
+        # Set annotated comment cache in bulk
+        missing_serialized_annotated_comments = {
+            COMMENT_CACHE_KEY(comment["id"]): comment
+            for comment in missing_serialized_annotated_comments
+        }
+        cache.set_many(missing_serialized_annotated_comments, timeout=CACHE_TIMEOUT)
 
     # Cache user like status in bulk
-    cache_key = COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)        
-    user_liked_comments = cache.get(cache_key, None)
-    if user_liked_comments is None:
-        user_liked_comments = CommentLike.objects.filter(user=user_instance).values_list(
+    liked_flags = redis_conn.smismember(USER_LIKED_COMMENTS_KEY(user_instance.id), *ids)
+    if liked_flags is None:
+        user_liked_comments = CommentLike.objects.filter(user=user_instance, comment__in=ids).values_list(
             "comment", flat=True
         )
         user_liked_comments = {pk: True for pk in user_liked_comments}
-        cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
+        redis_conn.sadd(USER_LIKED_COMMENTS_KEY(user_instance.id), *user_liked_comments.keys())
+        liked_flags = [user_liked_comments.get(pk, False) for pk in ids]
+    liked_ids = dict(zip(ids, map(bool, liked_flags)))
 
-    # Insert the missing comments and attach user specific data while maintain the order
-    for nid in id_list:
-        if results[nid] is None:
-            results[nid] = missing_serialized_annotated_comments.get(COMMENT_CACHE_KEY(nid), None)
+    comments = []
+    for cid, comment in raw_comments.items():
+        if comment is None:
+            comment = missing_serialized_annotated_comments.get(COMMENT_CACHE_KEY(cid), None)
 
-        if results[nid] is not None:
-            # Attach user specific data
-            results[nid]["like_status"] = user_liked_comments.get(
-                results[nid]["id"], False
-            )
-        else:
-            del results[nid]
-            print(f"Comment {nid} not found in the database or cache.")
+        if comment is None:
+            continue
+
+        comment['like_status'] = liked_ids.get(cid, False)
+        comments.append(comment)
     
     if moreComments:
         url = request.build_absolute_uri()
@@ -161,10 +159,10 @@ def get_paginated_comments(
         
     return {
         "next": next_page,
-        "results": {"comments": results.values()},
+        "results": {"comments": comments},
     }
 
-def get_serialized_comment(request, comment_instance):
+def get_comment(request, comment_instance):
 
     # Cache the annotated comment
     cache_key = COMMENT_CACHE_KEY(comment_instance.id)
@@ -186,20 +184,26 @@ def get_serialized_comment(request, comment_instance):
         serialized_annotated_comment = CommentResponseSerializer(comment_instance).data
         cache.set(cache_key, serialized_annotated_comment, timeout=CACHE_TIMEOUT)
 
-    # Cache user like status in bulk
-    cache_key = COMMENT_USER_LIKED_UNSORTED_IDS_CACHE_KEY(user_instance.id)        
-    user_liked_comments = cache.get(cache_key, None)
-    if user_liked_comments is None:
-        user_liked_comments = CommentLike.objects.filter(user=user_instance).values_list(
-            "comment", flat=True
-        )
+    # Cache user like status
+    like_status = redis_conn.smismember(USER_LIKED_COMMENTS_KEY(user_instance.id), comment_instance.id)
+    if like_status is None:
+        user_liked_comments = CommentLike.objects.filter(user=user_instance, comment=comment_instance).exists()
         user_liked_comments = {pk: True for pk in user_liked_comments}
-        cache.set(cache_key, user_liked_comments, CACHE_TIMEOUT)
-
-    like_status = user_liked_comments.get(comment_instance.id, False)
+        redis_conn.sadd(USER_LIKED_COMMENTS_KEY(user_instance.id), comment_instance.id)
+        like_status = user_liked_comments
     serialized_annotated_comment["like_status"] = like_status
 
     return serialized_annotated_comment
+
+def update_comment_action(action_type, add, user_instance, comment_instance):
+    if action_type == 'liked':
+        cache_key = USER_LIKED_COMMENTS_KEY(user_instance.id)
+    else:
+        raise ValueError("Invalid action type")
+    if add:
+        redis_conn.sadd(cache_key, comment_instance.id)
+    else:
+        redis_conn.srem(cache_key, comment_instance.id)
 
 def update_comment(comment_instance, updated_fields={}):
     

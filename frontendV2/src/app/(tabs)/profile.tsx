@@ -121,10 +121,30 @@ return (
 });
 
   const apiEndpoints = {
-    posted: URLs.POSTED_ARTICLES,
-    saved: URLs.SAVED_ARTICLES,
-    commented: URLs.COMMENTED_ARTICLES,
-    liked: URLs.LIKED_ARTICLES,
+    posted: URLs.LIST_ARTICLES(
+      '0', // marketplace
+      '1', // unicon
+      'posted', // feed
+      '', // variable
+    ),
+    saved: URLs.LIST_ARTICLES(
+      '0', // marketplace
+      '1', // unicon
+      'saved', // feed
+      '', // variable
+    ),
+    commented: URLs.LIST_ARTICLES(
+      '0', // marketplace
+      '1', // unicon
+      'commented', // feed
+      '', // variable
+    ),
+    liked: URLs.LIST_ARTICLES(
+      '0', // marketplace
+      '1', // unicon
+      'liked', // feed
+      '', // variable
+    ),
   };
 
   const styles = StyleSheet.create({

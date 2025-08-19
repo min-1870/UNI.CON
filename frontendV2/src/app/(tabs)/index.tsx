@@ -151,14 +151,6 @@ return (
   );
 });
 
-const apiEndpoints = ['all', 'hot', 'for you', 'tag'];
-// {
-//   'all': URLs.TIME_SORTED_ARTICLES,
-//   'hot': URLs.HOT_SORTED_ARTICLES,
-//   'for you': URLs.PREFERENCE_SORTED_ARTICLES,
-//   'tag': URLs.PREFERENCE_SORTED_ARTICLES,
-//};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -243,19 +235,44 @@ export default function HomePage() {
   let url = ''
       if (sortOption === 'tag') {
         if (selectedTag) {
-          url = URLs.SEARCHING_TAG(selectedTag, unicon ? 1 : 0);
+          url = URLs.LIST_ARTICLES(
+            '0', // marketplace
+            unicon ? '1' : '0', // unicon
+            'tag', // feed
+            selectedTag, // variable
+          );
         }else{
-          url = URLs.HOT_SORTED_ARTICLES(unicon ? 1 : 0);
+          url = URLs.LIST_ARTICLES(
+            '0', // marketplace
+            unicon ? '1' : '0', // unicon
+            'hot', // feed
+            '', // variable
+          );
         }
       } 
       else if (sortOption === 'hot') {
-        url = URLs.HOT_SORTED_ARTICLES(unicon ? 1 : 0);
+        url = URLs.LIST_ARTICLES(
+          '0', // marketplace
+          unicon ? '1' : '0', // unicon
+          'hot', // feed
+          '', // variable
+        );
       }
       else if (sortOption === 'for you') {
-        url = URLs.PREFERENCE_SORTED_ARTICLES(unicon ? 1 : 0);
+        url = URLs.LIST_ARTICLES(
+          '0', // marketplace
+          unicon ? '1' : '0', // unicon
+          'preference', // feed
+          '', // variable
+        );
       }
       else {
-        url = URLs.TIME_SORTED_ARTICLES(unicon ? 1 : 0);
+        url = URLs.LIST_ARTICLES(
+          '0', // marketplace
+          unicon ? '1' : '0', // unicon
+          'recent', // feed
+          '', // variable
+        );
       }
   const lastResetPage = useArticlesStore(s => s.lastResetPage);
   const feedIds = useArticlesStore(s => s.feeds[route.name]) || {};
